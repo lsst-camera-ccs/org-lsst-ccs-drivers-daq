@@ -9,12 +9,12 @@ public class SourceMetaData {
     private final byte sensor;
     private final byte lane;
     private final String platform;
-    private final String software;
+    private final Version software;
     private final int firmware;
     private final long serialNumber;
     private final int length;
 
-    SourceMetaData(byte sensor, byte lane, String platform, String software, int firmware, long serialNumber, int length, byte bay, byte board) {
+    SourceMetaData(byte sensor, byte lane, String platform, Version software, int firmware, long serialNumber, int length, byte bay, byte board) {
         this.sensor = sensor;
         this.lane = lane;
         this.platform = platform;
@@ -37,7 +37,7 @@ public class SourceMetaData {
         return platform;
     }
 
-    public String getSoftware() {
+    public Version getSoftware() {
         return software;
     }
 

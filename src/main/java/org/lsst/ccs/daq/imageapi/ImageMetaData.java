@@ -1,5 +1,7 @@
 package org.lsst.ccs.daq.imageapi;
 
+import java.util.BitSet;
+
 /**
  * Meta-data associated with an image
  * @author tonyj
@@ -7,13 +9,13 @@ package org.lsst.ccs.daq.imageapi;
 class ImageMetaData {
     private final String name;
     private final String annotation;
-    private final String release;
+    private final Version release;
     private final int opcode;
     private final long timestamp;
     private final LocationSet elements;
     private final long id;
 
-    ImageMetaData(long id, String name, String annotation, String release, int opcode, long timestamp, long[] elements) {
+    ImageMetaData(long id, String name, String annotation, Version release, int opcode, long timestamp, BitSet elements) {
         this.id = id;
         this.name = name;
         this.annotation = annotation;
@@ -31,7 +33,7 @@ class ImageMetaData {
         return annotation;
     }
 
-    public String getRelease() {
+    public Version getRelease() {
         return release;
     }
 

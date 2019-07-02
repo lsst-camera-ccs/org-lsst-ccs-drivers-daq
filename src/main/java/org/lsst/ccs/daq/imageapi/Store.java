@@ -15,6 +15,7 @@ public class Store implements AutoCloseable {
 
     static {
         System.loadLibrary("daq_ims");
+        initialize();
     }
 
     /**
@@ -88,6 +89,11 @@ public class Store implements AutoCloseable {
     void listSources(String imageName, String folderName, List<SourceMetaData> result) {
         listSources(store, imageName, folderName, result);
     }
+    
+    // Callbacks used from C++
+    
+    // Native methods
+    private static native void initialize();
     
     private synchronized native long attachStore(String partition);
 

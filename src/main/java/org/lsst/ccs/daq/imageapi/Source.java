@@ -61,7 +61,7 @@ public class Source implements Comparable<Source> {
 
     @Override
     public int compareTo(Source o) {
-        return this.metaData.getLocation().index() - o.metaData.getLocation().index();
+        return this.metaData.getLocation().compareTo(o.metaData.getLocation());
 
     }
 

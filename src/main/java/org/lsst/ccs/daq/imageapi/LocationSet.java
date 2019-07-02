@@ -1,6 +1,8 @@
 package org.lsst.ccs.daq.imageapi;
 
 import java.util.BitSet;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  *
@@ -13,9 +15,9 @@ public class LocationSet {
     public LocationSet() {
         locations = new BitSet();
     }
-    
-    LocationSet(long[] elements) {
-        locations = BitSet.valueOf(elements);
+
+    LocationSet(BitSet bitset) {
+        locations = bitset;
     }
 
     public void addLocation(Location location) {
@@ -33,4 +35,22 @@ public class LocationSet {
     public int cardinality() {
         return locations.cardinality();
     }
+
+    Set<Location> getLocations() {
+        Set<Location> result = new TreeSet<>();
+        for (int index = -1;;) {
+            index = locations.nextSetBit(index+1);
+            if (index < 0) {
+                break;
+            }
+            result.add(new Location(index));
+        }
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "LocationSet{" + "locations=" + getLocations() + '}';
+    }
+
 }

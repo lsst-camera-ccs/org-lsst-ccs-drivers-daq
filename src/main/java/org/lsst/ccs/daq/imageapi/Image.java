@@ -53,7 +53,7 @@ public class Image implements Comparable<Image> {
     }
     /**
      * Move the image to a different folder
-     * @param folder The folder to move to
+     * @param folderName The folder to move to
      */
     public void moveTo(String folderName) throws DAQException {
         int rc = folder.getStore().moveImageToFolder(this.metaData.getId(), folderName);
