@@ -4,25 +4,17 @@
 
 #include "ims/Image.hh"
 #include "ims/ImageMetadata.hh"
-
+#include "daq/LocationSet.hh"
 
 using namespace IMS;
 
 MyProcessor::MyProcessor(Store& store, JNIEnv *env, jobject result) :
 IMS::Processor(), store(store), env(env), result(result) {
-    jclass cls = env->GetObjectClass(result);
-    if (env->ExceptionCheck()) {
-        return;
-    }
-    mid = env->GetMethodID(cls, "add", "(Ljava/lang/Object;)Z");
-    if (env->ExceptionCheck()) {
-        return;
-    }
     imageMetaDataClass = env->FindClass("org/lsst/ccs/daq/imageapi/ImageMetaData");
     if (env->ExceptionCheck()) {
         return;
     }
-    imageMetaDataConstructor = env->GetMethodID(imageMetaDataClass, "<init>", "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;IJ)V");
+    imageMetaDataConstructor = env->GetMethodID(imageMetaDataClass, "<init>", "(JLjava/lang/String;Ljava/lang/String;Lorg/lsst/ccs/daq/imageapi/Version;IJLjava/util/BitSet;)V");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -38,9 +30,9 @@ void MyProcessor::process(const Id& id) {
     jlong timestamp = metaData.timestamp();
     jstring release = env->NewStringUTF(metaData.release().tag());
     jlong id_ = id.value();
-    //TODO: Deal with location and other release info
-
-    jobject jimage = env->NewObject(imageMetaDataClass, imageMetaDataConstructor, id_, name, annotation, release, opcode, timestamp);
-    env->CallVoidMethod(result, mid, jimage);
+    jobject bitset = createBitSet(env, metaData.elements());
+    jobject version_ = createVersion(env, metaData.release());
+    jobject jimage = env->NewObject(imageMetaDataClass, imageMetaDataConstructor, id_, name, annotation, version_, opcode, timestamp, bitset);
+    addObjectToList(env, result, jimage);
 }
 

@@ -15,7 +15,6 @@ public class Store implements AutoCloseable {
 
     static {
         System.loadLibrary("daq_ims");
-        initialize();
     }
 
     /**

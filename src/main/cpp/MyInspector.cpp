@@ -1,20 +1,21 @@
 #include <stdio.h>
 
 #include "MyInspector.h"
+#include "Store.h"
 
 #include "ims/Image.hh"
+#include "dvi/Version.hh"
+
 
 using namespace IMS;
 
 MyInspector::MyInspector(Image& image, JNIEnv *env, jobject result) :
 IMS::Decoder(image), env(env), result(result) {
-    jclass cls = env->GetObjectClass(result);
-    mid = env->GetMethodID(cls, "add", "(Ljava/lang/Object;)Z");
     sourceMetaDataClass = env->FindClass("org/lsst/ccs/daq/imageapi/SourceMetaData");
     if (env->ExceptionCheck()) {
         return;
     }
-    sourceMetaDataConstructor = env->GetMethodID(sourceMetaDataClass, "<init>", "(BBLjava/lang/String;Ljava/lang/String;IJIBB)V");
+    sourceMetaDataConstructor = env->GetMethodID(sourceMetaDataClass, "<init>", "(BBLjava/lang/String;Lorg/lsst/ccs/daq/imageapi/Version;IJIBB)V");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -45,12 +46,11 @@ void MyInspector::process(const IMS::Source& source, uint64_t length) {
     jbyte sensor = metaData.sensor();
     jbyte lane = metaData.lane();
     jstring platform = env->NewStringUTF(metaData.platform());
-    jstring software = env->NewStringUTF(metaData.software().tag());
+    jobject version_ = createVersion(env, metaData.software());
     jint firmware = metaData.firmware();
     jlong serialNumber = metaData.serial_number();
     jbyte bay = source.location().bay();
     jbyte board = source.location().board();
-    
-    jobject metaData_ = env->NewObject(sourceMetaDataClass, sourceMetaDataConstructor, sensor, lane, platform, software, firmware, serialNumber, length, bay, board);
-    env->CallVoidMethod(result, mid, metaData_);    
+    jobject metaData_ = env->NewObject(sourceMetaDataClass, sourceMetaDataConstructor, sensor, lane, platform, version_, firmware, serialNumber, length, bay, board);
+    addObjectToList(env, result, metaData_);    
 }

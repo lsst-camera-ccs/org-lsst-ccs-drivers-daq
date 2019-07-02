@@ -19,7 +19,6 @@ public:
 private:
     jobject result;
     JNIEnv *env;
-    jmethodID mid;
 };
 
 #endif

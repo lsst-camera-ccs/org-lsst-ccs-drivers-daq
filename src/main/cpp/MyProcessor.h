@@ -5,15 +5,13 @@
 #include "ims/Store.hh"
 #include "ims/Processor.hh"
 
-#include <jni.h>
-
+#include "Store.h"
 class MyProcessor : public IMS::Processor {
 public:
     MyProcessor(IMS::Store&, JNIEnv *env, jobject result);
 public:
 
-    ~MyProcessor() {
-    }
+    ~MyProcessor() {}
 public:
     void process(const IMS::Id&);
 
@@ -21,7 +19,6 @@ private:
     IMS::Store& store;
     jobject result;
     JNIEnv *env;
-    jmethodID mid;
     jmethodID imageMetaDataConstructor;
     jclass imageMetaDataClass;
 };

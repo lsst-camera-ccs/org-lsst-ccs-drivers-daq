@@ -28,7 +28,6 @@ private:
 private:
   jobject result;
   JNIEnv *env;
-  jmethodID mid;
   jmethodID sourceMetaDataConstructor;
   jclass sourceMetaDataClass;
 };
