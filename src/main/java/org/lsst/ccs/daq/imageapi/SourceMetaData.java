@@ -1,12 +1,14 @@
 package org.lsst.ccs.daq.imageapi;
 
+import org.lsst.ccs.daq.imageapi.Source.SourceType;
+
 /**
  *
  * @author tonyj
  */
 public class SourceMetaData {
     private final Location location;
-    private final byte sensor;
+    private final SourceType sensor;
     private final byte lane;
     private final String platform;
     private final Version software;
@@ -15,7 +17,7 @@ public class SourceMetaData {
     private final int length;
 
     SourceMetaData(byte sensor, byte lane, String platform, Version software, int firmware, long serialNumber, int length, byte bay, byte board) {
-        this.sensor = sensor;
+        this.sensor = Source.SourceType.values()[sensor-1];
         this.lane = lane;
         this.platform = platform;
         this.software = software;
@@ -25,7 +27,7 @@ public class SourceMetaData {
         this.location = new Location(bay,board);
     }
 
-    public byte getSensor() {
+    public SourceType getSensor() {
         return sensor;
     }
 
@@ -61,4 +63,5 @@ public class SourceMetaData {
     public String toString() {
         return "SourceMetaData{" + "location=" + location + ", sensor=" + sensor + ", lane=" + lane + ", platform=" + platform + ", software=" + software + ", firmware=" + firmware + ", serialNumber=" + serialNumber + ", length=" + length + '}';
     }
+
 }

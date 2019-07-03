@@ -6,7 +6,7 @@ import java.util.BitSet;
  * Meta-data associated with an image
  * @author tonyj
  */
-class ImageMetaData {
+public class ImageMetaData {
     private final String name;
     private final String annotation;
     private final Version release;

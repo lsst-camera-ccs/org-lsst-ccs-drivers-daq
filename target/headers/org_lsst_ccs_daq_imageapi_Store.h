@@ -9,14 +9,6 @@ extern "C" {
 #endif
 /*
  * Class:     org_lsst_ccs_daq_imageapi_Store
- * Method:    initialize
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_initialize
-  (JNIEnv *, jclass);
-
-/*
- * Class:     org_lsst_ccs_daq_imageapi_Store
  * Method:    attachStore
  * Signature: (Ljava/lang/String;)J
  */
@@ -110,6 +102,14 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_deleteImage
  */
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_listSources
   (JNIEnv *, jobject, jlong, jstring, jstring, jobject);
+
+/*
+ * Class:     org_lsst_ccs_daq_imageapi_Store
+ * Method:    readRawImage
+ * Signature: (JLjava/lang/String;Ljava/lang/String;[Ljava/nio/ByteBuffer;)V
+ */
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_readRawImage
+  (JNIEnv *, jobject, jlong, jstring, jstring, jobjectArray);
 
 #ifdef __cplusplus
 }

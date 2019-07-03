@@ -1,7 +1,6 @@
 package org.lsst.ccs.daq.imageapi;
 
 import java.nio.ByteBuffer;
-import javax.tools.DocumentationTool.Location;
 
 /**
  * Reference to both Source data + metadata buckets
@@ -11,17 +10,24 @@ import javax.tools.DocumentationTool.Location;
 public class Source implements Comparable<Source> {
 
     private final SourceMetaData metaData;
+    private final Image image;
 
-    private enum Stripe {
-        STRIPE0, STRIPE1, STRIPE2
+    public enum SourceType {
+        WAVEFRONT(1), GUIDER(2), SCIENCE(3);
+        private int nRebs;
+
+        SourceType(int nRebs) {
+            this.nRebs = nRebs;
+        }
+
+        public int getNRebs() {
+            return nRebs;
+        }
     }
 
-    private enum SourceType {
-        SCIENCE, WAVEFRONT, GUIDER
-    }
-
-    Source(SourceMetaData metaData) {
+    Source(Image image, SourceMetaData metaData) {
         this.metaData = metaData;
+        this.image = image;
     }
 
     /**
@@ -34,15 +40,19 @@ public class Source implements Comparable<Source> {
     }
 
     public Location getLocation() {
-        return null;
+        return metaData.getLocation();
     }
 
-    public long size() {
-        return 0;
+    public int size() {
+        return metaData.getLength();
     }
 
     public SourceType getSourceType() {
         return null;
+    }
+
+    void readRaw(ByteBuffer buffer) {
+        image.readRaw(buffer, this.metaData.getLocation());
     }
 
     /**

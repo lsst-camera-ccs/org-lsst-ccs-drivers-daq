@@ -1,7 +1,15 @@
 package org.lsst.ccs.daq.imageapi;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.lsst.ccs.daq.imageapi.decoder.Decompress18BitChannel;
+import org.lsst.ccs.daq.imageapi.decoder.DemultiplexingIntChannel;
+import org.lsst.ccs.daq.imageapi.decoder.IntBufferWriter;
+import org.lsst.ccs.daq.imageapi.decoder.WritableIntChannel;
 
 /**
  *
@@ -9,7 +17,7 @@ import java.util.List;
  */
 public class Example1 {
 
-    public static void main(String[] args) throws DAQException {
+    public static void main(String[] args) throws DAQException, IOException {
         Store store = new Store("dev");
         System.out.printf("capacity %,d\n", store.getCapacity());
         System.out.printf("remaining %,d\n", store.getCurrent());
@@ -39,12 +47,54 @@ public class Example1 {
         images.forEach((image) -> {
             System.out.println(image.getMetaData());
         });
-        
+
         Image image = images.get(0);
         List<Source> sources = image.listSources();
         Collections.sort(sources);
+        List<ByteBuffer> buffers = new ArrayList<>();
+        long totalSize = 0;
         for (Source source : sources) {
-           System.out.println(source.getMetaData());
+            System.out.println(source.getMetaData());
+            buffers.add(ByteBuffer.allocateDirect(source.size()));
+            totalSize += source.size();
         }
+
+        long start = System.nanoTime();
+        image.readRaw(buffers);
+        long stop = System.nanoTime();
+        System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalSize, (stop - start), 1000 * totalSize / (stop - start));
+
+        start = System.nanoTime();
+        int i = 0;
+        long totalReadSize = 0;
+        for (Source source : sources) {
+            final ByteBuffer buffer = buffers.get(i++);
+            source.readRaw(buffer);
+            totalReadSize += buffer.limit();
+        }
+        stop = System.nanoTime();
+        System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
+
+        // now unpack the buffers
+        i = 0;
+        long unpackSize = 0;
+        start = System.nanoTime();
+        for (Source source : sources) {
+            ByteBuffer buffer = buffers.get(i++);
+            int rebs = source.getMetaData().getSensor().getNRebs();
+            int outputSize = source.getMetaData().getLength() / 9 * 16 / rebs / 4;
+            IntBufferWriter[] output = new IntBufferWriter[16 * rebs];
+            for (int j = 0; j < output.length; j++) {
+                output[j] = new IntBufferWriter(IntBuffer.allocate(outputSize));
+            }
+            WritableIntChannel destination = new DemultiplexingIntChannel(output);
+            Decompress18BitChannel b18 = new Decompress18BitChannel(destination);
+            b18.write(buffer.asIntBuffer());
+            for (int j = 0; j < output.length; j++) {
+                unpackSize += 4 * output[j].getIntBuffer().position();
+            }
+        }
+        stop = System.nanoTime();
+        System.out.printf("Unpack %,d bytes in %,dns (%d MBytes/second)\n", unpackSize, (stop - start), 1000 * unpackSize / (stop - start));
     }
 }

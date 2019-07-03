@@ -1,0 +1,3 @@
+export DAQ_HOME=/gpfs/slac/lsst/fs1/g/daq/daq-sdk/current/
+export LD_LIBRARY_PATH=$DAQ_HOME/x86/lib
+java -Djava.library.path=target/lib64/  -cp target/DAQImageAPI-1.0-SNAPSHOT.jar org.lsst.ccs.daq.imageapi.Example1

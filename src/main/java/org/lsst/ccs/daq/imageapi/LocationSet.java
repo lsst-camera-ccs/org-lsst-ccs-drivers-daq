@@ -32,6 +32,16 @@ public class LocationSet {
         return locations.get(location.index());
     }
 
+    boolean isSet(int i) {
+        return locations.get(i);
+    }
+    
+    static LocationSet singleton(Location location) {
+        LocationSet result = new LocationSet();
+        result.addLocation(location);
+        return result;
+    }
+    
     public int cardinality() {
         return locations.cardinality();
     }

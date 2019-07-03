@@ -23,7 +23,12 @@ $(OBJ)/MyInspector.o: MyInspector.cpp MyInspector.h
 	mkdir -p $(OBJ)
 	$(CC) -std=c++11 -fPIC -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -fPIC -o $@ -c $<
 
-$(LIBTGT)/libdaq_ims.so: $(OBJ)/Store.o $(OBJ)/MyFolders.o $(OBJ)/MyProcessor.o $(OBJ)/MyInspector.o
+$(OBJ)/MyReader.o: MyReader.cpp MyReader.h
+	mkdir -p $(OBJ)
+	$(CC) -std=c++11 -fPIC -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -fPIC -o $@ -c $<
+
+
+$(LIBTGT)/libdaq_ims.so: $(OBJ)/Store.o $(OBJ)/MyFolders.o $(OBJ)/MyProcessor.o $(OBJ)/MyInspector.o $(OBJ)/MyReader.o
 	mkdir -p ${LIBTGT}
 	$(CC) -shared -L$(DAQ_HOME)/x86/lib -ldaq_ims -ldaq_dsm -o $@ $^
 	

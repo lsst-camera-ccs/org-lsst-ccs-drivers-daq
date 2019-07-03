@@ -5,13 +5,14 @@
 #include "ims/Catalog.hh"
 #include "ims/Folder.hh"
 #include "ims/Image.hh"
-#include "dsi/LocationSet.hh"
+#include "daq/LocationSet.hh"
 #include "dsm/Exception.hh"
 #include "xds/Page.hh"
 
 #include "MyFolders.h"
 #include "MyProcessor.h"
 #include "MyInspector.h"
+#include "MyReader.h"
 
 using namespace IMS;
 
@@ -49,13 +50,13 @@ void addObjectToList(JNIEnv* env, jobject list, jobject item) {
 Image findImage(JNIEnv* env, Store* store_, jstring imageName, jstring folderName) {
     const char *folder_name = env->GetStringUTFChars(folderName, 0);
     const char *image_name = env->GetStringUTFChars(imageName, 0);
-    Id id_ =  store_->catalog.lookup(image_name, folder_name);
+    Id id_ = store_->catalog.lookup(image_name, folder_name);
     env->ReleaseStringUTFChars(folderName, folder_name);
     env->ReleaseStringUTFChars(folderName, image_name);
     Image image_(id_, *store_);
     if (!image_) {
         jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
-        env->ThrowNew(exClass, "Invalid image");        
+        env->ThrowNew(exClass, "Invalid image");
     }
     return image_;
 }
@@ -63,12 +64,12 @@ Image findImage(JNIEnv* env, Store* store_, jstring imageName, jstring folderNam
 static jint JNI_VERSION = JNI_VERSION_1_8;
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved) {
-    
+
     printf("OnLoad\n");
 
     // Obtain the JNIEnv from the VM and confirm JNI_VERSION
     JNIEnv* env;
-    if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION) != JNI_OK) {
+    if (vm->GetEnv(reinterpret_cast<void**> (&env), JNI_VERSION) != JNI_OK) {
         return JNI_ERR;
     }
 
@@ -81,7 +82,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     JCversionConstructor = env->GetMethodID(JCversionClass, "<init>", "(Ljava/lang/String;JZI)V");
     if (env->ExceptionCheck()) {
         return JNI_ERR;
-    }   
+    }
 
     jclass bitSetClass = env->FindClass("java/util/BitSet");
     if (env->ExceptionCheck()) {
@@ -97,7 +98,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     if (env->ExceptionCheck()) {
         return JNI_ERR;
     }
-    
+
     jclass listClass = env->FindClass("java/util/List");
     if (env->ExceptionCheck()) {
         return JNI_ERR;
@@ -214,15 +215,30 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_deleteImage
 }
 
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_listSources
-  (JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jobject result) {
+(JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jobject result) {
     Store* store_ = (Store*) store;
     Image image_ = findImage(env, store_, imageName, folderName);
     MyInspector inspector(image_, env, result);
     if (env->ExceptionCheck()) {
         return;
     }
-    image_.synopsis(0);
-    printf("Calling run %s\n",image_.metadata().name());
     inspector.run();
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_readRawImage
+(JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jobjectArray byteBufferList) {
+    Store* store_ = (Store*) store;
+    Image image_ = findImage(env, store_, imageName, folderName);
+    jobject buffers[128];
+    DAQ::LocationSet filter;
+    for (uint8_t index=0; index<env->GetArrayLength(byteBufferList); index++) {
+        jobject byteBuffer = env->GetObjectArrayElement(byteBufferList, index);
+        if (byteBuffer) {
+            filter.insert(index);
+            buffers[index] = byteBuffer;
+        }
+    }
+    MyReader reader(image_, env, filter, buffers);
+    reader.run();
 }
 

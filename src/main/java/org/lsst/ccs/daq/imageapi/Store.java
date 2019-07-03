@@ -1,6 +1,8 @@
 package org.lsst.ccs.daq.imageapi;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -88,12 +90,19 @@ public class Store implements AutoCloseable {
     void listSources(String imageName, String folderName, List<SourceMetaData> result) {
         listSources(store, imageName, folderName, result);
     }
-    
-    // Callbacks used from C++
-    
-    // Native methods
-    private static native void initialize();
-    
+
+    void readRawImage(String imageName, String folderName, List<ByteBuffer> buffers, LocationSet elements) {
+        Iterator<ByteBuffer> iterator = buffers.iterator();
+        ByteBuffer[] bufferArray = new ByteBuffer[128];
+        for (int i=0; i<128; i++) {
+            if (elements.isSet(i)) {
+                bufferArray[i] = iterator.next();
+            }
+        }
+        readRawImage(store, imageName, folderName, bufferArray);
+    }
+        
+    // Native methods    
     private synchronized native long attachStore(String partition);
 
     private synchronized native void detachStore(long store);
@@ -117,4 +126,6 @@ public class Store implements AutoCloseable {
     private synchronized native int deleteImage(long store, long id);
 
     private synchronized native void listSources(long store, String imageName, String folderName, List<SourceMetaData> result);
+
+    private synchronized native void readRawImage(long store, String imageName, String folderName, ByteBuffer[] buffers);
 }
