@@ -33,8 +33,21 @@ public class Folder implements Comparable<Folder> {
      * @param name
      * @return
      */
-    Image find(String name) {
-        return null;
+    public Image find(String name) throws DAQException {
+        ImageMetaData meta = store.findImage(name, this.name);
+        return new Image(this, meta);
+    }
+
+    public Image insert(ImageMetaData meta) {
+        ImageMetaData metaNew = store.addImageToFolder(meta.getName(), this.name, meta);
+        return new Image(this, metaNew);
+    }
+
+    void delete(Image image) throws DAQException {
+        int rc = store.deleteImage(image.getMetaData().getName(), this.name);
+        if (rc != 0) {
+            throw new DAQException(String.format("Delete image failed (rc=%d)", rc));
+        }
     }
 
     @Override

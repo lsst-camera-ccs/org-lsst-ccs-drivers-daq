@@ -9,7 +9,7 @@ public class Version {
     private final long buildTime;
     private final boolean dirty;
     private final int hash;    
-
+ 
     Version(String tag, long buildTime, boolean dirty, int hash) {
         this.tag = tag;
         this.buildTime = buildTime;

@@ -29,7 +29,7 @@ public class Image implements Comparable<Image> {
         return metaData;
     }
     
-    List<Source> listSources() {
+    public List<Source> listSources() {
         List<Source> result = new ArrayList<>();
         List<SourceMetaData> metadata = new ArrayList<>();
         folder.getStore().listSources(metaData.getName(), folder.getName(), metadata);
@@ -39,15 +39,15 @@ public class Image implements Comparable<Image> {
         return result;       
     }
     
-    void readRaw(List<ByteBuffer> buffers) {
+    public void readRaw(List<ByteBuffer> buffers) {
         Image.this.readRaw(buffers, metaData.getElements());
     }
     
-    void readRaw(List<ByteBuffer> buffers, LocationSet elements) {
+    public void readRaw(List<ByteBuffer> buffers, LocationSet elements) {
         folder.getStore().readRawImage(metaData.getName(), folder.getName(), buffers, elements);
     }
     
-    void readRaw(ByteBuffer buffer, Location location) {
+    public void readRaw(ByteBuffer buffer, Location location) {
         readRaw(Collections.singletonList(buffer), LocationSet.singleton(location));
     }
     
@@ -62,11 +62,7 @@ public class Image implements Comparable<Image> {
      * @throws DAQException 
      */
     public void delete() throws DAQException {
-        // TODO: Switch id to name and folder
-        int rc = folder.getStore().deleteImage(this.metaData.getId());
-        if (rc != 0) {
-            throw new DAQException(String.format("Delete image failed (rc=%d)",rc));
-        }
+        folder.delete(this);
     }
     /**
      * Move the image to a different folder

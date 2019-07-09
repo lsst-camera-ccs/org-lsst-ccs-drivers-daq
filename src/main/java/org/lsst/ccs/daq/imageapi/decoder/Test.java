@@ -24,6 +24,17 @@ public class Test {
         System.out.println(Arrays.toString(output2.array()));
         System.out.println(output1.position());
         System.out.println(output2.position());
+        
+        output1.flip();
+        output2.flip();
+        
+        MultiplexingIntChannel multi = new MultiplexingIntChannel(new IntBufferReader(output1), new IntBufferReader(output2));
+        Compress18BitChannel compress = new Compress18BitChannel(multi);
+        int[] result = new int[data.length];
+        for (int i=0; i<result.length; i++) {
+            result[i] = compress.read();
+        }
+        System.out.println(Arrays.toString(result));
     }
 
 }

@@ -29,7 +29,7 @@ public class Test2 {
 
         NullIntWriter none = new NullIntWriter();
         WritableIntChannel destination = new DemultiplexingIntChannel(output);
-        Decompress18BitChannel b18 = new Decompress18BitChannel(none);
+        Decompress18BitChannel b18 = new Decompress18BitChannel(destination);
         long start = System.nanoTime();
         b18.write(input);
         long end = System.nanoTime();

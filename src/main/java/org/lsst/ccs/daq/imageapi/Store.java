@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.BitSet;
 
 /**
  *
@@ -16,7 +17,7 @@ public class Store implements AutoCloseable {
     private final long store;
 
     static {
-        System.loadLibrary("daq_ims");
+        System.loadLibrary("ccs_daq_ims");
     }
 
     /**
@@ -25,7 +26,7 @@ public class Store implements AutoCloseable {
      * @param partition The name of the partition
      * @throws DAQException If something goes wrong
      */
-    Store(String partition) throws DAQException {
+    public Store(String partition) throws DAQException {
         this.partition = partition;
         catalog = new Catalog(this);
         store = attachStore(partition);
@@ -36,7 +37,7 @@ public class Store implements AutoCloseable {
      *
      * @return
      */
-    Catalog getCatalog() {
+    public Catalog getCatalog() {
         return catalog;
     }
 
@@ -83,8 +84,8 @@ public class Store implements AutoCloseable {
         return moveImageToFolder(store, id, folderName);
     }
 
-    int deleteImage(long id) {
-        return deleteImage(store, id);
+    int deleteImage(String imageName, String folderName) {
+        return deleteImage(store, imageName, folderName);
     }
 
     void listSources(String imageName, String folderName, List<SourceMetaData> result) {
@@ -100,6 +101,14 @@ public class Store implements AutoCloseable {
             }
         }
         readRawImage(store, imageName, folderName, bufferArray);
+    }
+    
+    ImageMetaData addImageToFolder(String imageName, String folderName, ImageMetaData meta) {
+        return addImageToFolder(store, imageName, folderName, meta.getAnnotation(), meta.getOpcode(), meta.getElements().getBitSet());
+    }
+    
+    ImageMetaData findImage(String imageName, String folderName) {
+        return findImage(store, imageName, folderName);
     }
         
     // Native methods    
@@ -123,9 +132,13 @@ public class Store implements AutoCloseable {
 
     private synchronized native int moveImageToFolder(long store, long id, String folderName);
 
-    private synchronized native int deleteImage(long store, long id);
+    private synchronized native int deleteImage(long store, String imageName, String folderName);
 
     private synchronized native void listSources(long store, String imageName, String folderName, List<SourceMetaData> result);
 
     private synchronized native void readRawImage(long store, String imageName, String folderName, ByteBuffer[] buffers);
+
+    private synchronized native ImageMetaData addImageToFolder(long store, String imageName, String folderName, String annotation, int opcode, BitSet elements);
+
+    private synchronized native ImageMetaData findImage(long store, String imageName, String folderName);
 }

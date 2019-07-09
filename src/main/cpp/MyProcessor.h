@@ -19,8 +19,6 @@ private:
     IMS::Store& store;
     jobject result;
     JNIEnv *env;
-    jmethodID imageMetaDataConstructor;
-    jclass imageMetaDataClass;
 };
 
 #endif

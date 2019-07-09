@@ -14,7 +14,7 @@ public class Source implements Comparable<Source> {
 
     public enum SourceType {
         WAVEFRONT(1), GUIDER(2), SCIENCE(3);
-        private int nRebs;
+        private final int nRebs;
 
         SourceType(int nRebs) {
             this.nRebs = nRebs;
@@ -51,7 +51,7 @@ public class Source implements Comparable<Source> {
         return null;
     }
 
-    void readRaw(ByteBuffer buffer) {
+    public void readRaw(ByteBuffer buffer) {
         image.readRaw(buffer, this.metaData.getLocation());
     }
 

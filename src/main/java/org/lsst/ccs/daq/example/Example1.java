@@ -1,4 +1,4 @@
-package org.lsst.ccs.daq.imageapi;
+package org.lsst.ccs.daq.example;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -6,6 +6,12 @@ import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.lsst.ccs.daq.imageapi.Catalog;
+import org.lsst.ccs.daq.imageapi.DAQException;
+import org.lsst.ccs.daq.imageapi.Folder;
+import org.lsst.ccs.daq.imageapi.Image;
+import org.lsst.ccs.daq.imageapi.Source;
+import org.lsst.ccs.daq.imageapi.Store;
 import org.lsst.ccs.daq.imageapi.decoder.Decompress18BitChannel;
 import org.lsst.ccs.daq.imageapi.decoder.DemultiplexingIntChannel;
 import org.lsst.ccs.daq.imageapi.decoder.IntBufferWriter;
@@ -90,8 +96,8 @@ public class Example1 {
             WritableIntChannel destination = new DemultiplexingIntChannel(output);
             Decompress18BitChannel b18 = new Decompress18BitChannel(destination);
             b18.write(buffer.asIntBuffer());
-            for (int j = 0; j < output.length; j++) {
-                unpackSize += 4 * output[j].getIntBuffer().position();
+            for (IntBufferWriter output1 : output) {
+                unpackSize += 4 * output1.getIntBuffer().position();
             }
         }
         stop = System.nanoTime();

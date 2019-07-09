@@ -25,6 +25,16 @@ public class ImageMetaData {
         this.elements = new LocationSet(elements);
     }
 
+    public ImageMetaData(String imageName, String annotation, int opcode, LocationSet locationSet) {
+        this.name = imageName;
+        this.annotation = annotation;
+        this.release = null;
+        this.opcode = opcode;
+        this.elements = locationSet;
+        this.timestamp = 0;
+        this.id = 0;
+    }
+
     public String getName() {
         return name;
     }

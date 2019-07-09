@@ -21,8 +21,11 @@ static jmethodID JCversionConstructor;
 static jclass JCbitSetClass;
 static jmethodID JCbitSetConstructor;
 static jmethodID JCbitSetSetMethodId;
+static jmethodID JCbitSetGetMethodId;
 static jclass JClistClass;
 static jmethodID JClistAddMethodID;
+static jclass JCimageMetaDataClass;
+static jmethodID JCimageMetaDataConstructor;
 
 jobject createVersion(JNIEnv* env, DVI::Version version) {
     jstring tag = env->NewStringUTF(version.tag());
@@ -37,10 +40,33 @@ jobject createBitSet(JNIEnv* env, DAQ::LocationSet elements) {
     jobject bitset = env->NewObject(JCbitSetClass, JCbitSetConstructor);
     for (uint8_t index = 0; index < size; index++) {
         if (elements.has(index)) {
-            env->CallVoidMethod(bitset, JCbitSetSetMethodId, index);
+            env->CallVoidMethod(bitset, JCbitSetSetMethodId, (jint) index);
         }
     }
     return bitset;
+}
+
+DAQ::LocationSet convertLocations(JNIEnv* env, jobject bitset) {
+    DAQ::LocationSet locations;
+    int size = locations.SIZE;
+    for (uint8_t index = 0; index < size; index++) {
+        if (env->CallBooleanMethod(bitset, JCbitSetGetMethodId, (jint) index)) {
+           locations.insert(index);
+        }
+    }
+    return locations;    
+}
+
+jobject createImageMetaData(JNIEnv* env, Image& image) {
+    const ImageMetadata& metaData = image.metadata();
+    jstring name = env->NewStringUTF(metaData.name());
+    jstring annotation = env->NewStringUTF(metaData.annotation());
+    jint opcode = metaData.opcode();
+    jlong timestamp = metaData.timestamp();
+    jlong id_ = image.id().value();
+    jobject bitset = createBitSet(env, metaData.elements());
+    jobject version_ = createVersion(env, metaData.release());
+    return env->NewObject(JCimageMetaDataClass, JCimageMetaDataConstructor, id_, name, annotation, version_, opcode, timestamp, bitset);
 }
 
 void addObjectToList(JNIEnv* env, jobject list, jobject item) {
@@ -51,13 +77,15 @@ Image findImage(JNIEnv* env, Store* store_, jstring imageName, jstring folderNam
     const char *folder_name = env->GetStringUTFChars(folderName, 0);
     const char *image_name = env->GetStringUTFChars(imageName, 0);
     Id id_ = store_->catalog.lookup(image_name, folder_name);
-    env->ReleaseStringUTFChars(folderName, folder_name);
-    env->ReleaseStringUTFChars(folderName, image_name);
     Image image_(id_, *store_);
     if (!image_) {
         jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
-        env->ThrowNew(exClass, "Invalid image");
+        char x[256];
+        sprintf(x, "Find image %s in folder %s failed (error=%d)", image_name, folder_name, image_.error() );
+        env->ThrowNew(exClass, x);
     }
+    env->ReleaseStringUTFChars(folderName, folder_name);
+    env->ReleaseStringUTFChars(imageName, image_name);
     return image_;
 }
 
@@ -98,7 +126,10 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     if (env->ExceptionCheck()) {
         return JNI_ERR;
     }
-
+    JCbitSetGetMethodId = env->GetMethodID(JCbitSetClass, "get", "(I)Z");
+    if (env->ExceptionCheck()) {
+        return JNI_ERR;
+    }
     jclass listClass = env->FindClass("java/util/List");
     if (env->ExceptionCheck()) {
         return JNI_ERR;
@@ -109,6 +140,18 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     if (env->ExceptionCheck()) {
         return JNI_ERR;
     }
+    
+    jclass imageMetaDataClass = env->FindClass("org/lsst/ccs/daq/imageapi/ImageMetaData");
+    if (env->ExceptionCheck()) {
+        return JNI_ERR;
+    }
+    JCimageMetaDataClass = (jclass) env->NewGlobalRef(imageMetaDataClass);
+    
+    JCimageMetaDataConstructor = env->GetMethodID(imageMetaDataClass, "<init>", "(JLjava/lang/String;Ljava/lang/String;Lorg/lsst/ccs/daq/imageapi/Version;IJLjava/util/BitSet;)V");
+    if (env->ExceptionCheck()) {
+        return JNI_ERR;
+    }
+    
 
     // Return the JNI Version as required by method
     return JNI_VERSION;
@@ -207,10 +250,9 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_moveImageToFolder
 }
 
 JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_deleteImage
-(JNIEnv *env, jobject obj, jlong store, jlong id) {
+(JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName) {
     Store* store_ = (Store*) store;
-    Id id_(id);
-    Image image_(id_, *store_);
+    Image image_ = findImage(env, store_, imageName, folderName);
     return image_.remove();
 }
 
@@ -240,5 +282,36 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_readRawImage
     }
     MyReader reader(image_, env, filter, buffers);
     reader.run();
+}
+
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_addImageToFolder
+  (JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jstring annotation, jint opcode, jobject locations) {
+    Store* store_ = (Store*) store;
+    const char *image_name = env->GetStringUTFChars(imageName, 0);
+    const char *folder_name = env->GetStringUTFChars(folderName, 0);
+    const char *annotation_ = env->GetStringUTFChars(annotation, 0);
+
+    ImageMetadata meta(image_name, convertLocations(env, locations), opcode, annotation_); 
+    Image image(folder_name, meta, *store_);
+    if (!image) {
+        jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
+        char x[256];
+        sprintf(x, "Creating image %s in folder %s failed (error=%d)", image_name, folder_name, image.error() );
+        env->ThrowNew(exClass, x);
+    }
+    env->ReleaseStringUTFChars(folderName, folder_name);
+    env->ReleaseStringUTFChars(imageName, image_name);
+    env->ReleaseStringUTFChars(annotation, annotation_);
+    return createImageMetaData(env, image);
+}
+
+
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_findImage
+  (JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName) {
+    
+    Store* store_ = (Store*) store;
+    Image image = findImage(env, store_, imageName, folderName);
+    if (!image) return 0;
+    return createImageMetaData(env, image);
 }
 

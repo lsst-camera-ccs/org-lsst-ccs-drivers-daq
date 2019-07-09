@@ -41,4 +41,12 @@
             </plugin>  
         </plugins>
     </build>
+    <dependencies>
+        <dependency>
+            <groupId>gov.nasa.gsfc.heasarc</groupId>
+            <artifactId>nom-tam-fits</artifactId>
+            <version>1.15.2</version>
+            <type>jar</type>
+        </dependency>
+    </dependencies>
 </project>
