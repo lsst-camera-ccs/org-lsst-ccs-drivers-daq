@@ -95,22 +95,30 @@ public class Store implements AutoCloseable {
     void readRawImage(String imageName, String folderName, List<ByteBuffer> buffers, LocationSet elements) {
         Iterator<ByteBuffer> iterator = buffers.iterator();
         ByteBuffer[] bufferArray = new ByteBuffer[128];
-        for (int i=0; i<128; i++) {
+        for (int i = 0; i < 128; i++) {
             if (elements.isSet(i)) {
                 bufferArray[i] = iterator.next();
             }
         }
         readRawImage(store, imageName, folderName, bufferArray);
     }
-    
+
     ImageMetaData addImageToFolder(String imageName, String folderName, ImageMetaData meta) {
-        return addImageToFolder(store, imageName, folderName, meta.getAnnotation(), meta.getOpcode(), meta.getElements().getBitSet());
+        return addImageToFolder(store, imageName, folderName, meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
     }
-    
+
     ImageMetaData findImage(String imageName, String folderName) {
         return findImage(store, imageName, folderName);
     }
-        
+
+    void closeImageChannel(String imageName, String folderName, Location location) {
+        closeImageChannel(store, imageName, folderName, location.index());
+    }
+
+    void writeRawImage(String imageName, String folderName, Location location, ByteBuffer buffer) {
+        writeRawImage(store, imageName, folderName, location.index(), buffer);
+    }
+
     // Native methods    
     private synchronized native long attachStore(String partition);
 
@@ -141,4 +149,9 @@ public class Store implements AutoCloseable {
     private synchronized native ImageMetaData addImageToFolder(long store, String imageName, String folderName, String annotation, int opcode, BitSet elements);
 
     private synchronized native ImageMetaData findImage(long store, String imageName, String folderName);
+
+    private synchronized native void closeImageChannel(long store, String imageName, String folderName, int index);
+
+    private synchronized native void writeRawImage(long store, String imageName, String folderName, int index, ByteBuffer buffer);
+
 }

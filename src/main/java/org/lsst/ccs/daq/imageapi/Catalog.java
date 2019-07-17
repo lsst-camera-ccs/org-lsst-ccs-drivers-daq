@@ -23,7 +23,7 @@ public class Catalog {
      * @param folderName The folder name to search for
      * @return The folder, or <code>null<</code> if the folder does not exist
      */
-    public Folder find(String folderName) {
+    public Folder find(String folderName) throws DAQException {
         boolean ok = store.findFolder(folderName);
         if (ok) {
             return new Folder(store, folderName);

@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.imageapi;
 
+import java.util.Arrays;
 import org.lsst.ccs.daq.imageapi.Source.SourceType;
 
 /**
@@ -15,8 +16,9 @@ public class SourceMetaData {
     private final int firmware;
     private final long serialNumber;
     private final int length;
+    private final int[] registerValues;
 
-    SourceMetaData(byte sensor, byte lane, String platform, Version software, int firmware, long serialNumber, int length, byte bay, byte board) {
+    SourceMetaData(byte sensor, byte lane, String platform, Version software, int firmware, long serialNumber, int length, byte bay, byte board, int[] registerValues) {
         this.sensor = Source.SourceType.values()[sensor-1];
         this.lane = lane;
         this.platform = platform;
@@ -25,6 +27,7 @@ public class SourceMetaData {
         this.serialNumber = serialNumber;
         this.length = length;
         this.location = new Location(bay,board);
+        this.registerValues = registerValues;
     }
 
     public SourceType getSensor() {
@@ -59,9 +62,15 @@ public class SourceMetaData {
         return location;
     }
 
+    public int[] getRegisterValues() {
+        return registerValues;
+    }
+
     @Override
     public String toString() {
-        return "SourceMetaData{" + "location=" + location + ", sensor=" + sensor + ", lane=" + lane + ", platform=" + platform + ", software=" + software + ", firmware=" + firmware + ", serialNumber=" + serialNumber + ", length=" + length + '}';
+        return "SourceMetaData{" + "location=" + location + ", sensor=" + sensor + ", lane=" + lane + ", platform=" + platform + ", software=" + software + ", firmware=" + firmware + ", serialNumber=" + serialNumber + ", length=" + length + ", registerValues=" + Arrays.toString(registerValues) + '}';
     }
+
+
 
 }

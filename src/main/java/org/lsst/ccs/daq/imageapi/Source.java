@@ -48,31 +48,29 @@ public class Source implements Comparable<Source> {
     }
 
     public SourceType getSourceType() {
-        return null;
+        return metaData.getSensor();
     }
 
     public void readRaw(ByteBuffer buffer) {
-        image.readRaw(buffer, this.metaData.getLocation());
+        image.readRaw(buffer, metaData.getLocation());
     }
 
-    /**
-     * Fetch decoded pixel data
-     *
-     * @param stripeMask Mask with bit set for each stripe to be read
-     * @param stripeBuffer A set of stripeBuffers to receive the data. Must
-     * provide one stripeBuffer for each bit set in the stripeMask
-     * @throws IllegalArgumentException if the number of bits set in the stripe
-     * mask does not match the number of stripeBuffers provided, or if the
-     * stripeMask is not legal for the SourceType.
-     */
-    void decodePixels(int stripeMask, ByteBuffer... stripeBuffer) throws IllegalArgumentException {
-
+    public void writeRaw(ByteBuffer buffer) {
+        System.out.printf("Location %s index %d\n",metaData.getLocation(),metaData.getLocation().index());
+        image.writeRaw(buffer, metaData.getLocation());
+    }
+    
+    public void close() {
+        image.close(metaData.getLocation());
     }
 
     @Override
     public int compareTo(Source o) {
         return this.metaData.getLocation().compareTo(o.metaData.getLocation());
-
     }
 
+    @Override
+    public String toString() {
+        return "Source{" + "metaData=" + metaData + ", image=" + image + '}';
+    }
 }

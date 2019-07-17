@@ -1,9 +1,11 @@
 package org.lsst.ccs.daq.imageapi;
 
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Image is a reference to an image instance, which may contain
@@ -43,14 +45,21 @@ public class Image implements Comparable<Image> {
         Image.this.readRaw(buffers, metaData.getElements());
     }
     
-    public void readRaw(List<ByteBuffer> buffers, LocationSet elements) {
-        folder.getStore().readRawImage(metaData.getName(), folder.getName(), buffers, elements);
+    public void readRaw(List<ByteBuffer> buffers, Set<Location> elements) {
+        folder.getStore().readRawImage(metaData.getName(), folder.getName(), buffers, new LocationSet(elements));
     }
     
     public void readRaw(ByteBuffer buffer, Location location) {
-        readRaw(Collections.singletonList(buffer), LocationSet.singleton(location));
+        readRaw(Collections.singletonList(buffer), Collections.singleton(location));
     }
     
+    void close(Location location) {
+        folder.getStore().closeImageChannel(metaData.getName(), folder.getName(), location);
+    }
+
+    void writeRaw(ByteBuffer buffer, Location location) {
+        folder.getStore().writeRawImage(metaData.getName(), folder.getName(), location, buffer);
+    }
     
     /**
      * Deletes the image, This includes deleting its:
@@ -64,6 +73,9 @@ public class Image implements Comparable<Image> {
     public void delete() throws DAQException {
         folder.delete(this);
     }
+
+
+
     /**
      * Move the image to a different folder
      * @param folderName The folder to move to

@@ -1,21 +1,42 @@
 package org.lsst.ccs.daq.imageapi;
 
+import java.util.AbstractSet;
 import java.util.BitSet;
+import java.util.Iterator;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
- *
+ * Default implementation of Set&lt;Location&gt;. This implementation
+ * uses a bitmap to represent the selected locations.
  * @author tonyj
  */
-public class LocationSet {
+public class LocationSet extends AbstractSet<Location> {
 
     private final BitSet locations;
 
+    /**
+     * Creates an empty location set
+     */
     public LocationSet() {
         locations = new BitSet();
     }
 
+    /**
+     * Creates a location set which is a copy of the provided set
+     * @param input The location set to copy
+     */
+    public LocationSet(Set<Location> input) {
+        this();
+        if (input instanceof LocationSet) {
+            this.locations.or(((LocationSet) input).locations);
+        } else if (input != null) {
+            input.forEach((l) -> {
+                locations.set(l.index());
+            });
+        }
+    }
+    
+    
     LocationSet(BitSet bitset) {
         locations = bitset;
     }
@@ -24,47 +45,50 @@ public class LocationSet {
         return locations;
     }
 
-    public void addLocation(Location location) {
-        locations.set(location.index());
+    @Override
+    public boolean add(Location location) {
+        final int index = location.index();
+        boolean wasSet = locations.get(index);
+        locations.set(index);
+        return wasSet;
     }
 
-    public void removeLocation(Location location) {
-        locations.clear(location.index());
-    }
-
-    public boolean hasLocation(Location location) {
-        return locations.get(location.index());
+    @Override
+    public boolean remove(Object location) {
+        if (location instanceof Location) {
+            final int index = ((Location) location).index();
+            boolean wasSet = locations.get(index);
+            locations.clear(index);
+            return wasSet;
+        } else {
+            return false;
+        }
     }
 
     boolean isSet(int i) {
         return locations.get(i);
     }
 
-    public static LocationSet singleton(Location location) {
-        LocationSet result = new LocationSet();
-        result.addLocation(location);
-        return result;
-    }
-
-    public int cardinality() {
-        return locations.cardinality();
-    }
-
-    Set<Location> getLocations() {
-        Set<Location> result = new TreeSet<>();
-        for (int index = -1;;) {
-            index = locations.nextSetBit(index + 1);
-            if (index < 0) {
-                break;
+    @Override
+    public Iterator<Location> iterator() {
+        return new Iterator<Location>() {
+            private int current = -1;
+            @Override
+            public boolean hasNext() {
+                return locations.nextSetBit(current+1)>=0;
             }
-            result.add(new Location(index));
-        }
-        return result;
+
+            @Override
+            public Location next() {
+                current = locations.nextSetBit(current+1);
+                return new Location(current);
+            }  
+        };
     }
 
     @Override
-    public String toString() {
-        return "LocationSet{" + "locations=" + getLocations() + '}';
+    public int size() {
+        return locations.cardinality();
     }
 
 }
