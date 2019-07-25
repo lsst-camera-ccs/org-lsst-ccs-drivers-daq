@@ -386,3 +386,12 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_addSourceToImage
     Source source(image.id(), element, *store_, smd);
     return createSourceMetaData(env, source);
 }
+
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_waitForImage
+  (JNIEnv *env, jobject obj, jlong store) {
+    Store* store_ = (Store*) store;
+    Stream stream(*store_);
+    Image image(*store_, stream);
+    if (!image) return NULL;
+    return createImageMetaData(env, image);
+}

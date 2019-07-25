@@ -3,6 +3,7 @@ package org.lsst.ccs.daq.imageapi;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.BitSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  *
@@ -13,6 +14,8 @@ public class Store implements AutoCloseable {
     private final Catalog catalog;
     private final String partition;
     private final long store;
+    private final List<ImageListener> imageListeners = new CopyOnWriteArrayList<>();
+    private Thread streamThread;
 
     static {
         System.loadLibrary("ccs_daq_ims");
@@ -49,6 +52,33 @@ public class Store implements AutoCloseable {
 
     public long getCurrent() {
         return remaining(store);
+    }
+
+    public void addImageListener(ImageListener l) {
+        imageListeners.add(l);
+        synchronized (this) {
+            if (streamThread == null) {
+                streamThread = new Thread("ImageStreamThread_" + partition) {
+
+                    @Override
+                    public void run() {
+                        for (;;) {
+                            ImageMetaData meta = waitForImage(store);
+                            System.out.println("Got "+meta);
+//                        for (ImageListener l : imageListeners) {
+//                            l.imageDelivered(image);
+//                        }
+                        }
+                    }
+                };
+                streamThread.setDaemon(false);
+                streamThread.start();
+            }
+        }
+    }
+
+    public void removeImageListener(ImageListener l) {
+        imageListeners.remove(l);
     }
 
     @Override
@@ -99,13 +129,13 @@ public class Store implements AutoCloseable {
     }
 
     long openSourceChannel(String imageName, String folderName, Location location, DAQSourceChannel.Mode mode) {
-        return openSourceChannel(store, imageName, folderName, location.index(), mode==DAQSourceChannel.Mode.WRITE);
+        return openSourceChannel(store, imageName, folderName, location.index(), mode == DAQSourceChannel.Mode.WRITE);
     }
-    
+
     SourceMetaData addSourceToImage(String imageName, String folderName, Location location, int[] registerValues) {
-        return addSourceToImage(store, imageName, folderName, location.index(), (byte) location.type().getNRebs(), "test-platform", registerValues); 
+        return addSourceToImage(store, imageName, folderName, location.index(), (byte) location.type().getNRebs(), "test-platform", registerValues);
     }
-    
+
     // Native methods    
     private synchronized native long attachStore(String partition);
 
@@ -138,4 +168,6 @@ public class Store implements AutoCloseable {
     private synchronized native long openSourceChannel(long store, String imageName, String folderName, int index, boolean write);
 
     private synchronized native SourceMetaData addSourceToImage(long store, String imageName, String folderName, int index, byte type, String platform, int[] registerValues);
+
+    private native ImageMetaData waitForImage(long store);
 }

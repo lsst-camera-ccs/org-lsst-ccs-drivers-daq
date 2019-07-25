@@ -11,7 +11,6 @@ import java.nio.channels.ByteChannel;
  */
 public class DAQSourceChannel implements ByteChannel {
 
-
     public enum Mode {
         READ, WRITE
     };
@@ -36,7 +35,7 @@ public class DAQSourceChannel implements ByteChannel {
             throw new IOException("Channel not open for read");
         }        
         if (!dst.isDirect()) {
-            throw new IOException("Channel is not direct");
+            throw new IOException("Supplied ByteBuffer is not direct");
         }
         int l = Math.min(dst.remaining(), length-offset);
         if (l==0) return -1;
@@ -74,7 +73,7 @@ public class DAQSourceChannel implements ByteChannel {
             throw new IOException("Channel not open for write");
         }
         if (!src.isDirect()) {
-            throw new IOException("Channel is not direct");
+            throw new IOException("Supplied ByteBuffer is not direct");
         }
         int remaining = src.remaining();
         int position = src.position();
