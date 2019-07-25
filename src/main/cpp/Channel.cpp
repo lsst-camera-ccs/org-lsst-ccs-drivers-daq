@@ -10,7 +10,6 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_DAQSourceChannel_read
 (JNIEnv *env, jobject obj, jlong source_, jobject buffer, jint position, jint offset, jint length) {
     Source* source = (Source*) source_;
     char *buf = (char*) env->GetDirectBufferAddress(buffer);
-    printf("About to read %d,%d,%d\n", buf + position, offset, length);
     return source->read(buf + position, length, offset);
 }
 
