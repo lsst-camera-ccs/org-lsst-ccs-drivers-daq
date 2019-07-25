@@ -5,6 +5,7 @@
 #include "ims/Catalog.hh"
 #include "ims/Folder.hh"
 #include "ims/Image.hh"
+#include "ims/Source.hh"
 #include "ims/SourceMetadata.hh"
 #include "daq/LocationSet.hh"
 #include "dsm/Exception.hh"
@@ -12,7 +13,6 @@
 
 #include "MyFolders.h"
 #include "MyProcessor.h"
-#include "MyReader.h"
 
 using namespace IMS;
 
@@ -316,22 +316,6 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_listSources
     }
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_readRawImage
-(JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jobjectArray byteBufferList) {
-    Store* store_ = (Store*) store;
-    Image image_ = findImage(env, store_, imageName, folderName);
-    jobject buffers[128];
-    DAQ::LocationSet filter;
-    for (uint8_t index = 0; index < env->GetArrayLength(byteBufferList); index++) {
-        jobject byteBuffer = env->GetObjectArrayElement(byteBufferList, index);
-        if (byteBuffer) {
-            filter.insert(index);
-            buffers[index] = byteBuffer;
-        }
-    }
-    MyReader reader(image_, env, filter, buffers);
-    reader.run();
-}
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_addImageToFolder
 (JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jstring annotation, jint opcode, jobject locations) {
@@ -373,37 +357,18 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_findImage
     return createImageMetaData(env, image);
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_closeImageChannel
-(JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jint elementIndex) {
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_imageapi_Store_openSourceChannel
+  (JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jint elementIndex, jboolean write) {
     Store* store_ = (Store*) store;
     Image image = findImage(env, store_, imageName, folderName);
     DAQ::Location element(elementIndex);
-    Source source(image.id(), element, *store_);
-}
-
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_writeRawImage
-(JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jint elementIndex, jobject buffer) {
-    Store* store_ = (Store*) store;
-    Image image = findImage(env, store_, imageName, folderName);
-    printf("elementIndex %d\n", elementIndex);
-    DAQ::Location element(elementIndex);
-    element.dump(0);
-    Source source(image.id(), element, *store_);
-    if (!source) {
+    Source* source = new Source(image.id(), element, *store_);
+    if (!*source) {
         jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
         char x[256];
-        sprintf(x, "Source not found (error=%d)", source.error());
+        sprintf(x, "Source not found (error=%d)", source->error());
         env->ThrowNew(exClass, x);
-    }
-    char *buf = (char*) env->GetDirectBufferAddress(buffer);
-    jclass cls = env->GetObjectClass(buffer);
-    jmethodID mid = env->GetMethodID(cls, "remaining", "()I");
-    if (env->ExceptionCheck()) {
-        return;
-    }
-    jint length = env->CallIntMethod(buffer, mid);
-    printf("Writing %d bytes\n", length);
-    source.write(buf, length);
-    source.terminate();
-    printf("terminate\n");
+        delete source;
+    }    
+    return (jlong) source;
 }

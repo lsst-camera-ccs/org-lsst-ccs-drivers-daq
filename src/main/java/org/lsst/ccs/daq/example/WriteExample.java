@@ -1,11 +1,13 @@
 package org.lsst.ccs.daq.example;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import org.lsst.ccs.daq.imageapi.Catalog;
 import org.lsst.ccs.daq.imageapi.DAQException;
+import org.lsst.ccs.daq.imageapi.DAQSourceChannel;
 import org.lsst.ccs.daq.imageapi.Folder;
 import org.lsst.ccs.daq.imageapi.Image;
 import org.lsst.ccs.daq.imageapi.ImageMetaData;
@@ -18,7 +20,7 @@ import org.lsst.ccs.daq.imageapi.Store;
  * @author tonyj
  */
 public class WriteExample {
-    public static void main(String[] args) throws DAQException {
+    public static void main(String[] args) throws DAQException, IOException {
         Store store = new Store("dev");
         Catalog catalog = store.getCatalog();
         Folder testFolder;
@@ -43,11 +45,12 @@ public class WriteExample {
         Source source = sources.get(0);
         ByteBuffer buffer = ByteBuffer.allocateDirect(1000000);
         Random r = new Random();
-        for (int i=0; i<100000; i+=4) {
+        for (int i=0; i<1000000; i+=4) {
             buffer.putInt(r.nextInt());
         }
         buffer.flip();
-        source.writeRaw(buffer);
-        source.close();
+        try (DAQSourceChannel channel = source.openChannel(DAQSourceChannel.Mode.WRITE)) {
+            channel.write(buffer);
+        }
     }
 }

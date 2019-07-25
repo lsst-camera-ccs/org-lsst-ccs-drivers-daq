@@ -36,6 +36,14 @@ public class LocationSet extends AbstractSet<Location> {
         }
     }
     
+    public static LocationSet of(String... location) {
+        BitSet locations = new BitSet();
+        for (String l : location) {
+            locations.set(Location.of(l).index());
+        }
+        return new LocationSet(locations);
+    }
+    
     
     LocationSet(BitSet bitset) {
         locations = bitset;

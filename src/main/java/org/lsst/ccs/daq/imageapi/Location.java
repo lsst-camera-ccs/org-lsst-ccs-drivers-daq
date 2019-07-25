@@ -1,5 +1,8 @@
 package org.lsst.ccs.daq.imageapi;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Corresponds to a REB location in the focal plane e.g. R22/Reb0
  *
@@ -19,23 +22,35 @@ public class Location implements Comparable<Location> {
     private final static int[] INDEX_TO_BAY = new int[]{
         0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 30, 31, 32, 33, 34, 40, 41, 42, 43, 44};
 
+    private final static Pattern PATTERN = Pattern.compile("R(\\d\\d)/Reb(\\d)");
+
     private final byte bay;
     private final byte board;
-    
+
     Location(int index) {
         bay = (byte) INDEX_TO_BAY[index / BAY_MULTIPLIER];
         board = (byte) (index % BAY_MULTIPLIER);
     }
 
-    public Location(byte bay, byte board) {
+    public Location(int bay, int board) {
         if (bay < 0 || bay >= BAY_TO_INDEX.length || BAY_TO_INDEX[bay] == INVALID_INDEX) {
             throw new IllegalArgumentException("Invalid bay: " + bay);
         }
         if (board < 0 || board > 3) {
             throw new IllegalArgumentException("Invalid board: " + board);
         }
-        this.bay = bay;
-        this.board = board;
+        this.bay = (byte) bay;
+        this.board = (byte) board;
+    }
+
+    public static Location of(String location) {
+        Matcher matcher = PATTERN.matcher(location);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Illegal location: " + location);
+        }
+        int bay = Integer.parseInt(matcher.group(1));
+        int board = Integer.parseInt(matcher.group(2));
+        return new Location(bay, board);
     }
 
     int index() {
@@ -43,22 +58,22 @@ public class Location implements Comparable<Location> {
     }
 
     @Override
-        public String toString() {
+    public String toString() {
         return String.format("R%02d/Reb%d", bay, board);
     }
 
     @Override
-        public int compareTo(Location o) {
+    public int compareTo(Location o) {
         return this.index() - o.index();
     }
 
     @Override
-        public int hashCode() {
+    public int hashCode() {
         return index();
     }
 
     @Override
-        public boolean equals(Object obj) {
+    public boolean equals(Object obj) {
         if (this == obj) {
             return true;
         }

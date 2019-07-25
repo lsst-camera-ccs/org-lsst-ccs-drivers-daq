@@ -1,7 +1,5 @@
 package org.lsst.ccs.daq.imageapi;
 
-import java.nio.ByteBuffer;
-
 /**
  * Reference to both Source data + metadata buckets
  *
@@ -51,19 +49,14 @@ public class Source implements Comparable<Source> {
         return metaData.getSensor();
     }
 
-    public void readRaw(ByteBuffer buffer) {
-        image.readRaw(buffer, metaData.getLocation());
-    }
-
-    public void writeRaw(ByteBuffer buffer) {
-        System.out.printf("Location %s index %d\n",metaData.getLocation(),metaData.getLocation().index());
-        image.writeRaw(buffer, metaData.getLocation());
+    Image getImage() {
+        return image;
     }
     
-    public void close() {
-        image.close(metaData.getLocation());
+    public DAQSourceChannel openChannel(DAQSourceChannel.Mode mode) {
+        return new DAQSourceChannel(this, mode);
     }
-
+    
     @Override
     public int compareTo(Source o) {
         return this.metaData.getLocation().compareTo(o.metaData.getLocation());

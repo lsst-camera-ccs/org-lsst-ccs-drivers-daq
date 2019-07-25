@@ -1,8 +1,8 @@
 package org.lsst.ccs.daq.imageapi.decoder;
 
-import java.io.EOFException;
+import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,48 +18,59 @@ import nom.tam.util.BufferedFile;
  *
  * @author tonyj
  */
-public class FITSReadTest {
+public class FitsIntReader implements ReadableIntChannel {
 
     static {
         FitsFactory.setUseHierarch(true);
     }
-
-    public static void main(String[] args) throws FitsException, IOException {
-
-        List<Segment> segments = new ArrayList<>();
-        openFITSFile(segments, "/home/tonyj/Data/pretty/10_Flat_screen_0000_20190322172301.fits");
-        openFITSFile(segments, "/home/tonyj/Data/pretty/11_Flat_screen_0000_20190322172301.fits");
-        openFITSFile(segments, "/home/tonyj/Data/pretty/12_Flat_screen_0000_20190322172301.fits");
-
-        List<ByteBuffer> buffers = new ArrayList<>();
-        for (Segment segment : segments) {
-            ByteBuffer bb = ByteBuffer.allocateDirect(segment.getDataSize());
-            FileChannel channel = segment.getChannel();
-            int len = channel.read(bb, segment.getSeekPosition());
-            if (bb.remaining() != 0) {
-                throw new IOException("Unexpected length " + len);
-            }
-            bb.flip();
-            buffers.add(bb);
+    private final Compress18BitChannel input;
+    private final List<Segment> segments;
+    
+    public FitsIntReader(File... files) throws IOException, TruncatedFileException {
+        segments = new ArrayList<>();
+        for (File file : files) {
+            openFITSFile(segments, file);
         }
+
         IntBufferReader[] inputs = new IntBufferReader[segments.size()];
-        for (int i=0; i<inputs.length; i++) {
-            inputs[i] = new IntBufferReader(buffers.get(i).asIntBuffer());
+        int j = 0;
+        for (Segment segment : segments) {
+            FileChannel channel = segment.getChannel();
+            inputs[j++] = new IntFileChannelReader(channel, segment.getSeekPosition(), segment.getDataSize());
         }
+
         MultiplexingIntChannel multiplex = new MultiplexingIntChannel(inputs);
-        Compress18BitChannel compress = new Compress18BitChannel(multiplex);
-        int i = 0;
-        try {
-            for (;;i++) {
-                compress.read();
-            }
-        } catch(EOFException x) {
-            System.out.printf("End of file after %,d bytes",i*4);
+        input = new Compress18BitChannel(multiplex);
+    }
+
+    @Override
+    public void close() throws IOException {
+        input.close();
+        for (Segment segment : segments) {
+            segment.close();
         }
     }
 
-    private static void openFITSFile(List<Segment> segments, String name) throws IOException, TruncatedFileException {
-        BufferedFile bf = new BufferedFile(name, "r");
+    public static void main(String[] args) throws FitsException, IOException {
+        try (FitsIntReader reader = new FitsIntReader(
+                new File("/home/tonyj/Data/pretty/10_Flat_screen_0000_20190322172301.fits"),
+                new File("/home/tonyj/Data/pretty/11_Flat_screen_0000_20190322172301.fits"),
+                new File("/home/tonyj/Data/pretty/12_Flat_screen_0000_20190322172301.fits")
+        )) {
+            IntBuffer buffer = IntBuffer.allocate(1000000);
+            int i = 0;
+            for (;;) {
+                int len = reader.read(buffer);
+                if (len<0) break;
+                System.out.println(buffer.remaining());
+                i += len;
+            }
+            System.out.printf("End of file after %,d bytes\n", i * 4);
+        } 
+    }
+
+    private static void openFITSFile(List<Segment> segments, File file) throws IOException, TruncatedFileException {
+        BufferedFile bf = new BufferedFile(file, "r");
         for (int i = 0; i < 17; i++) {
             Header header = new Header(bf);
             // Skip primary header, assumes file contains 16 image extensions
@@ -76,7 +87,21 @@ public class FITSReadTest {
                 segments.add(segment);
             }
         }
+    }
 
+    @Override
+    public int read() throws IOException {
+        return input.read();
+    }
+
+    @Override
+    public int read(IntBuffer buffer) throws IOException {
+        return input.read(buffer);
+    }
+
+    @Override
+    public boolean isOpen() {
+        return input.isOpen();
     }
 
     private static class Segment {
@@ -111,6 +136,8 @@ public class FITSReadTest {
             return filePointer;
         }
 
+        private void close() throws IOException {
+            channel.close();
+        }
     }
-
 }

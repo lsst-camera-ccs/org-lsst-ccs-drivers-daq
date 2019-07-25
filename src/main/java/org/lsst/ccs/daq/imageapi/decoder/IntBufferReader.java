@@ -27,8 +27,10 @@ public class IntBufferReader implements ReadableIntChannel {
     }
 
     @Override
-    public void read(IntBuffer buffer) throws IOException {
-       buffer.put(input);
+    public int read(IntBuffer buffer) throws IOException {
+       int remaining = input.remaining();
+       input.put(buffer);
+       return remaining - input.remaining();
     }
 
     @Override

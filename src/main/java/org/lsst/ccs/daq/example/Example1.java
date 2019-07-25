@@ -3,11 +3,11 @@ package org.lsst.ccs.daq.example;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.lsst.ccs.daq.imageapi.Catalog;
 import org.lsst.ccs.daq.imageapi.DAQException;
+import org.lsst.ccs.daq.imageapi.DAQSourceChannel;
 import org.lsst.ccs.daq.imageapi.Folder;
 import org.lsst.ccs.daq.imageapi.Image;
 import org.lsst.ccs.daq.imageapi.Source;
@@ -57,47 +57,60 @@ public class Example1 {
         Image image = images.get(0);
         List<Source> sources = image.listSources();
         Collections.sort(sources);
-        List<ByteBuffer> buffers = new ArrayList<>();
         long totalSize = 0;
         for (Source source : sources) {
             System.out.println(source.getMetaData());
-            buffers.add(ByteBuffer.allocateDirect(source.size()));
             totalSize += source.size();
         }
+        System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        long start = System.nanoTime();
-        image.readRaw(buffers);
-        long stop = System.nanoTime();
-        System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalSize, (stop - start), 1000 * totalSize / (stop - start));
-
-        start = System.nanoTime();
-        int i = 0;
+        ByteBuffer buffer = ByteBuffer.allocateDirect(1_000_000);
         long totalReadSize = 0;
+        long start = System.nanoTime();
         for (Source source : sources) {
-            final ByteBuffer buffer = buffers.get(i++);
-            source.readRaw(buffer);
-            totalReadSize += buffer.limit();
+            try (DAQSourceChannel channel = source.openChannel(DAQSourceChannel.Mode.READ)) {
+                for (;;) {
+                    buffer.clear();
+                    int l = channel.read(buffer);
+                    if (l < 0) {
+                        break;
+                    }
+                    totalReadSize += l;
+                }
+            }
         }
-        stop = System.nanoTime();
+        long stop = System.nanoTime();
         System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
 
         // now unpack the buffers
-        i = 0;
+        int i = 0;
         long unpackSize = 0;
         start = System.nanoTime();
         for (Source source : sources) {
-            ByteBuffer buffer = buffers.get(i++);
-            int rebs = source.getMetaData().getSensor().getNRebs();
-            int outputSize = source.getMetaData().getLength() / 9 * 16 / rebs / 4;
-            IntBufferWriter[] output = new IntBufferWriter[16 * rebs];
-            for (int j = 0; j < output.length; j++) {
-                output[j] = new IntBufferWriter(IntBuffer.allocate(outputSize));
-            }
-            WritableIntChannel destination = new DemultiplexingIntChannel(output);
-            Decompress18BitChannel b18 = new Decompress18BitChannel(destination);
-            b18.write(buffer.asIntBuffer());
-            for (IntBufferWriter output1 : output) {
-                unpackSize += 4 * output1.getIntBuffer().position();
+            try (DAQSourceChannel channel = source.openChannel(DAQSourceChannel.Mode.READ)) {
+                int rebs = source.getMetaData().getSensor().getNRebs();
+                int outputSize = source.getMetaData().getLength() / 9 * 16 / rebs / 4;
+                IntBufferWriter[] output = new IntBufferWriter[16 * rebs];
+                for (int j = 0; j < output.length; j++) {
+                    output[j] = new IntBufferWriter(IntBuffer.allocate(outputSize));
+                }
+                WritableIntChannel destination = new DemultiplexingIntChannel(output);
+                Decompress18BitChannel b18 = new Decompress18BitChannel(destination);
+
+                for (;;) {
+                    buffer.clear();
+                    int l = channel.read(buffer);
+                    if (l < 0) {
+                        break;
+                    }
+                    totalReadSize += l;
+                    buffer.flip();
+                    b18.write(buffer.asIntBuffer());
+                }
+
+                for (IntBufferWriter output1 : output) {
+                    unpackSize += 4 * output1.getIntBuffer().position();
+                }
             }
         }
         stop = System.nanoTime();
