@@ -102,6 +102,10 @@ public class Store implements AutoCloseable {
         return openSourceChannel(store, imageName, folderName, location.index(), mode==DAQSourceChannel.Mode.WRITE);
     }
     
+    SourceMetaData addSourceToImage(String imageName, String folderName, Location location, int[] registerValues) {
+        return addSourceToImage(store, imageName, folderName, location.index(), (byte) location.type().getNRebs(), "test-platform", registerValues); 
+    }
+    
     // Native methods    
     private synchronized native long attachStore(String partition);
 
@@ -132,4 +136,6 @@ public class Store implements AutoCloseable {
     private synchronized native ImageMetaData findImage(long store, String imageName, String folderName);
 
     private synchronized native long openSourceChannel(long store, String imageName, String folderName, int index, boolean write);
+
+    private synchronized native SourceMetaData addSourceToImage(long store, String imageName, String folderName, int index, byte type, String platform, int[] registerValues);
 }

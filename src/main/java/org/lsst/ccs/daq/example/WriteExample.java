@@ -3,7 +3,6 @@ package org.lsst.ccs.daq.example;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 import org.lsst.ccs.daq.imageapi.Catalog;
 import org.lsst.ccs.daq.imageapi.DAQException;
@@ -37,12 +36,12 @@ public class WriteExample {
         } catch (DAQException x) {
             
         }
-        ImageMetaData meta = new ImageMetaData("imageName","Image Annotation", 2, Collections.singleton(new Location((byte) 22, (byte)1)));
+        final Location location = new Location((byte) 22, (byte)1);
+        ImageMetaData meta = new ImageMetaData("imageName","Image Annotation", 2, Collections.singleton(location));
         Image image = testFolder.insert(meta);
         System.out.println(image.getMetaData());
-        List<Source> sources = image.listSources();
-        System.out.println(sources);
-        Source source = sources.get(0);
+        int[] registerValues = { 1, 2, 3, 4, 5, 6 };
+        Source source = image.addSource(location, registerValues);
         ByteBuffer buffer = ByteBuffer.allocateDirect(1000000);
         Random r = new Random();
         for (int i=0; i<1000000; i+=4) {
@@ -52,5 +51,6 @@ public class WriteExample {
         try (DAQSourceChannel channel = source.openChannel(DAQSourceChannel.Mode.WRITE)) {
             channel.write(buffer);
         }
+        System.out.println(source);
     }
 }

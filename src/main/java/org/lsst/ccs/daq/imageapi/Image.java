@@ -65,6 +65,13 @@ public class Image implements Comparable<Image> {
         }
     }
 
+    public Source addSource(Location location, int[] registerValues) {
+        if (!metaData.getLocations().contains(location)) {
+            throw new IllegalArgumentException("Invalid location "+location+" for image "+this);
+        }
+        return new Source(this, folder.getStore().addSourceToImage(metaData.getName(), folder.getName(), location, registerValues));
+    }
+    
     @Override
     public int compareTo(Image o) {
         return this.metaData.getName().compareTo(o.metaData.getName());

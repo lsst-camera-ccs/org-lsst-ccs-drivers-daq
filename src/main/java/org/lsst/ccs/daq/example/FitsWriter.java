@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.List;
 import nom.tam.fits.TruncatedFileException;
 import org.lsst.ccs.daq.imageapi.Catalog;
 import org.lsst.ccs.daq.imageapi.DAQException;
@@ -13,6 +12,7 @@ import org.lsst.ccs.daq.imageapi.DAQSourceChannel.Mode;
 import org.lsst.ccs.daq.imageapi.Folder;
 import org.lsst.ccs.daq.imageapi.Image;
 import org.lsst.ccs.daq.imageapi.ImageMetaData;
+import org.lsst.ccs.daq.imageapi.Location;
 import org.lsst.ccs.daq.imageapi.LocationSet;
 import org.lsst.ccs.daq.imageapi.Source;
 import org.lsst.ccs.daq.imageapi.Store;
@@ -34,8 +34,8 @@ public class FitsWriter {
         File dir = new File("/home/tonyj/Data/pretty/");
         File[] files = dir.listFiles((File dir1, String name) -> name.matches("1\\d_Flat_screen_0000_20190322172301.fits"));
         try (FitsIntReader reader = new FitsIntReader(files)) {
-            List<Source> sources = image.listSources();
-            Source source = sources.get(0);
+            int[] registerValues = { 1, 2, 3, 4, 5, 6 };
+            Source source = image.addSource(Location.of("R22/Reb0"), registerValues);
             try (DAQSourceChannel channel = source.openChannel(Mode.WRITE)) {
                 ByteBuffer buffer = ByteBuffer.allocateDirect(1_000_000);
                 IntBuffer intBuffer = buffer.asIntBuffer();

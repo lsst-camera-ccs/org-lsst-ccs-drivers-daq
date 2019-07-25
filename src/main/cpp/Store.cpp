@@ -333,15 +333,6 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_addImageToFolder
         sprintf(x, "Creating image %s in folder %s failed (error=%d)", image_name, folder_name, image.error());
         env->ThrowNew(exClass, x);
     }
-    // Create required Sources
-    DAQ::Location element;
- 
-    while (locations_.remove(element)) {
-        Source source(image.id(), element, *store_, SourceMetadata(DAQ::Sensor::Type::SCIENCE, DAQ::Lane::Type::EMULATION, "test-platform"));
-        element.dump(0);
-        source.synopsis(0);
-    }
-
     env->ReleaseStringUTFChars(folderName, folder_name);
     env->ReleaseStringUTFChars(imageName, image_name);
     env->ReleaseStringUTFChars(annotation, annotation_);
@@ -371,4 +362,27 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_imageapi_Store_openSourceChannel
         delete source;
     }    
     return (jlong) source;
+}
+
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_addSourceToImage
+  (JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jint elementIndex, jbyte type, jstring platform, jintArray registerValues) {
+    Store* store_ = (Store*) store;
+    Image image = findImage(env, store_, imageName, folderName);
+    DAQ::Location element(elementIndex);    
+    const char *platform_ = env->GetStringUTFChars(platform, 0);
+    SourceMetadata smd((DAQ::Sensor::Type) type, DAQ::Lane::Type::EMULATION, platform_);
+    RMS::InstructionList il;
+    jint size = env->GetArrayLength(registerValues);
+    jint* values = env->GetIntArrayElements(registerValues, 0);
+    for (uint32_t i = 0; i < size; i++) {
+        il.insert(RMS::Instruction::Opcode::GET, values[i]);
+    }
+    for (uint32_t i = size; i < il.size(); i++) {
+        il.insert(RMS::Instruction::Opcode::GET, 0);
+    }
+    smd = il;
+    env->ReleaseIntArrayElements(registerValues, values, JNI_ABORT);
+    env->ReleaseStringUTFChars(platform, platform_);
+    Source source(image.id(), element, *store_, smd);
+    return createSourceMetaData(env, source);
 }

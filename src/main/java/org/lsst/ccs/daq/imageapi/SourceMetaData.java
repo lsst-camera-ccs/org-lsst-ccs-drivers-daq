@@ -65,12 +65,9 @@ public class SourceMetaData {
     public int[] getRegisterValues() {
         return registerValues;
     }
-
+    
     @Override
     public String toString() {
         return "SourceMetaData{" + "location=" + location + ", sensor=" + sensor + ", lane=" + lane + ", platform=" + platform + ", software=" + software + ", firmware=" + firmware + ", serialNumber=" + serialNumber + ", length=" + length + ", registerValues=" + Arrays.toString(registerValues) + '}';
     }
-
-
-
 }

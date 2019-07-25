@@ -57,7 +57,7 @@ public class ImageMetaData {
         return timestamp;
     }
 
-    public Set<Location> getElements() {
+    public Set<Location> getLocations() {
         return Collections.unmodifiableSet(elements);
     }
 

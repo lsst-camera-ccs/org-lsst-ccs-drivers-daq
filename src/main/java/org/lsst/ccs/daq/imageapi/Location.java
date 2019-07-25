@@ -52,6 +52,15 @@ public class Location implements Comparable<Location> {
         int board = Integer.parseInt(matcher.group(2));
         return new Location(bay, board);
     }
+    
+    public Source.SourceType type() {
+       if (bay == 0 || bay == 40 || bay == 44 || bay == 04) {
+           if (board == 0) return  Source.SourceType.WAVEFRONT;
+           else return Source.SourceType.GUIDER;
+       } else {
+           return Source.SourceType.SCIENCE;
+       }
+    }
 
     int index() {
         return BAY_MULTIPLIER * BAY_TO_INDEX[bay] + board;
