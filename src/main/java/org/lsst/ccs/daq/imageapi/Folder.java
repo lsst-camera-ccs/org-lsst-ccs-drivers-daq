@@ -22,7 +22,7 @@ public class Folder implements Comparable<Folder> {
         List<ImageMetaData> metaData = new ArrayList<>();
         store.listImages(name, metaData);
         metaData.forEach((meta) -> {
-            result.add(new Image(this, meta));
+            result.add(new Image(store, meta));
         });
         return result;
     }
@@ -32,22 +32,16 @@ public class Folder implements Comparable<Folder> {
      *
      * @param name
      * @return
+     * @throws org.lsst.ccs.daq.imageapi.DAQException
      */
     public Image find(String name) throws DAQException {
         ImageMetaData meta = store.findImage(name, this.name);
-        return new Image(this, meta);
+        return new Image(store, meta);
     }
 
     public Image insert(ImageMetaData meta) {
         ImageMetaData metaNew = store.addImageToFolder(meta.getName(), this.name, meta);
-        return new Image(this, metaNew);
-    }
-
-    void delete(Image image) throws DAQException {
-        int rc = store.deleteImage(image.getMetaData().getName(), this.name);
-        if (rc != 0) {
-            throw new DAQException(String.format("Delete image failed (rc=%d)", rc));
-        }
+        return new Image(store, metaNew);
     }
 
     @Override

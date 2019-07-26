@@ -64,10 +64,10 @@ public class Store implements AutoCloseable {
                     public void run() {
                         for (;;) {
                             ImageMetaData meta = waitForImage(store);
-                            System.out.println("Got "+meta);
-//                        for (ImageListener l : imageListeners) {
-//                            l.imageDelivered(image);
-//                        }
+                            Image image = new Image(Store.this, meta);
+                            for (ImageListener l : imageListeners) {
+                                l.imageDelivered(image);
+                            }
                         }
                     }
                 };
@@ -112,12 +112,12 @@ public class Store implements AutoCloseable {
         return moveImageToFolder(store, id, folderName);
     }
 
-    int deleteImage(String imageName, String folderName) {
-        return deleteImage(store, imageName, folderName);
+    int deleteImage(long id) {
+        return deleteImage(store, id);
     }
 
-    void listSources(String imageName, String folderName, List<SourceMetaData> result) {
-        listSources(store, imageName, folderName, result);
+    void listSources(long id, List<SourceMetaData> result) {
+        listSources(store, id, result);
     }
 
     ImageMetaData addImageToFolder(String imageName, String folderName, ImageMetaData meta) {
@@ -128,12 +128,12 @@ public class Store implements AutoCloseable {
         return findImage(store, imageName, folderName);
     }
 
-    long openSourceChannel(String imageName, String folderName, Location location, DAQSourceChannel.Mode mode) {
-        return openSourceChannel(store, imageName, folderName, location.index(), mode == DAQSourceChannel.Mode.WRITE);
+    long openSourceChannel(long id, Location location, DAQSourceChannel.Mode mode) {
+        return openSourceChannel(store, id, location.index(), mode == DAQSourceChannel.Mode.WRITE);
     }
 
-    SourceMetaData addSourceToImage(String imageName, String folderName, Location location, int[] registerValues) {
-        return addSourceToImage(store, imageName, folderName, location.index(), (byte) location.type().getNRebs(), "test-platform", registerValues);
+    SourceMetaData addSourceToImage(long id, Location location, int[] registerValues) {
+        return addSourceToImage(store, id, location.index(), (byte) location.type().getNRebs(), "test-platform", registerValues);
     }
 
     // Native methods    
@@ -157,17 +157,17 @@ public class Store implements AutoCloseable {
 
     private synchronized native int moveImageToFolder(long store, long id, String folderName);
 
-    private synchronized native int deleteImage(long store, String imageName, String folderName);
+    private synchronized native int deleteImage(long store, long id);
 
-    private synchronized native void listSources(long store, String imageName, String folderName, List<SourceMetaData> result);
+    private synchronized native void listSources(long store, long id, List<SourceMetaData> result);
 
     private synchronized native ImageMetaData addImageToFolder(long store, String imageName, String folderName, String annotation, int opcode, BitSet elements);
 
     private synchronized native ImageMetaData findImage(long store, String imageName, String folderName);
 
-    private synchronized native long openSourceChannel(long store, String imageName, String folderName, int index, boolean write);
+    private synchronized native long openSourceChannel(long store, long id, int index, boolean write);
 
-    private synchronized native SourceMetaData addSourceToImage(long store, String imageName, String folderName, int index, byte type, String platform, int[] registerValues);
+    private synchronized native SourceMetaData addSourceToImage(long store, long id, int index, byte type, String platform, int[] registerValues);
 
     private native ImageMetaData waitForImage(long store);
 }

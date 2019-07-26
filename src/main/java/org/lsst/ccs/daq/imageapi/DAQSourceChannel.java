@@ -23,10 +23,9 @@ public class DAQSourceChannel implements ByteChannel {
     DAQSourceChannel(Source source, Mode mode) {
         this.mode = mode;
         final Image image = source.getImage();
-        final Folder folder = image.getFolder();
         length = source.getMetaData().getLength();
-        store = folder.getStore();
-        source_ = store.openSourceChannel(image.getMetaData().getName(), folder.getName(), source.getLocation(), mode);
+        store = image.getStore();
+        source_ = store.openSourceChannel(image.getMetaData().getId(), source.getLocation(), mode);
     }
 
     @Override

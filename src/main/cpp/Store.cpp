@@ -114,6 +114,18 @@ Image findImage(JNIEnv* env, Store* store_, jstring imageName, jstring folderNam
     return image_;
 }
 
+Image findImage(JNIEnv* env, Store* store_, uint64_t id) {
+    Id id_(id);
+    Image image_(id_, *store_);
+    if (!image_) {
+        jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
+        char x[256];
+        sprintf(x, "Find image id %d failed (error=%d)", id, image_.error());
+        env->ThrowNew(exClass, x);
+    }
+    return image_;
+}
+
 static jint JNI_VERSION = JNI_VERSION_1_8;
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved) {
@@ -286,26 +298,24 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_listImages
 JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_moveImageToFolder
 (JNIEnv *env, jobject obj, jlong store, jlong id, jstring folderName) {
     Store* store_ = (Store*) store;
-    //Id id_(id);
-    //Image image_(id_, *store_);
-    //const char *folder_name = env->GetStringUTFChars(folderName, 0);
-    //int rc = image_.moveTo(folder_name);
-    //env->ReleaseStringUTFChars(folderName, folder_name);
-    //return rc;
-    return 0;
+    Image image_ = findImage(env, store_, id);
+    const char *folder_name = env->GetStringUTFChars(folderName, 0);
+    int rc = image_.moveTo(folder_name);
+    env->ReleaseStringUTFChars(folderName, folder_name);
+    return rc;
 }
 
 JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_deleteImage
-(JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName) {
+(JNIEnv *env, jobject obj, jlong store, jlong id) {
     Store* store_ = (Store*) store;
-    Image image_ = findImage(env, store_, imageName, folderName);
+    Image image_ = findImage(env, store_, id);
     return image_.remove();
 }
 
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_listSources
-(JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jobject result) {
+(JNIEnv *env, jobject obj, jlong store, jlong id, jobject result) {
     Store* store_ = (Store*) store;
-    Image image_ = findImage(env, store_, imageName, folderName);
+    Image image_ = findImage(env, store_, id);
     DAQ::LocationSet locations_ = image_.metadata().elements();
     DAQ::Location element;
 
@@ -349,9 +359,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_findImage
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_imageapi_Store_openSourceChannel
-  (JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jint elementIndex, jboolean write) {
+  (JNIEnv *env, jobject obj, jlong store, jlong id, jint elementIndex, jboolean write) {
     Store* store_ = (Store*) store;
-    Image image = findImage(env, store_, imageName, folderName);
+    Image image = findImage(env, store_, id);
     DAQ::Location element(elementIndex);
     Source* source = new Source(image.id(), element, *store_);
     if (!*source) {
@@ -365,9 +375,9 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_imageapi_Store_openSourceChannel
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_addSourceToImage
-  (JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jint elementIndex, jbyte type, jstring platform, jintArray registerValues) {
+  (JNIEnv *env, jobject obj, jlong store, jlong id, jint elementIndex, jbyte type, jstring platform, jintArray registerValues) {
     Store* store_ = (Store*) store;
-    Image image = findImage(env, store_, imageName, folderName);
+    Image image = findImage(env, store_, id);
     DAQ::Location element(elementIndex);    
     const char *platform_ = env->GetStringUTFChars(platform, 0);
     SourceMetadata smd((DAQ::Sensor::Type) type, DAQ::Lane::Type::EMULATION, platform_);

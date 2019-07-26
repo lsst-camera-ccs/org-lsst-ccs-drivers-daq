@@ -11,15 +11,15 @@ import java.util.List;
 public class Image implements Comparable<Image> {
 
     private final ImageMetaData metaData;
-    private final Folder folder;
+    private final Store store;
     /** 
      * Non-public constructor representing an existing image
      * @param id
      * @param store 
      */
 
-    Image(Folder folder, ImageMetaData metaData) {
-        this.folder = folder;
+    Image(Store store, ImageMetaData metaData) {
+        this.store = store;
         this.metaData = metaData;
     }
     
@@ -30,7 +30,7 @@ public class Image implements Comparable<Image> {
     public List<Source> listSources() {
         List<Source> result = new ArrayList<>();
         List<SourceMetaData> metadata = new ArrayList<>();
-        folder.getStore().listSources(metaData.getName(), folder.getName(), metadata);
+        store.listSources(metaData.getId(), metadata);
         metadata.forEach((data) -> {
             result.add(new Source(this, data));
         });
@@ -47,7 +47,10 @@ public class Image implements Comparable<Image> {
      * @throws DAQException 
      */
     public void delete() throws DAQException {
-        folder.delete(this);
+        int rc = store.deleteImage(metaData.getId());
+        if (rc != 0) {
+            throw new DAQException(String.format("Delete image failed (rc=%d)", rc));
+        }
     }
 
 
@@ -58,8 +61,7 @@ public class Image implements Comparable<Image> {
      * @throws org.lsst.ccs.daq.imageapi.DAQException
      */
     public void moveTo(String folderName) throws DAQException {
-        // TODO: Switch id to name and folder
-        int rc = folder.getStore().moveImageToFolder(this.metaData.getId(), folderName);
+        int rc = store.moveImageToFolder(this.metaData.getId(), folderName);
         if (rc != 0) {
             throw new DAQException(String.format("Move image to folder %s failed (rc=%d)",folderName,rc));
         }
@@ -69,7 +71,11 @@ public class Image implements Comparable<Image> {
         if (!metaData.getLocations().contains(location)) {
             throw new IllegalArgumentException("Invalid location "+location+" for image "+this);
         }
-        return new Source(this, folder.getStore().addSourceToImage(metaData.getName(), folder.getName(), location, registerValues));
+        return new Source(this, store.addSourceToImage(metaData.getId(), location, registerValues));
+    }
+    
+    Store getStore() {
+        return store;
     }
     
     @Override
@@ -97,8 +103,8 @@ public class Image implements Comparable<Image> {
         return this.metaData.getId() == other.metaData.getId();
     }
 
-    Folder getFolder() {
-        return folder;
+    @Override
+    public String toString() {
+        return "Image{" + "metaData=" + metaData + '}';
     }
-
 }
