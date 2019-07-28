@@ -4,7 +4,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Corresponds to a REB location in the focal plane e.g. R22/Reb0
+ * Corresponds to a REB location in the focal plane e.g.&nbsp;R22/Reb0.
  *
  * @author tonyj
  */
@@ -32,17 +32,27 @@ public class Location implements Comparable<Location> {
         board = (byte) (index % BAY_MULTIPLIER);
     }
 
+    /**
+     * Create location from bay number and board number
+     * @param bay Bay (e.g.\ 22, 10, 04 etc)
+     * @param board Board (0-2)
+     */
     public Location(int bay, int board) {
         if (bay < 0 || bay >= BAY_TO_INDEX.length || BAY_TO_INDEX[bay] == INVALID_INDEX) {
             throw new IllegalArgumentException("Invalid bay: " + bay);
         }
-        if (board < 0 || board > 3) {
+        if (board < 0 || board > 2) {
             throw new IllegalArgumentException("Invalid board: " + board);
         }
         this.bay = (byte) bay;
         this.board = (byte) board;
     }
 
+    /**
+     * Create location from string
+     * @param location String representation of location, of form Rnn/Rebm
+     * @return The corresponding location
+     */
     public static Location of(String location) {
         Matcher matcher = PATTERN.matcher(location);
         if (!matcher.matches()) {
@@ -53,6 +63,10 @@ public class Location implements Comparable<Location> {
         return new Location(bay, board);
     }
     
+    /**
+     * The source type for this location
+     * @return The source type
+     */
     public Source.SourceType type() {
        if (bay == 0 || bay == 40 || bay == 44 || bay == 04) {
            if (board == 0) return  Source.SourceType.WAVEFRONT;

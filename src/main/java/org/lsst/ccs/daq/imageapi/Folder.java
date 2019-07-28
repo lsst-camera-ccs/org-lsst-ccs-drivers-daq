@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Represent a Folder in the DAQ catalog. Folders can contain images
+ * Represents a Folder in the DAQ catalog. Folders can contain images
  * but not nested folders.
  * @see Catalog#list()
  * @author tonyj

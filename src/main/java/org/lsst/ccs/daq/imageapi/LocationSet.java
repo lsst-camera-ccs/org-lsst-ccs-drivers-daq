@@ -35,7 +35,12 @@ public class LocationSet extends AbstractSet<Location> {
             });
         }
     }
-    
+    /**
+     * Creates a LocationSet from a list of strings
+     * @see Location#of(java.lang.String) 
+     * @param location The location(s)
+     * @return The LocationSet
+     */
     public static LocationSet of(String... location) {
         BitSet locations = new BitSet();
         for (String l : location) {
