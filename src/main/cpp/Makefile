@@ -9,7 +9,7 @@ DAQ_HOME ?= $(HOME)/projects/lsst/daq/R4-V1.0-IR2
 
 all: $(LIBTGT)/libccs_daq_ims.so
 
-$(OBJ)/Store.o: Store.cpp $(INC)/org_lsst_ccs_daq_imageapi_Store.h
+$(OBJ)/Store.o: Store.cpp $(INC)/org_lsst_ccs_daq_ims_Store.h
 	mkdir -p $(OBJ)
 	$(CC) -std=c++11 -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -fPIC -o $@ -c $<
 
@@ -25,7 +25,7 @@ $(OBJ)/MyBarrier.o: MyBarrier.cpp MyBarrier.h
 	mkdir -p $(OBJ)
 	$(CC) -std=c++11 -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -fPIC -o $@ -c $<
 
-$(OBJ)/Channel.o: Channel.cpp Channel.h
+$(OBJ)/Channel.o: Channel.cpp Channel.h $(INC)/org_lsst_ccs_daq_ims_DAQSourceChannel.h
 	mkdir -p $(OBJ)
 	$(CC) -std=c++11 -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -fPIC -o $@ -c $<
 

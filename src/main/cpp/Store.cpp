@@ -1,6 +1,6 @@
 #include "Store.h"
 
-#include "org_lsst_ccs_daq_imageapi_Store.h"
+#include "org_lsst_ccs_daq_ims_Store.h"
 #include "ims/Store.hh"
 #include "ims/Catalog.hh"
 #include "ims/Folder.hh"
@@ -108,7 +108,7 @@ Image findImage(JNIEnv* env, Store* store_, jstring imageName, jstring folderNam
     Id id_ = store_->catalog.lookup(image_name, folder_name);
     Image image_(id_, *store_);
     if (!image_) {
-        jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
+        jclass exClass = env->FindClass("org/lsst/ccs/daq/ims/DAQException");
         char x[256];
         sprintf(x, "Find image %s in folder %s failed (error=%d)", image_name, folder_name, image_.error());
         env->ThrowNew(exClass, x);
@@ -122,7 +122,7 @@ Image findImage(JNIEnv* env, Store* store_, uint64_t id) {
     Id id_(id);
     Image image_(id_, *store_);
     if (!image_) {
-        jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
+        jclass exClass = env->FindClass("org/lsst/ccs/daq/ims/DAQException");
         char x[256];
         sprintf(x, "Find image id %d failed (error=%d)", id, image_.error());
         env->ThrowNew(exClass, x);
@@ -140,7 +140,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
         return JNI_ERR;
     }
 
-    jclass versionClass = env->FindClass("org/lsst/ccs/daq/imageapi/Version");
+    jclass versionClass = env->FindClass("org/lsst/ccs/daq/ims/Version");
     if (env->ExceptionCheck()) {
         return JNI_ERR;
     }
@@ -180,40 +180,40 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
         return JNI_ERR;
     }
 
-    jclass imageMetaDataClass = env->FindClass("org/lsst/ccs/daq/imageapi/ImageMetaData");
+    jclass imageMetaDataClass = env->FindClass("org/lsst/ccs/daq/ims/ImageMetaData");
     if (env->ExceptionCheck()) {
         return JNI_ERR;
     }
     JCimageMetaDataClass = (jclass) env->NewGlobalRef(imageMetaDataClass);
 
-    JCimageMetaDataConstructor = env->GetMethodID(imageMetaDataClass, "<init>", "(JLjava/lang/String;Ljava/lang/String;Lorg/lsst/ccs/daq/imageapi/Version;IJLjava/util/BitSet;)V");
+    JCimageMetaDataConstructor = env->GetMethodID(imageMetaDataClass, "<init>", "(JLjava/lang/String;Ljava/lang/String;Lorg/lsst/ccs/daq/ims/Version;IJLjava/util/BitSet;)V");
     if (env->ExceptionCheck()) {
         return JNI_ERR;
     }
 
-    jclass sourceMetaDataClass = env->FindClass("org/lsst/ccs/daq/imageapi/SourceMetaData");
+    jclass sourceMetaDataClass = env->FindClass("org/lsst/ccs/daq/ims/SourceMetaData");
     if (env->ExceptionCheck()) {
         return JNI_ERR;
     }
     JCsourceMetaDataClass = (jclass) env->NewGlobalRef(sourceMetaDataClass);
 
-    JCsourceMetaDataConstructor = env->GetMethodID(JCsourceMetaDataClass, "<init>", "(BBLjava/lang/String;Lorg/lsst/ccs/daq/imageapi/Version;IJJBB[I)V");
+    JCsourceMetaDataConstructor = env->GetMethodID(JCsourceMetaDataClass, "<init>", "(BBLjava/lang/String;Lorg/lsst/ccs/daq/ims/Version;IJJBB[I)V");
     if (env->ExceptionCheck()) {
         return JNI_ERR;
     }
 
-    jclass storeClass = env->FindClass("org/lsst/ccs/daq/imageapi/Store");
+    jclass storeClass = env->FindClass("org/lsst/ccs/daq/ims/Store");
     if (env->ExceptionCheck()) {
         return JNI_ERR;
     }
     JCstoreClass = (jclass) env->NewGlobalRef(storeClass);
 
-    JCimageCreatedCallbackMethod = env->GetMethodID(JCstoreClass, "imageCreatedCallback", "(Lorg/lsst/ccs/daq/imageapi/ImageMetaData;)V");
+    JCimageCreatedCallbackMethod = env->GetMethodID(JCstoreClass, "imageCreatedCallback", "(Lorg/lsst/ccs/daq/ims/ImageMetaData;)V");
     if (env->ExceptionCheck()) {
         return JNI_ERR;
     }
 
-    JCimageCompleteCallbackMethod = env->GetMethodID(JCstoreClass, "imageCompleteCallback", "(Lorg/lsst/ccs/daq/imageapi/ImageMetaData;)V");
+    JCimageCompleteCallbackMethod = env->GetMethodID(JCstoreClass, "imageCompleteCallback", "(Lorg/lsst/ccs/daq/ims/ImageMetaData;)V");
     if (env->ExceptionCheck()) {
         return JNI_ERR;
     }
@@ -227,7 +227,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     return JNI_VERSION;
 }
 
-JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_imageapi_Store_attachStore
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_attachStore
 (JNIEnv* env, jobject obj, jstring partition) {
 
     const char *partition_name = env->GetStringUTFChars(partition, 0);
@@ -236,31 +236,31 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_imageapi_Store_attachStore
         env->ReleaseStringUTFChars(partition, partition_name);
         return (jlong) store;
     } catch (DSM::Exception& x) {
-        jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
+        jclass exClass = env->FindClass("org/lsst/ccs/daq/ims/DAQException");
         return env->ThrowNew(exClass, x.what());
     }
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_detachStore
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_detachStore
 (JNIEnv* env, jobject obj, jlong store) {
     delete ((Store*) store);
 }
 
-JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_imageapi_Store_capacity
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_capacity
 (JNIEnv * env, jobject obj, jlong store) {
 
     DSI::LocationSet missing;
     return ((Store *) store)->capacity(missing) << XDS::Page::SIZE2;
 }
 
-JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_imageapi_Store_remaining
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_remaining
 (JNIEnv * env, jobject obj, jlong store) {
 
     DSI::LocationSet missing;
     return ((Store *) store)->remaining(missing) << XDS::Page::SIZE2;
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_listFolders
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_listFolders
 (JNIEnv *env, jobject obj, jlong store, jobject result) {
 
     Catalog& catalog = ((Store *) store)->catalog;
@@ -271,7 +271,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_listFolders
     folders.traverse();
 }
 
-JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_insertFolder
+JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_insertFolder
 (JNIEnv *env, jobject obj, jlong store, jstring name) {
     Catalog& catalog = ((Store *) store)->catalog;
     const char *folder_name = env->GetStringUTFChars(name, 0);
@@ -280,7 +280,7 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_insertFolder
     return rc;
 }
 
-JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_removeFolder
+JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_removeFolder
 (JNIEnv *env, jobject obj, jlong store, jstring name) {
     Catalog& catalog = ((Store *) store)->catalog;
     const char *folder_name = env->GetStringUTFChars(name, 0);
@@ -289,13 +289,13 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_removeFolder
     return rc;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_lsst_ccs_daq_imageapi_Store_findFolder
+JNIEXPORT jboolean JNICALL Java_org_lsst_ccs_daq_ims_Store_findFolder
 (JNIEnv *env, jobject obj, jlong store, jstring name) {
     Catalog& catalog = ((Store *) store)->catalog;
     const char *folder_name = env->GetStringUTFChars(name, 0);
     Folder folder(folder_name, catalog);
     if (!folder) {
-        jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
+        jclass exClass = env->FindClass("org/lsst/ccs/daq/ims/DAQException");
         char x[256];
         sprintf(x, "No such folder %s (error=%d)", folder_name, folder.error());
         env->ThrowNew(exClass, x);
@@ -304,7 +304,7 @@ JNIEXPORT jboolean JNICALL Java_org_lsst_ccs_daq_imageapi_Store_findFolder
     return 1;
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_listImages
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_listImages
 (JNIEnv *env, jobject obj, jlong store, jstring folderName, jobject result) {
     Store* store_ = (Store*) store;
     const char *folder_name = env->GetStringUTFChars(folderName, 0);
@@ -317,7 +317,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_listImages
     env->ReleaseStringUTFChars(folderName, folder_name);
 }
 
-JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_moveImageToFolder
+JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_moveImageToFolder
 (JNIEnv *env, jobject obj, jlong store, jlong id, jstring folderName) {
     Store* store_ = (Store*) store;
     Image image_ = findImage(env, store_, id);
@@ -330,7 +330,7 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_moveImageToFolder
     return rc;
 }
 
-JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_deleteImage
+JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_deleteImage
 (JNIEnv *env, jobject obj, jlong store, jlong id) {
     Store* store_ = (Store*) store;
     Image image_ = findImage(env, store_, id);
@@ -340,7 +340,7 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_deleteImage
     return image_.remove();
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_findSource
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_findSource
   (JNIEnv *env, jobject obj, jlong store, jlong id, jint location) {
     Store* store_ = (Store*) store;
     Image image_ = findImage(env, store_, id);
@@ -350,7 +350,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_findSource
     Source source(image_.id(), location, *store_);
     // When accessing a source for which no data yet exists, it is reported as in error state 33, and source.bool() returns false
     if (source.error() != 0 && source.error() != 33) {
-        jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
+        jclass exClass = env->FindClass("org/lsst/ccs/daq/ims/DAQException");
         char x[256];
         sprintf(x, "Source not found (error=%d id=%ld elementIndex=%d)", source.error(), id, location);
         env->ThrowNew(exClass, x);
@@ -359,7 +359,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_findSource
     return createSourceMetaData(env, source);    
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_addImageToFolder
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_addImageToFolder
 (JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jstring annotation, jint opcode, jobject locations) {
     Store* store_ = (Store*) store;
     const char *image_name = env->GetStringUTFChars(imageName, 0);
@@ -370,7 +370,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_addImageToFolder
     ImageMetadata meta(image_name, locations_, opcode, annotation_);
     Image image(folder_name, meta, *store_);
     if (!image) {
-        jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
+        jclass exClass = env->FindClass("org/lsst/ccs/daq/ims/DAQException");
         char x[256];
         sprintf(x, "Creating image %s in folder %s failed (error=%d)", image_name, folder_name, image.error());
         env->ThrowNew(exClass, x);
@@ -381,7 +381,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_addImageToFolder
     return createImageMetaData(env, image);
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_findImage
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_findImage
 (JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName) {
 
     Store* store_ = (Store*) store;
@@ -390,7 +390,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_findImage
     return createImageMetaData(env, image);
 }
 
-JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_imageapi_Store_openSourceChannel
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_openSourceChannel
 (JNIEnv *env, jobject obj, jlong store, jlong id, jint elementIndex, jboolean write) {
     Store* store_ = (Store*) store;
     Image image = findImage(env, store_, id);
@@ -401,7 +401,7 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_imageapi_Store_openSourceChannel
     Source* source = new Source(image.id(), element, *store_);
     // When accessing a source for which no data yet exists, it is reported as in error state 33, and source.bool() returns false
     if (source->error() != 0 && source->error() != 33) {
-        jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
+        jclass exClass = env->FindClass("org/lsst/ccs/daq/ims/DAQException");
         char x[256];
         sprintf(x, "Source not found (error=%d id=%ld elementIndex=%d)", source->error(), id, elementIndex);
         env->ThrowNew(exClass, x);
@@ -410,7 +410,7 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_imageapi_Store_openSourceChannel
     return (jlong) source;
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_addSourceToImage
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_addSourceToImage
 (JNIEnv *env, jobject obj, jlong store, jlong id, jint elementIndex, jbyte type, jstring platform, jintArray registerValues) {
     Store* store_ = (Store*) store;
     Image image = findImage(env, store_, id);
@@ -436,7 +436,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_addSourceToImage
     return createSourceMetaData(env, source);
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_waitForImage
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_waitForImage
 (JNIEnv *env, jobject obj, jlong store) {
     Store* store_ = (Store*) store;
     Stream stream(*store_);
