@@ -15,10 +15,10 @@ public class SourceMetaData {
     private final Version software;
     private final int firmware;
     private final long serialNumber;
-    private final int length;
+    private final long length;
     private final int[] registerValues;
 
-    SourceMetaData(byte sensor, byte lane, String platform, Version software, int firmware, long serialNumber, int length, byte bay, byte board, int[] registerValues) {
+    SourceMetaData(byte sensor, byte lane, String platform, Version software, int firmware, long serialNumber, long length, byte bay, byte board, int[] registerValues) {
         this.sensor = Source.SourceType.values()[sensor-1];
         this.lane = lane;
         this.platform = platform;
@@ -54,7 +54,7 @@ public class SourceMetaData {
         return serialNumber;
     }
 
-    public int getLength() {
+    public long getLength() {
         return length;
     }
 

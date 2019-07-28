@@ -1,5 +1,7 @@
 package org.lsst.ccs.daq.imageapi;
 
+import java.nio.channels.ByteChannel;
+
 /**
  * Reference to both Source data + metadata buckets
  *
@@ -22,6 +24,10 @@ public class Source implements Comparable<Source> {
             return nRebs;
         }
     }
+    
+    public enum ChannelMode {
+        READ, WRITE, STREAM
+    };
 
     Source(Image image, SourceMetaData metaData) {
         this.metaData = metaData;
@@ -41,7 +47,7 @@ public class Source implements Comparable<Source> {
         return metaData.getLocation();
     }
 
-    public int size() {
+    public long size() {
         return metaData.getLength();
     }
 
@@ -53,8 +59,16 @@ public class Source implements Comparable<Source> {
         return image;
     }
     
-    public DAQSourceChannel openChannel(DAQSourceChannel.Mode mode) {
-        return new DAQSourceChannel(this, mode);
+    public ByteChannel openChannel(ChannelMode mode) throws DAQException {
+        return DAQSourceChannel.open(this, mode);
+    }
+
+    void addStreamListener(StreamListener listener) {
+        image.getStore().addStreamListener(this.image.getMetaData().getId(), this.getLocation().index(), listener);
+    }
+
+    void removeStreamListener(StreamListener listener) {
+        image.getStore().removeStreamListener(this.image.getMetaData().getId(), this.getLocation().index(), listener);
     }
     
     @Override

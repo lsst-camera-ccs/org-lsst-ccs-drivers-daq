@@ -21,11 +21,15 @@ $(OBJ)/MyProcessor.o: MyProcessor.cpp MyProcessor.h
 	mkdir -p $(OBJ)
 	$(CC) -std=c++11 -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -fPIC -o $@ -c $<
 
+$(OBJ)/MyBarrier.o: MyBarrier.cpp MyBarrier.h
+	mkdir -p $(OBJ)
+	$(CC) -std=c++11 -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -fPIC -o $@ -c $<
+
 $(OBJ)/Channel.o: Channel.cpp Channel.h
 	mkdir -p $(OBJ)
 	$(CC) -std=c++11 -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -fPIC -o $@ -c $<
 
-$(LIBTGT)/libccs_daq_ims.so: $(OBJ)/Store.o $(OBJ)/MyFolders.o $(OBJ)/MyProcessor.o $(OBJ)/Channel.o
+$(LIBTGT)/libccs_daq_ims.so: $(OBJ)/Store.o $(OBJ)/MyFolders.o $(OBJ)/MyProcessor.o $(OBJ)/Channel.o $(OBJ)/MyBarrier.o
 	mkdir -p ${LIBTGT}
 	$(CC) -shared -Wl,-rpath=$(DAQ_HOME)/x86/lib -L$(DAQ_HOME)/x86/lib -ldaq_ims -ldaq_dsm -o $@ $^
 	

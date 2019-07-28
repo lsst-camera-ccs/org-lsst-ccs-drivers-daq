@@ -2,11 +2,11 @@ package org.lsst.ccs.daq.example;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
 import java.util.Collections;
 import java.util.Random;
 import org.lsst.ccs.daq.imageapi.Catalog;
 import org.lsst.ccs.daq.imageapi.DAQException;
-import org.lsst.ccs.daq.imageapi.DAQSourceChannel;
 import org.lsst.ccs.daq.imageapi.Folder;
 import org.lsst.ccs.daq.imageapi.Image;
 import org.lsst.ccs.daq.imageapi.ImageMetaData;
@@ -48,7 +48,7 @@ public class WriteExample {
             buffer.putInt(r.nextInt());
         }
         buffer.flip();
-        try (DAQSourceChannel channel = source.openChannel(DAQSourceChannel.Mode.WRITE)) {
+        try (ByteChannel channel = source.openChannel(Source.ChannelMode.WRITE)) {
             channel.write(buffer);
         }
         System.out.println(source);

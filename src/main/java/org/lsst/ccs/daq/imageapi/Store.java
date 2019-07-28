@@ -3,6 +3,8 @@ package org.lsst.ccs.daq.imageapi;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -15,8 +17,10 @@ public class Store implements AutoCloseable {
     private final String partition;
     private final long store;
     private final List<ImageListener> imageListeners = new CopyOnWriteArrayList<>();
+    private final Map<Long, StreamListener> streamListenerMap = new HashMap<>();
     private Thread streamThread;
 
+    
     static {
         System.loadLibrary("ccs_daq_ims");
     }
@@ -63,11 +67,7 @@ public class Store implements AutoCloseable {
                     @Override
                     public void run() {
                         for (;;) {
-                            ImageMetaData meta = waitForImage(store);
-                            Image image = new Image(Store.this, meta);
-                            for (ImageListener l : imageListeners) {
-                                l.imageDelivered(image);
-                            }
+                            waitForImage(store);
                         }
                     }
                 };
@@ -77,10 +77,46 @@ public class Store implements AutoCloseable {
         }
     }
 
+    void imageCreatedCallback(ImageMetaData meta) {
+        Image image = new Image(Store.this, meta);
+        imageListeners.forEach((l) -> {
+            l.imageCreated(image);
+        });
+    }
+
+    void imageCompleteCallback(ImageMetaData meta) {
+        Image image = new Image(Store.this, meta);
+        for (Source source : image.listSources()) {
+            StreamListener l = streamListenerMap.get(image.getMetaData().getId()+source.getLocation().index());
+            if (l != null) {
+                l.imageComplete(source.getMetaData().getLength());
+            }
+        }
+        imageListeners.forEach((l) -> {
+            l.imageComplete(image);
+        });
+    }
+
+    void imageSourceStreamCallback(long imageId, int location, long length) {
+        System.out.printf("Stream %,d\n",length);
+        StreamListener l = streamListenerMap.get(imageId+location);
+        if (l != null) {
+            l.streamLength(length);
+        }
+    }
+    
     public void removeImageListener(ImageListener l) {
         imageListeners.remove(l);
     }
+    
+    void addStreamListener(long imageId, int location, StreamListener listener) {
+        streamListenerMap.put(imageId+location,listener); 
+    }
 
+    void removeStreamListener(long imageId, int location, StreamListener listener) {
+        streamListenerMap.remove(imageId+location);    
+    }
+    
     @Override
     public void close() throws DAQException {
         detachStore(store);
@@ -128,8 +164,8 @@ public class Store implements AutoCloseable {
         return findImage(store, imageName, folderName);
     }
 
-    long openSourceChannel(long id, Location location, DAQSourceChannel.Mode mode) {
-        return openSourceChannel(store, id, location.index(), mode == DAQSourceChannel.Mode.WRITE);
+    long openSourceChannel(long id, Location location, Source.ChannelMode mode) {
+        return openSourceChannel(store, id, location.index(), mode == Source.ChannelMode.WRITE);
     }
 
     SourceMetaData addSourceToImage(long id, Location location, int[] registerValues) {
@@ -169,5 +205,5 @@ public class Store implements AutoCloseable {
 
     private synchronized native SourceMetaData addSourceToImage(long store, long id, int index, byte type, String platform, int[] registerValues);
 
-    private native ImageMetaData waitForImage(long store);
+    private native void waitForImage(long store);
 }
