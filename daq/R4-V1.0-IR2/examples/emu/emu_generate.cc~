@@ -1,0 +1,81 @@
+
+
+#include <stdio.h>
+#include <unistd.h>
+#include <csignal>
+#include <stdlib.h>
+
+#include "ims/Store.hh"
+#include "xds/Page.hh"
+
+#include "Generate.hh"
+
+
+static bool _exit_req = false;
+
+extern "C" {
+  void _quit_signal(int s)
+  {
+    if(_exit_req)
+    {
+      exit(1);
+    }
+    _exit_req=true;
+  };
+};
+
+
+
+static const char FOLDER[] = "emu";
+
+static const char NAME_FORMAT[] = "gent%i";
+
+#define PARTITION argv[1]
+
+static const char SPACE[] = "Remaining store space %llu pages %llu bytes\n";
+
+int main(int argc, char* argv[])
+{
+
+  struct sigaction sigIntHandler;
+  sigIntHandler.sa_handler = _quit_signal;
+  sigemptyset(&sigIntHandler.sa_mask);
+  sigIntHandler.sa_flags = 0;
+  sigaction(SIGINT, &sigIntHandler, NULL);
+
+
+  IMS::Store store(PARTITION);
+
+  printf("partition %s, folder %s\n", PARTITION, FOLDER);
+  DSI::LocationSet missing;
+  unsigned long long remaining_pages = store.remaining(missing);
+  unsigned long long remaining_bytes = remaining_pages<<XDS::Page::SIZE2;
+  
+  printf(SPACE, remaining_pages, remaining_bytes);
+  
+
+  EMU::Editor::Generate generate(store, FOLDER);
+  char buffer[32];
+  char* name = buffer;
+
+  unsigned long long usecs = 10000;
+
+  unsigned remaining = 2000;
+  unsigned idx = 0;
+  while(remaining-- && !_exit_req)
+  {
+    sprintf(name, NAME_FORMAT, idx++);
+    generate.process(1, (const char**)&name, 0);
+    if(usecs) usleep(usecs);
+
+    DSI::LocationSet missing;
+    unsigned long long remaining_pages = store.remaining(missing);
+    unsigned long long remaining_bytes = remaining_pages<<XDS::Page::SIZE2;
+
+    printf(SPACE, remaining_pages, remaining_bytes);
+
+    if(remaining_pages < 1000) break;
+
+  }
+
+}

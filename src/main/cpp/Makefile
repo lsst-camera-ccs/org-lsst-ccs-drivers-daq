@@ -5,7 +5,7 @@ LIBTGT = $(TGT)/$(ARCH)
 CC = g++
 INC = $(TGT)/headers
 
-DAQ_HOME ?= $(HOME)/projects/lsst/daq/R4-V1.0-IR2
+DAQ_HOME ?= ../../../daq/R4-V1.0-IR2
 
 all: $(LIBTGT)/libccs_daq_ims.so
 
