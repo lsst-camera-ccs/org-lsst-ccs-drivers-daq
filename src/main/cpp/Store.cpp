@@ -340,21 +340,23 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_imageapi_Store_deleteImage
     return image_.remove();
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_imageapi_Store_listSources
-(JNIEnv *env, jobject obj, jlong store, jlong id, jobject result) {
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_findSource
+  (JNIEnv *env, jobject obj, jlong store, jlong id, jint location) {
     Store* store_ = (Store*) store;
     Image image_ = findImage(env, store_, id);
     if (!image_) {
-        return;
+        return 0;
     }
-    DAQ::LocationSet locations_ = image_.metadata().elements();
-    DAQ::Location element;
-
-    while (locations_.remove(element)) {
-        Source source(image_.id(), element, *store_);
-        jobject metaData_ = createSourceMetaData(env, source);
-        addObjectToList(env, result, metaData_);
+    Source source(image_.id(), location, *store_);
+    // When accessing a source for which no data yet exists, it is reported as in error state 33, and source.bool() returns false
+    if (source.error() != 0 && source.error() != 33) {
+        jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
+        char x[256];
+        sprintf(x, "Source not found (error=%d id=%ld elementIndex=%d)", source.error(), id, location);
+        env->ThrowNew(exClass, x);
+        return 0;
     }
+    return createSourceMetaData(env, source);    
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_imageapi_Store_addImageToFolder
@@ -397,14 +399,14 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_imageapi_Store_openSourceChannel
     }
     DAQ::Location element(elementIndex);
     Source* source = new Source(image.id(), element, *store_);
-    // TODO: When accessing a source for which no data yet exists, it is reported as in error state 33, and source.bool() returnsArun2@@ false
-//    if (!*source) {
-//        jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
-//        char x[256];
-//        sprintf(x, "Source not found (error=%d id=%ld elementIndex=%d)", source->error(), id, elementIndex);
-//        env->ThrowNew(exClass, x);
-//        delete source;
-//    }
+    // When accessing a source for which no data yet exists, it is reported as in error state 33, and source.bool() returns false
+    if (source->error() != 0 && source->error() != 33) {
+        jclass exClass = env->FindClass("org/lsst/ccs/daq/imageapi/DAQException");
+        char x[256];
+        sprintf(x, "Source not found (error=%d id=%ld elementIndex=%d)", source->error(), id, elementIndex);
+        env->ThrowNew(exClass, x);
+        delete source;
+    }
     return (jlong) source;
 }
 

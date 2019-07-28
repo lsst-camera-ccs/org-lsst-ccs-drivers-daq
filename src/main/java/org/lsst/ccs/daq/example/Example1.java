@@ -26,7 +26,7 @@ public class Example1 {
     public static void main(String[] args) throws DAQException, IOException {
         Store store = new Store("dev");
         System.out.printf("capacity %,d\n", store.getCapacity());
-        System.out.printf("remaining %,d\n", store.getCurrent());
+        System.out.printf("remaining %,d\n", store.getRemaining());
         final Catalog catalog = store.getCatalog();
         List<Folder> list = catalog.list();
         Collections.sort(list);
@@ -88,7 +88,7 @@ public class Example1 {
         start = System.nanoTime();
         for (Source source : sources) {
             try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ)) {
-                int rebs = source.getMetaData().getSensor().getNRebs();
+                int rebs = source.getMetaData().getSensor().getCCDCount();
                 int outputSize = (int) source.getMetaData().getLength() / 9 * 16 / rebs / 4;
                 IntBufferWriter[] output = new IntBufferWriter[16 * rebs];
                 for (int j = 0; j < output.length; j++) {

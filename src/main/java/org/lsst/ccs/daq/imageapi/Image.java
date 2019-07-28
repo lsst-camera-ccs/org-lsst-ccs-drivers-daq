@@ -5,7 +5,14 @@ import java.util.List;
 
 /**
  * Image is a reference to an image instance, which may contain
- * multiple Sources
+ * multiple Sources. Existing images can be obtained from folders, or
+ * by listening for newly created images. New writable images can be
+ * created within a folder. Each source within the image
+ * corresponds to one REB.
+ * @see Folder#listImages()
+ * @see Folder#find(java.lang.String)
+ * @see Folder#insert(ImageMetaData) 
+ * @see Store#addImageListener(ImageListener) 
  * @author tonyj
  */
 public class Image implements Comparable<Image> {
@@ -23,16 +30,23 @@ public class Image implements Comparable<Image> {
         this.metaData = metaData;
     }
     
+    /**
+     * Get the metadata associated with this image
+     * @return The corresponding metadata
+     */
     public ImageMetaData getMetaData() {
         return metaData;
     }
     
+    /**
+     * List the sources associated with this image. Each source represents the 
+     * data obtained from a single REB.
+     * @return The list of sources.
+     */
     public List<Source> listSources() {
         List<Source> result = new ArrayList<>();
-        List<SourceMetaData> metadata = new ArrayList<>();
-        store.listSources(metaData.getId(), metadata);
-        metadata.forEach((data) -> {
-            result.add(new Source(this, data));
+        metaData.getLocations().forEach((location) -> {
+            result.add(new Source(this, store.findSource(metaData.getId(), location.index())));
         });
         return result;       
     }
@@ -44,7 +58,7 @@ public class Image implements Comparable<Image> {
      * <li>metadata buckets</li>
      * <li>Catalog entry</li>
      * </ul>
-     * @throws DAQException 
+     * @throws DAQException If something goes wrong.
      */
     public void delete() throws DAQException {
         int rc = store.deleteImage(metaData.getId());
@@ -58,7 +72,7 @@ public class Image implements Comparable<Image> {
     /**
      * Move the image to a different folder
      * @param folderName The folder to move to
-     * @throws org.lsst.ccs.daq.imageapi.DAQException
+     * @throws DAQException If the image move fails
      */
     public void moveTo(String folderName) throws DAQException {
         int rc = store.moveImageToFolder(this.metaData.getId(), folderName);
@@ -67,6 +81,13 @@ public class Image implements Comparable<Image> {
         }
     }
 
+    /**
+     * Adds a new source to an image. This method will only succeed if the image is writable
+     * @see Folder#insert(ImageMetaData) 
+     * @param location The location corresponding to the source to be added.
+     * @param registerValues The register values (meta-data) to be associated with the new source.
+     * @return The created source
+     */
     public Source addSource(Location location, int[] registerValues) {
         if (!metaData.getLocations().contains(location)) {
             throw new IllegalArgumentException("Invalid location "+location+" for image "+this);

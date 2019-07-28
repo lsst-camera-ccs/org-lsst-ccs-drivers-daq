@@ -3,7 +3,9 @@ package org.lsst.ccs.daq.imageapi;
 import java.nio.channels.ByteChannel;
 
 /**
- * Reference to both Source data + metadata buckets
+ * A reference to a source within an image. Each source represents the data
+ * from the set of CCDs connected to a given REB.
+ * @see Image#listSources()
  *
  * @author tonyj
  */
@@ -13,20 +15,46 @@ public class Source implements Comparable<Source> {
     private final Image image;
 
     public enum SourceType {
-        WAVEFRONT(1), GUIDER(2), SCIENCE(3);
-        private final int nRebs;
+        /**
+         * A WREB source.
+         */
+        WAVEFRONT(1), 
+        /**
+         * A GREB source
+         */
+        GUIDER(2), 
+        /**
+         * A Science REB source
+         */
+        SCIENCE(3);
+        private final int CCDCount;
 
-        SourceType(int nRebs) {
-            this.nRebs = nRebs;
+        SourceType(int CCDCount) {
+            this.CCDCount = CCDCount;
         }
 
-        public int getNRebs() {
-            return nRebs;
+        /**
+         * The number of CCDs associated with the source type.
+         * @return 
+         */
+        public int getCCDCount() {
+            return CCDCount;
         }
     }
     
     public enum ChannelMode {
-        READ, WRITE, STREAM
+        /**
+         * A channel opened for reading data from an image already existing in the Store.
+         */
+        READ, 
+        /**
+         * A channel for writing data to a newly created image. 
+         */
+        WRITE, 
+        /**
+         * A channel opened for streaming data from an image as it is created in the store.
+         */
+        STREAM
     };
 
     Source(Image image, SourceMetaData metaData) {
@@ -36,21 +64,34 @@ public class Source implements Comparable<Source> {
 
     /**
      * Get meta-data associated with this source
-     *
-     * @return
+     * @return The associate metadata.
      */
     public SourceMetaData getMetaData() {
         return metaData;
     }
 
+    /**
+     * Get the location within the focal plane of this source
+     * @return THe location.
+     */
     public Location getLocation() {
         return metaData.getLocation();
     }
 
+    /**
+     * The total size of the raw data associated with this source. This may be zero
+     * of the source has been newly created and not yet written, or if the source
+     * is in the process of being streamed to the DAQ store.
+     * @return The image size, or <code>0</code> if the image is not completely written.
+     */
     public long size() {
         return metaData.getLength();
     }
 
+    /**
+     * The type of REB this source corresponds to.
+     * @return The source type.
+     */
     public SourceType getSourceType() {
         return metaData.getSensor();
     }
@@ -59,6 +100,13 @@ public class Source implements Comparable<Source> {
         return image;
     }
     
+    /**
+     * Open a channel for reading or writing data to this source.
+     * @param mode The mode to open the channel.
+     * @return The created channel.
+     * @throws DAQException If the mode is invalid for the current state of this source, 
+     * or some other error occurs.
+     */
     public ByteChannel openChannel(ChannelMode mode) throws DAQException {
         return DAQSourceChannel.open(this, mode);
     }

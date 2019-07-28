@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
+import java.time.Duration;
 
 /**
  * A channel for reading or writing DAQ raw data
@@ -55,6 +56,15 @@ class DAQSourceChannel implements ByteChannel {
         }
     }
 
+    void checkOpen(ByteBuffer dst) throws IOException {
+        if (source_ == 0) {
+            throw new IOException("Channel not open for read");
+        }
+        if (!dst.isDirect()) {
+            throw new IOException("Supplied ByteBuffer is not direct");
+        }
+    }
+
     @Override
     public int read(ByteBuffer dst) throws IOException {
         throw new IOException("Channel not open for read.");
@@ -83,12 +93,7 @@ class DAQSourceChannel implements ByteChannel {
 
         @Override
         public int read(ByteBuffer dst) throws IOException {
-            if (source_ == 0) {
-                throw new IOException("Channel not open for read");
-            }
-            if (!dst.isDirect()) {
-                throw new IOException("Supplied ByteBuffer is not direct");
-            }
+            checkOpen(dst);
             int l = (int) Math.min(dst.remaining(), length - offset);
             if (l == 0) {
                 return -1;
@@ -113,41 +118,25 @@ class DAQSourceChannel implements ByteChannel {
         private volatile boolean isComplete = false;
         private long offset = 0;
         private final Source source;
+        private static final Duration READ_TIMEOUT = Duration.ofSeconds(10);
 
+        @SuppressWarnings("LeakingThisInConstructor")
         StreamingDAQSourceChannel(Source source) throws DAQException {
             super(source, Source.ChannelMode.STREAM);
             this.source = source;
-            // TOOD: Race condition here, what if stream is already complete?
             source.addStreamListener(this);
         }
 
         @Override
         public int read(ByteBuffer dst) throws IOException {
-            if (source_ == 0) {
-                throw new IOException("Channel not open for read");
-            }
-            if (!dst.isDirect()) {
-                throw new IOException("Supplied ByteBuffer is not direct");
-            }
-            int l;
-            synchronized (this) {
-                l = (int) Math.min(dst.remaining(), length - offset);
-                while (l == 0) {
-                    try {
-                        if (isComplete) {
-                            return -1;
-                        } // TODO: We need to have a timeout
-                        else {
-                            wait();
-                        }
-                        l = (int) Math.min(dst.remaining(), length - offset);
-                    } catch (InterruptedException x) {
-                        throw new InterruptedIOException();
-                    }
-                }
+            checkOpen(dst);
+            int l = waitForData(dst);
+            if (l < 0) {
+                return -1;
             }
             int position = dst.position();
             int err;
+            // TODO: Check if synchronizing on store is really necessary. Mike says not.
             synchronized (store) {
                 err = read(source_, dst, position, offset, l);
             }
@@ -159,21 +148,39 @@ class DAQSourceChannel implements ByteChannel {
             return l;
         }
 
-        @Override
-        public void streamLength(long length) {
-            synchronized (this) {
-                this.length = length;
-                this.notifyAll();
+        private synchronized int waitForData(ByteBuffer dst) throws IOException {
+            int l = (int) Math.min(dst.remaining(), length - offset);
+            long finishBy = System.currentTimeMillis() + READ_TIMEOUT.toMillis();
+            while (l == 0) {
+                try {
+                    if (isComplete) {
+                        return -1;
+                    } else {
+                        long remainingTime = finishBy - System.currentTimeMillis();
+                        if (remainingTime <= 0) {
+                            throw new IOException("Streaming read timed out");
+                        }
+                        wait(remainingTime);
+                    }
+                    l = (int) Math.min(dst.remaining(), length - offset);
+                } catch (InterruptedException x) {
+                    throw new InterruptedIOException();
+                }
             }
+            return l;
         }
 
         @Override
-        public void imageComplete(long length) {
-            synchronized (this) {
-                this.length = length;
-                this.isComplete = true;
-                this.notifyAll();
-            }
+        public synchronized void streamLength(long length) {
+            this.length = length;
+            this.notifyAll();
+        }
+
+        @Override
+        public synchronized void imageComplete(long length) {
+            this.length = length;
+            this.isComplete = true;
+            this.notifyAll();
         }
 
         @Override
@@ -190,13 +197,9 @@ class DAQSourceChannel implements ByteChannel {
             super(source, Source.ChannelMode.WRITE);
         }
 
+        @Override
         public int write(ByteBuffer src) throws IOException {
-            if (source_ == 0) {
-                throw new IOException("Channel not open for write");
-            }
-            if (!src.isDirect()) {
-                throw new IOException("Supplied ByteBuffer is not direct");
-            }
+            checkOpen(src);
             int remaining = src.remaining();
             int position = src.position();
             int err;
@@ -206,8 +209,9 @@ class DAQSourceChannel implements ByteChannel {
             if (err != 0) {
                 throw new IOException(String.format("Error writing DAQ data (err=%d)", err));
             }
-            src.position(position + remaining);
-            return remaining;
+            int lengthRead = remaining - src.remaining();
+            src.position(position + lengthRead);
+            return lengthRead;
         }
     }
 

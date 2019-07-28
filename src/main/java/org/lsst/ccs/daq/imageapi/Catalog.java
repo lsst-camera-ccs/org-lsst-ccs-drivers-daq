@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A catalog contains a list of top level folders. The catalog can be obtained
- * from the associated Store.
+ * A catalog contains a list of folders associated with a store. 
+ * The catalog can be obtained from the associated Store.
+ * @see Store#getCatalog() 
  *
  * @author tonyj
  */
@@ -21,7 +22,8 @@ public class Catalog {
      * Find the specified folder by name.
      *
      * @param folderName The folder name to search for
-     * @return The folder, or <code>null<</code> if the folder does not exist
+     * @return The folder, or <code>null</code> if the folder does not exist
+     * @throws DAQException If some other error occurs
      */
     public Folder find(String folderName) throws DAQException {
         boolean ok = store.findFolder(folderName);
@@ -33,8 +35,8 @@ public class Catalog {
     }
 
     /**
-     * Return a list of all available folders
-     *
+     * Return a list of all available folders. The list is not sorted, but Folder
+     * implements Comparable so it can be readily sorted if desired.
      * @return The list of folders
      */
     public List<Folder> list() {
@@ -46,6 +48,12 @@ public class Catalog {
         return result;
     }
 
+    /** 
+     * Insert a new folder into the catalog.
+     * @param folderName The name of the new folder to create
+     * @return The newly created folder
+     * @throws Catalog.CatalogException If the folder cannot be created.
+     */
     public Folder insert(String folderName) throws CatalogException {
         int rc = store.insertFolder(folderName);
         if (rc != 0) {
@@ -54,6 +62,11 @@ public class Catalog {
         return new Folder(store, folderName);
     }
 
+    /**
+     * Remove a folder.
+     * @param folderName The name of the folder to be removed
+     * @throws Catalog.CatalogException If the folder cannot be removed.
+     */
     public void remove(String folderName) throws CatalogException {
         int rc = store.removeFolder(folderName);
         if (rc != 0) {
@@ -61,9 +74,12 @@ public class Catalog {
         }
     }
 
-    private static class CatalogException extends DAQException {
+    /**
+     * An exception throw when errors occur when operating on the catalog.
+     */
+    public static class CatalogException extends DAQException {
 
-        public CatalogException(String message, String folderName, int rc) {
+        CatalogException(String message, String folderName, int rc) {
             super(String.format("%s: %s (rc=%d)", message, folderName, rc));
         }
     }

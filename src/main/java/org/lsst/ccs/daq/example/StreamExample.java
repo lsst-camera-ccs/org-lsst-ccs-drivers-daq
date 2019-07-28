@@ -70,7 +70,7 @@ public class StreamExample {
                 }
                 long stop = System.nanoTime();
                 System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
-            } catch (DAQException | IOException x) {
+            } catch (Throwable x) {
                 LOG.log(Level.SEVERE, "Error reading image", x);
             }
         }
