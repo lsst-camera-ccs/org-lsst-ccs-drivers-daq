@@ -35,11 +35,12 @@ public class Catalog {
     }
 
     /**
-     * Return a list of all available folders. The list is not sorted, but Folder
+     * Return a list of all available folders.The list is not sorted, but Folder
      * implements Comparable so it can be readily sorted if desired.
      * @return The list of folders
+     * @throws DAQException
      */
-    public List<Folder> list() {
+    public List<Folder> list() throws DAQException {
         List<Folder> result = new ArrayList<>();
         List<String> folderNames = store.listFolders();
         folderNames.forEach((name) -> {
@@ -53,8 +54,9 @@ public class Catalog {
      * @param folderName The name of the new folder to create
      * @return The newly created folder
      * @throws Catalog.CatalogException If the folder cannot be created.
+     * @throws DAQException If something else goes wrong
      */
-    public Folder insert(String folderName) throws CatalogException {
+    public Folder insert(String folderName) throws CatalogException, DAQException {
         int rc = store.insertFolder(folderName);
         if (rc != 0) {
             throw new CatalogException("Error creating folder", folderName, rc);
@@ -66,8 +68,9 @@ public class Catalog {
      * Remove a folder.
      * @param folderName The name of the folder to be removed
      * @throws Catalog.CatalogException If the folder cannot be removed.
+     * @throws DAQException If something else goes wrong
      */
-    public void remove(String folderName) throws CatalogException {
+    public void remove(String folderName) throws CatalogException, DAQException {
         int rc = store.removeFolder(folderName);
         if (rc != 0) {
             throw new CatalogException("Error creating folder", folderName, rc);
@@ -80,7 +83,7 @@ public class Catalog {
     public static class CatalogException extends DAQException {
 
         CatalogException(String message, String folderName, int rc) {
-            super(String.format("%s: %s (rc=%d)", message, folderName, rc));
+            super(String.format("%s: %s", message, folderName), rc);
         }
     }
 

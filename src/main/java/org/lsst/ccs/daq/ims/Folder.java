@@ -21,11 +21,12 @@ public class Folder implements Comparable<Folder> {
     }
 
     /**
-     * Obtain a list of images in this folder. The returned list is not sorted, 
+     * Obtain a list of images in this folder.The returned list is not sorted, 
      * but implements comparable so can easily be sorted if required.
      * @return The list of folders.
+     * @throws DAQException
      */
-    public List<Image> listImages() {
+    public List<Image> listImages() throws DAQException {
         List<Image> result = new ArrayList<>();
         List<ImageMetaData> metaData = new ArrayList<>();
         store.listImages(name, metaData);

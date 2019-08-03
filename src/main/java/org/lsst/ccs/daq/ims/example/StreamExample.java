@@ -36,10 +36,6 @@ public class StreamExample {
             @Override
             public void imageComplete(Image image) {
                 System.out.println("Image complete " + image);
-                List<Source> sources = image.listSources();
-                sources.forEach((source) -> {
-                    System.out.println(source);
-                });
             }
         });
     }
@@ -54,22 +50,24 @@ public class StreamExample {
 
         @Override
         public void run() {
-            List<Source> sources = image.listSources();
-            Source source = sources.get(0);
-            try (ByteChannel channel = source.openChannel(Source.ChannelMode.STREAM)) {
-                ByteBuffer buffer = ByteBuffer.allocateDirect(100_000);
-                long totalReadSize = 0;
-                long start = System.nanoTime();
-                for (;;) {
-                    buffer.clear();
-                    int l = channel.read(buffer);
-                    if (l < 0) {
-                        break;
+            try {
+                List<Source> sources = image.listSources();
+                Source source = sources.get(0);
+                try (ByteChannel channel = source.openChannel(Source.ChannelMode.STREAM)) {
+                    ByteBuffer buffer = ByteBuffer.allocateDirect(100_000);
+                    long totalReadSize = 0;
+                    long start = System.nanoTime();
+                    for (;;) {
+                        buffer.clear();
+                        int l = channel.read(buffer);
+                        if (l < 0) {
+                            break;
+                        }
+                        totalReadSize += l;
                     }
-                    totalReadSize += l;
+                    long stop = System.nanoTime();
+                    System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
                 }
-                long stop = System.nanoTime();
-                System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
             } catch (Throwable x) {
                 LOG.log(Level.SEVERE, "Error reading image", x);
             }

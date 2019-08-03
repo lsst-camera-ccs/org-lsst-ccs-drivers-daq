@@ -39,15 +39,16 @@ public class Image implements Comparable<Image> {
     }
     
     /**
-     * List the sources associated with this image. Each source represents the 
+     * List the sources associated with this image.Each source represents the 
      * data obtained from a single REB.
      * @return The list of sources.
+     * @throws org.lsst.ccs.daq.ims.DAQException
      */
-    public List<Source> listSources() {
+    public List<Source> listSources() throws DAQException {
         List<Source> result = new ArrayList<>();
-        metaData.getLocations().forEach((location) -> {
+        for (Location location : metaData.getLocations()) {
             result.add(new Source(this, store.findSource(metaData.getId(), location.index())));
-        });
+        }
         return result;       
     }
            
@@ -82,13 +83,14 @@ public class Image implements Comparable<Image> {
     }
 
     /**
-     * Adds a new source to an image. This method will only succeed if the image is writable
-     * @see Folder#insert(ImageMetaData) 
+     * Adds a new source to an image.This method will only succeed if the image is writable
      * @param location The location corresponding to the source to be added.
      * @param registerValues The register values (meta-data) to be associated with the new source.
      * @return The created source
+     * @throws DAQException
+     * @see Folder#insert(ImageMetaData) 
      */
-    public Source addSource(Location location, int[] registerValues) {
+    public Source addSource(Location location, int[] registerValues) throws DAQException {
         if (!metaData.getLocations().contains(location)) {
             throw new IllegalArgumentException("Invalid location "+location+" for image "+this);
         }

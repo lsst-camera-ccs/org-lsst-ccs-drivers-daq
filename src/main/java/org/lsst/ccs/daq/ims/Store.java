@@ -6,6 +6,8 @@ import java.util.BitSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A connection to the store within a specified DAQ partition. A store is the
@@ -21,6 +23,7 @@ public class Store implements AutoCloseable {
     private final List<ImageListener> imageListeners = new CopyOnWriteArrayList<>();
     private final Map<Long, Map<Integer, List<StreamListener>>> imageStreamMap = new ConcurrentHashMap<>();
     private Thread imageThread;
+    private static final Logger LOG = Logger.getLogger(Store.class.getName());
 
     static {
         System.loadLibrary("ccs_daq_ims");
@@ -62,8 +65,9 @@ public class Store implements AutoCloseable {
      * The total capacity in bytes of this store.
      *
      * @return The capacity
+     * @throws DAQException If unable to access to DAQ store
      */
-    public long getCapacity() {
+    public long getCapacity() throws DAQException {
         return capacity(store);
     }
 
@@ -71,8 +75,9 @@ public class Store implements AutoCloseable {
      * The storage capacity remaining (unused) in bytes.
      *
      * @return Bytes remaining unused.
+     * @throws DAQException If unable to access the DAQ store
      */
-    public long getRemaining() {
+    public long getRemaining() throws DAQException {
         return remaining(store);
     }
 
@@ -90,9 +95,14 @@ public class Store implements AutoCloseable {
                 imageThread = new Thread("ImageStreamThread_" + partition) {
 
                     @Override
+                    @SuppressWarnings("UseSpecificCatch")
                     public void run() {
-                        for (;;) {
-                            waitForImage(store);
+                        try {
+                            for (;;) {
+                                waitForImage(store);
+                            }
+                        } catch (Throwable x) {
+                            LOG.log(Level.SEVERE, "ImageStreamThread exiting",x);
                         }
                     }
                 };
@@ -119,6 +129,7 @@ public class Store implements AutoCloseable {
      */
     void imageCreatedCallback(ImageMetaData meta) {
         Image image = new Image(Store.this, meta);
+        LOG.log(Level.INFO, "Image created: {0}", image);
         synchronized(imageStreamMap) {
             imageStreamMap.put(image.getMetaData().getId(), new ConcurrentHashMap<>());
         }
@@ -134,15 +145,20 @@ public class Store implements AutoCloseable {
      */
     void imageCompleteCallback(ImageMetaData meta) {
         Image image = new Image(Store.this, meta);
+        LOG.log(Level.INFO, "Image complete: {0}", image);
         Map<Integer, List<StreamListener>> streamListeners;
         synchronized (imageStreamMap) {
             streamListeners = imageStreamMap.remove(image.getMetaData().getId());
         }
         streamListeners.forEach((locationIndex, listeners) -> {
-            SourceMetaData sourceMeta = findSource(meta.getId(), locationIndex);
-            listeners.forEach((l) -> {
-                l.imageComplete(sourceMeta.getLength());
-            });
+            try {
+                SourceMetaData sourceMeta = findSource(meta.getId(), locationIndex);
+                listeners.forEach((l) -> {
+                    l.imageComplete(sourceMeta.getLength());
+                });
+            } catch (DAQException ex) {
+                LOG.log(Level.SEVERE,"Exception during image complete callback", ex);
+            }
         });
         imageListeners.forEach((l) -> {
             l.imageComplete(image);
@@ -158,6 +174,7 @@ public class Store implements AutoCloseable {
      * source
      */
     void imageSourceStreamCallback(long imageId, int location, long length) {
+        LOG.log(Level.FINE, "Image stream: imageId={0} location={1} length={2}", new Object[]{imageId, location, length});
         Map<Integer, List<StreamListener>> streamListeners = imageStreamMap.get(imageId);
         if (streamListeners != null) {
             List<StreamListener> listeners = streamListeners.get(location);
@@ -175,10 +192,14 @@ public class Store implements AutoCloseable {
             streamListeners = imageStreamMap.get(imageId);
         }
         if (streamListeners == null) {
-            // This indicates no streaming is currently happening for this image, we need to report 
-            // the final length immediately to avoid hang.
-            SourceMetaData sourceMeta = findSource(imageId, location);
-            listener.imageComplete(sourceMeta.getLength());
+            try {
+                // This indicates no streaming is currently happening for this image, we need to report
+                // the final length immediately to avoid hang.
+                SourceMetaData sourceMeta = findSource(imageId, location);
+                listener.imageComplete(sourceMeta.getLength());
+            } catch (DAQException ex) {
+                LOG.log(Level.SEVERE, "Unexpected exception while adding stream listener", ex);
+            }
         } else {
             List<StreamListener> listeners = streamListeners.get(location);
             if (listeners == null) {
@@ -204,37 +225,37 @@ public class Store implements AutoCloseable {
         detachStore(store);
     }
 
-    List<String> listFolders() {
+    List<String> listFolders() throws DAQException {
         List<String> result = new ArrayList<>();
         listFolders(store, result);
         return result;
     }
 
-    int insertFolder(String folderName) {
+    int insertFolder(String folderName) throws DAQException {
         return insertFolder(store, folderName);
     }
 
-    int removeFolder(String folderName) {
+    int removeFolder(String folderName) throws DAQException {
         return removeFolder(store, folderName);
     }
 
-    boolean findFolder(String folderName) {
+    boolean findFolder(String folderName) throws DAQException {
         return findFolder(store, folderName);
     }
 
-    void listImages(String folderName, List<ImageMetaData> result) {
+    void listImages(String folderName, List<ImageMetaData> result) throws DAQException {
         listImages(store, folderName, result);
     }
 
-    int moveImageToFolder(long id, String folderName) {
+    int moveImageToFolder(long id, String folderName) throws DAQException {
         return moveImageToFolder(store, id, folderName);
     }
 
-    int deleteImage(long id) {
+    int deleteImage(long id) throws DAQException {
         return deleteImage(store, id);
     }
 
-    SourceMetaData findSource(long id, int location) {
+    SourceMetaData findSource(long id, int location) throws DAQException {
         return findSource(store, id, location);
     }
 
@@ -242,50 +263,52 @@ public class Store implements AutoCloseable {
         return addImageToFolder(store, imageName, folderName, meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
     }
 
-    ImageMetaData findImage(String imageName, String folderName) {
+    ImageMetaData findImage(String imageName, String folderName) throws DAQException {
         return findImage(store, imageName, folderName);
     }
 
-    long openSourceChannel(long id, Location location, Source.ChannelMode mode) {
+    long openSourceChannel(long id, Location location, Source.ChannelMode mode) throws DAQException {
         return openSourceChannel(store, id, location.index(), mode == Source.ChannelMode.WRITE);
     }
 
-    SourceMetaData addSourceToImage(long id, Location location, int[] registerValues) {
+    SourceMetaData addSourceToImage(long id, Location location, int[] registerValues) throws DAQException {
         return addSourceToImage(store, id, location.index(), (byte) location.type().getCCDCount(), "test-platform", registerValues);
     }
 
     // Native methods    
-    private synchronized native long attachStore(String partition);
+    private synchronized native long attachStore(String partition) throws DAQException;
 
-    private synchronized native void detachStore(long store);
+    private synchronized native void detachStore(long store) throws DAQException;
 
-    private synchronized native long capacity(long store);
+    private synchronized native long capacity(long store) throws DAQException;
 
-    private synchronized native long remaining(long store);
+    private synchronized native long remaining(long store) throws DAQException;
 
-    private synchronized native void listFolders(long store, List<String> result);
+    private synchronized native void listFolders(long store, List<String> result) throws DAQException;
 
-    private synchronized native int insertFolder(long store, String folderName);
+    private synchronized native int insertFolder(long store, String folderName) throws DAQException;
 
-    private synchronized native int removeFolder(long store, String folderName);
+    private synchronized native int removeFolder(long store, String folderName) throws DAQException;
 
-    private synchronized native boolean findFolder(long store, String folderName);
+    private synchronized native boolean findFolder(long store, String folderName) throws DAQException;
 
-    private synchronized native void listImages(long store, String folderName, List<ImageMetaData> result);
+    private synchronized native void listImages(long store, String folderName, List<ImageMetaData> result) throws DAQException;
 
-    private synchronized native int moveImageToFolder(long store, long id, String folderName);
+    private synchronized native int moveImageToFolder(long store, long id, String folderName) throws DAQException;
 
-    private synchronized native int deleteImage(long store, long id);
+    private synchronized native int deleteImage(long store, long id) throws DAQException;
 
-    private synchronized native SourceMetaData findSource(long store, long id, int location);
+    private synchronized native SourceMetaData findSource(long store, long id, int location) throws DAQException;
 
     private synchronized native ImageMetaData addImageToFolder(long store, String imageName, String folderName, String annotation, int opcode, BitSet elements) throws DAQException;
 
-    private synchronized native ImageMetaData findImage(long store, String imageName, String folderName);
+    private synchronized native ImageMetaData findImage(long store, String imageName, String folderName) throws DAQException;
 
-    private synchronized native long openSourceChannel(long store, long id, int index, boolean write);
+    private synchronized native long openSourceChannel(long store, long id, int index, boolean write) throws DAQException;
 
-    private synchronized native SourceMetaData addSourceToImage(long store, long id, int index, byte type, String platform, int[] registerValues);
+    private synchronized native SourceMetaData addSourceToImage(long store, long id, int index, byte type, String platform, int[] registerValues) throws DAQException;
 
-    private native void waitForImage(long store);
+    private native void waitForImage(long store) throws DAQException;
+
+    static native String decodeException(int rc);
 }
