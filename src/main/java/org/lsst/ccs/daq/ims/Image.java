@@ -97,6 +97,13 @@ public class Image implements Comparable<Image> {
         return new Source(this, store.addSourceToImage(metaData.getId(), location, registerValues));
     }
     
+    public Source findSource(Location location) throws DAQException {
+        if (!metaData.getLocations().contains(location)) {
+            throw new IllegalArgumentException("Invalid location "+location+" for image "+this);
+        }
+        return new Source(this, store.findSource(metaData.getId(), location.index()));
+    }
+    
     Store getStore() {
         return store;
     }

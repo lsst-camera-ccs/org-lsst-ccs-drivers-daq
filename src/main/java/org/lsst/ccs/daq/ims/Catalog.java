@@ -26,11 +26,12 @@ public class Catalog {
      * @throws DAQException If some other error occurs
      */
     public Folder find(String folderName) throws DAQException {
-        boolean ok = store.findFolder(folderName);
-        if (ok) {
+        try { 
+            store.findFolder(folderName);
             return new Folder(store, folderName);
-        } else {
-            return null;
+        } catch (DAQException x) {
+            if (x.rc() == 1) return null;
+            else throw x;
         }
     }
 

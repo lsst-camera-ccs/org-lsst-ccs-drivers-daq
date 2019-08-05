@@ -1,3 +1,4 @@
 target/
-test
 *.log
+/nbproject/
+/src/main/cpp/nbproject/

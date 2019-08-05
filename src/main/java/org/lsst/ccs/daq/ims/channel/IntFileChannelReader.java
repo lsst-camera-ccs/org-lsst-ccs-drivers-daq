@@ -1,7 +1,6 @@
 package org.lsst.ccs.daq.ims.channel;
 
 import java.io.IOException;
-import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 
 /**

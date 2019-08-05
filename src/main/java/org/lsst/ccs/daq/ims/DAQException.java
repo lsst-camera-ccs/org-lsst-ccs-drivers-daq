@@ -6,10 +6,10 @@ package org.lsst.ccs.daq.ims;
  */
 public class DAQException extends Exception {
 
-    private int rc;
-    private String decoded;
+    private final int rc;
     DAQException(String message) {
         super(message);
+        rc = -1;
     }
     
     DAQException(String message, int rc) {
@@ -19,6 +19,9 @@ public class DAQException extends Exception {
     DAQException(String message, int rc, String decoded) {
         super(String.format("%s (rc=%d %s)", message, rc, decoded));
         this.rc = rc;
-        this.decoded = decoded;
+    }
+
+    public int rc() {
+        return rc;
     }
 }

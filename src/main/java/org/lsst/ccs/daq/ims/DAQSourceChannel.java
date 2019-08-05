@@ -209,9 +209,8 @@ class DAQSourceChannel implements ByteChannel {
             if (err != 0) {
                 throw new IOException(String.format("Error writing DAQ data (err=%d)", err));
             }
-            int lengthRead = remaining - src.remaining();
-            src.position(position + lengthRead);
-            return lengthRead;
+            src.position(position + remaining);
+            return remaining - position;
         }
     }
 

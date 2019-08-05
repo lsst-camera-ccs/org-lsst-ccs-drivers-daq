@@ -7,6 +7,7 @@
 #include "ims/Image.hh"
 #include "ims/Source.hh"
 #include "ims/Exception.hh"
+#include "dsm/Exception.hh"
 #include "ims/SourceMetadata.hh"
 #include "daq/LocationSet.hh"
 #include "dsm/Exception.hh"
@@ -15,6 +16,8 @@
 #include "MyFolders.h"
 #include "MyProcessor.h"
 #include "MyBarrier.h"
+
+#define MESSAGE_LENGTH 256
 
 using namespace IMS;
 
@@ -38,7 +41,7 @@ static jclass JCexClass;
 static jmethodID JCexConstructor;
 
 jstring decode(JNIEnv* env, jint error) {
-   const char* decoded = IMS::Exception::decode(error);
+   const char* decoded = DSM::Exception::decode(error);
    // TODO: Check for other exceptions
    return env->NewStringUTF(decoded);
 }
@@ -125,8 +128,8 @@ Image findImage(JNIEnv* env, Store* store_, jstring imageName, jstring folderNam
     Id id_ = store_->catalog.lookup(image_name, folder_name);
     Image image_(id_, *store_);
     if (!image_) {
-        char x[256];
-        sprintf(x, "Find image %s in folder %s failed", image_name, folder_name);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Find image %s in folder %s failed", image_name, folder_name);
         throwDAQException(env, x, image_.error());
     }
     env->ReleaseStringUTFChars(folderName, folder_name);
@@ -138,8 +141,8 @@ Image findImage(JNIEnv* env, Store* store_, uint64_t id) {
     Id id_(id);
     Image image_(id_, *store_);
     if (!image_) {
-        char x[256];
-        sprintf(x, "Find image id %ld failed", id);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Find image id %ld failed", id);
         throwDAQException(env, x, image_.error());
     }
     return image_;
@@ -320,8 +323,8 @@ JNIEXPORT jboolean JNICALL Java_org_lsst_ccs_daq_ims_Store_findFolder
     const char *folder_name = env->GetStringUTFChars(name, 0);
     Folder folder(folder_name, catalog);
     if (!folder) {
-        char x[256];
-        sprintf(x, "No such folder %s", folder_name);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "No such folder %s", folder_name);
         throwDAQException(env, x, folder.error());
     }
     env->ReleaseStringUTFChars(name, folder_name);
@@ -334,8 +337,8 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_listImages
     const char *folder_name = env->GetStringUTFChars(folderName, 0);
     Folder folder(folder_name, store_->catalog);
     if (!folder) {
-        char x[256];
-        sprintf(x, "No such folder %s", folder_name);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "No such folder %s", folder_name);
         throwDAQException(env, x, folder.error());
         return;
     }
@@ -381,8 +384,8 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_findSource
     Source source(image_.id(), element, *store_);
     // When accessing a source for which no data yet exists, it is reported as in error state 33, and source.bool() returns false
     if (source.error() != 0 && source.error() != 33) {
-        char x[256];
-        sprintf(x, "Source not found (id=%ld elementIndex=%d)", id, location);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Source not found (id=%ld elementIndex=%d)", id, location);
         throwDAQException(env, x, source.error());
         return 0;
     }
@@ -400,8 +403,8 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_addImageToFolder
     ImageMetadata meta(image_name, locations_, opcode, annotation_);
     Image image(folder_name, meta, *store_);
     if (!image) {
-        char x[256];
-        sprintf(x, "Creating image %s in folder %s failed", image_name, folder_name);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Creating image %s in folder %s failed", image_name, folder_name);
         throwDAQException(env, x, image.error());
     }
     env->ReleaseStringUTFChars(folderName, folder_name);
@@ -430,8 +433,8 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_openSourceChannel
     Source* source = new Source(image.id(), element, *store_);
     // When accessing a source for which no data yet exists, it is reported as in error state 33, and source.bool() returns false
     if (source->error() != 0 && source->error() != 33) {
-        char x[256];
-        sprintf(x, "Source not found (id=%ld elementIndex=%d)", id, elementIndex);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Source not found (id=%ld elementIndex=%d)", id, elementIndex);
         throwDAQException(env, x, source->error());
         delete source;
     }

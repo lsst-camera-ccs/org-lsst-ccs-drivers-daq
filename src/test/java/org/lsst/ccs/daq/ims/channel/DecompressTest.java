@@ -1,19 +1,18 @@
 package org.lsst.ccs.daq.ims.channel;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.util.Arrays;
 import java.util.Random;
+import org.junit.jupiter.api.Test;
 
 /**
  *
  * @author tonyj
  */
-public class Test2 {
+public class DecompressTest {
 
-    public static void main(String[] args) throws IOException {
-
+    @Test
+    public void testPerformance() throws IOException {
         Random random = new Random();
         final int inputSize = 48 * 900_000;
         IntBuffer input = IntBuffer.allocate(inputSize);
@@ -33,7 +32,6 @@ public class Test2 {
         long start = System.nanoTime();
         b18.write(input);
         long end = System.nanoTime();
-        System.out.printf("Copy took %,dnS\n",end-start);
+        System.out.printf("Copy took %,dnS\n", end - start);
     }
-
 }
