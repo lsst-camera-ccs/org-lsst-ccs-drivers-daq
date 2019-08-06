@@ -1,11 +1,11 @@
 ARCH = lib64
-TGT = ../../../target
+TGT = ../../../target/classes
 OBJ = $(TGT)/$(ARCH)/obj
 LIBTGT = $(TGT)/$(ARCH)
 CC = g++ -std=c++11 -fPIC -Wno-deprecated
 INC = $(TGT)/headers
 
-DAQ_HOME ?= ../../../daq/R4-V1.0-IR2
+DAQ_HOME ?= ../../../lib64/daq/R4-V1.0-IR2
 
 all: $(LIBTGT)/libccs_daq_ims.so
 
