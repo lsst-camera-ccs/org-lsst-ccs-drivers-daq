@@ -31,33 +31,36 @@ class DAQSourceChannel implements ByteChannel {
     }
 
     protected final Store store;
-    protected long source_;
+    protected long channel_;
     private final Source.ChannelMode mode;
 
     DAQSourceChannel(Source source, Source.ChannelMode mode) throws DAQException {
         final Image image = source.getImage();
         store = image.getStore();
-        source_ = store.openSourceChannel(image.getMetaData().getId(), source.getLocation(), mode);
+        if (mode != Source.ChannelMode.STREAM) {
+            // In the case of streaming we delay opening the channel until the first data is ready 
+            channel_ = store.openSourceChannel(image.getMetaData().getId(), source.getLocation(), mode);
+        }
         this.mode = mode;
     }
 
     @Override
     public boolean isOpen() {
-        return source_ != 0;
+        return channel_ != 0;
     }
 
     @Override
     public void close() throws IOException {
-        if (source_ != 0) {
+        if (channel_ != 0) {
             synchronized (store) {
-                close(source_, mode == Source.ChannelMode.WRITE);
+                close(channel_, mode == Source.ChannelMode.WRITE);
             }
-            source_ = 0;
+            channel_ = 0;
         }
     }
 
     void checkOpen(ByteBuffer dst) throws IOException {
-        if (source_ == 0) {
+        if (channel_ == 0) {
             throw new IOException("Channel not open for read");
         }
         if (!dst.isDirect()) {
@@ -101,10 +104,11 @@ class DAQSourceChannel implements ByteChannel {
             int position = dst.position();
             int err;
             synchronized (store) {
-                err = read(source_, dst, position, offset, l);
+                err = read(channel_, dst, position, offset, l);
             }
             if (err != 0) {
-                throw new IOException(String.format("Error reading DAQ data (err=%d)", err));
+                DAQException daq = new DAQException("Error reading DAQ data", err);
+                throw new IOException("DAQ IO exception", daq);
             }
             offset += l;
             dst.position(position + l);
@@ -129,23 +133,32 @@ class DAQSourceChannel implements ByteChannel {
 
         @Override
         public int read(ByteBuffer dst) throws IOException {
-            checkOpen(dst);
-            int l = waitForData(dst);
-            if (l < 0) {
-                return -1;
+            try {
+                int l = waitForData(dst);
+                if (l < 0) {
+                    return -1;
+                }
+                if (channel_ == 0) {
+                   final Image image = source.getImage();
+                   channel_ = store.openSourceChannel(image.getMetaData().getId(), source.getLocation(), Source.ChannelMode.STREAM);
+                }
+                checkOpen(dst);
+                int position = dst.position();
+                int err;
+                // TODO: Check if synchronizing on store is really necessary. Mike says not.
+                synchronized (store) {
+                    System.out.printf("Read %d %d %d %d\n", channel_, position, offset, l);
+                    err = read(channel_, dst, position, offset, l);
+                }
+                if (err != 0) {
+                    throw new DAQException("Error reading DAQ data", err);
+                }
+                offset += l;
+                dst.position(position + l);
+                return l;
+            } catch (DAQException x) {
+                throw new IOException("DAQ IO exception", x);
             }
-            int position = dst.position();
-            int err;
-            // TODO: Check if synchronizing on store is really necessary. Mike says not.
-            synchronized (store) {
-                err = read(source_, dst, position, offset, l);
-            }
-            if (err != 0 && err != 66) {
-                throw new IOException(String.format("Error reading DAQ data (err=%d)", err));
-            }
-            offset += l;
-            dst.position(position + l);
-            return l;
         }
 
         private synchronized int waitForData(ByteBuffer dst) throws IOException {
@@ -201,13 +214,17 @@ class DAQSourceChannel implements ByteChannel {
         public int write(ByteBuffer src) throws IOException {
             checkOpen(src);
             int remaining = src.remaining();
+//            if ((remaining % (16*3)) != 0) {
+//                throw new IOException("ByteBuffer size must be a multiple of 48");
+//            }
             int position = src.position();
             int err;
             synchronized (store) {
-                err = write(source_, src, position, remaining);
+                err = write(channel_, src, position, remaining);
             }
             if (err != 0) {
-                throw new IOException(String.format("Error writing DAQ data (err=%d)", err));
+                DAQException daq = new DAQException("Error reading DAQ data", err);
+                throw new IOException("DAQ IO exception", daq);
             }
             src.position(position + remaining);
             return remaining - position;

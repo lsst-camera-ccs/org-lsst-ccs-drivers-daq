@@ -27,12 +27,7 @@
                 <version>2.22.2</version>
                 <configuration>
                     <argLine>-Djava.library.path=target/lib64</argLine>
-                    <systemProperties>
-                        <property>
-                            <name>java.library.path</name>
-                            <value></value>
-                        </property>
-                    </systemProperties>
+                    <trimStackTrace>false</trimStackTrace>
                 </configuration>
             </plugin>
             <plugin>

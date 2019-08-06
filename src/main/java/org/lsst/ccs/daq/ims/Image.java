@@ -47,7 +47,7 @@ public class Image implements Comparable<Image> {
     public List<Source> listSources() throws DAQException {
         List<Source> result = new ArrayList<>();
         for (Location location : metaData.getLocations()) {
-            result.add(new Source(this, store.findSource(metaData.getId(), location.index())));
+            result.add(new Source(this, location));
         }
         return result;       
     }
@@ -97,11 +97,11 @@ public class Image implements Comparable<Image> {
         return new Source(this, store.addSourceToImage(metaData.getId(), location, registerValues));
     }
     
-    public Source findSource(Location location) throws DAQException {
+    public Source findSource(Location location) {
         if (!metaData.getLocations().contains(location)) {
             throw new IllegalArgumentException("Invalid location "+location+" for image "+this);
         }
-        return new Source(this, store.findSource(metaData.getId(), location.index()));
+        return new Source(this, location);
     }
     
     Store getStore() {

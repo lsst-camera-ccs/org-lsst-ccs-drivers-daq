@@ -1,6 +1,5 @@
 package org.lsst.ccs.daq.ims.example;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.util.List;
@@ -8,6 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.CRC32;
 import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.daq.ims.Image;
 import org.lsst.ccs.daq.ims.ImageListener;
@@ -56,6 +56,7 @@ public class StreamExample {
                 try (ByteChannel channel = source.openChannel(Source.ChannelMode.STREAM)) {
                     ByteBuffer buffer = ByteBuffer.allocateDirect(100_000);
                     long totalReadSize = 0;
+                    CRC32 cksum = new CRC32();
                     long start = System.nanoTime();
                     for (;;) {
                         buffer.clear();
@@ -63,10 +64,13 @@ public class StreamExample {
                         if (l < 0) {
                             break;
                         }
+                        buffer.flip();
+                        cksum.update(buffer);
                         totalReadSize += l;
                     }
                     long stop = System.nanoTime();
                     System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
+                    System.out.printf("Checksum %,d\n", cksum.getValue());
                 }
             } catch (Throwable x) {
                 LOG.log(Level.SEVERE, "Error reading image", x);

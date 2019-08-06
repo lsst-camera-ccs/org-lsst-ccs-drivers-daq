@@ -39,7 +39,7 @@ public class FitsWriter {
             int[] registerValues = { 1, 2, 3, 4, 5, 6 };
             Source source = image.addSource(Location.of("R22/Reb0"), registerValues);
             try (ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
-                ByteBuffer buffer = ByteBuffer.allocateDirect(1_000_000);
+                ByteBuffer buffer = ByteBuffer.allocateDirect(1024*1024);
                 IntBuffer intBuffer = buffer.asIntBuffer();
                 for (;;) {
                     intBuffer.clear();

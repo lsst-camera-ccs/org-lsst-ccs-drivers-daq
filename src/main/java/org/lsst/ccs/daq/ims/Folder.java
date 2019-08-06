@@ -40,12 +40,17 @@ public class Folder implements Comparable<Folder> {
      * Find an image by name
      *
      * @param name The name of the image to search for
-     * @return The found image.
-     * @throws DAQException if the image cannot be found, or some other error occurs.
+     * @return The found image, or <code>null</code> if the image cannot be found
+     * @throws DAQException If some other error occurs.
      */
     public Image find(String name) throws DAQException {
-        ImageMetaData meta = store.findImage(name, this.name);
-        return new Image(store, meta);
+        try {
+            ImageMetaData meta = store.findImage(name, this.name);
+            return new Image(store, meta);
+        } catch (DAQException x) {
+            if (x.rc() == 33) return null;
+            else throw x;
+        }
     }
 
     /** 

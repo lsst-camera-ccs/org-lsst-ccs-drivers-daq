@@ -41,7 +41,7 @@ static jclass JCexClass;
 static jmethodID JCexConstructor;
 
 jstring decode(JNIEnv* env, jint error) {
-   const char* decoded = DSM::Exception::decode(error);
+   const char* decoded = IMS::Exception::decode(error);
    // TODO: Check for other exceptions
    return env->NewStringUTF(decoded);
 }
@@ -431,8 +431,7 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_openSourceChannel
     }
     DAQ::Location element(elementIndex);
     Source* source = new Source(image.id(), element, *store_);
-    // When accessing a source for which no data yet exists, it is reported as in error state 33, and source.bool() returns false
-    if (source->error() != 0 && source->error() != 33) {
+    if (!source) {
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Source not found (id=%ld elementIndex=%d)", id, elementIndex);
         throwDAQException(env, x, source->error());
