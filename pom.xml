@@ -87,5 +87,10 @@
             <version>1.15.2</version>
             <type>jar</type>
         </dependency>
+        <dependency>
+            <groupId>org.lsst</groupId>
+            <artifactId>org-lsst-ccs-command</artifactId>
+            <version>3.0.0</version>
+        </dependency>
     </dependencies>
 </project>
