@@ -41,6 +41,14 @@ public class Source implements Comparable<Source> {
         public int getCCDCount() {
             return CCDCount;
         }
+
+        String getBoardName(int board) {
+            return String.format("Reb%d", board);
+        }
+
+        String getSensorName(int board, int sensor) {
+            return String.format("S%d%d", board, sensor);
+        }
     }
     
     public enum ChannelMode {
@@ -79,6 +87,7 @@ public class Source implements Comparable<Source> {
     /**
      * Get meta-data associated with this source
      * @return The associate metadata.
+     * @throws DAQException
      */
     public SourceMetaData getMetaData() throws DAQException {
         if (metaData == null) {
@@ -96,10 +105,11 @@ public class Source implements Comparable<Source> {
     }
 
     /**
-     * The total size of the raw data associated with this source. This may be zero
+     * The total size of the raw data associated with this source.This may be zero
      * of the source has been newly created and not yet written, or if the source
      * is in the process of being streamed to the DAQ store.
      * @return The image size, or <code>0</code> if the image is not completely written.
+     * @throws DAQException
      */
     public long size() throws DAQException {
         return getMetaData().getLength();
@@ -108,12 +118,13 @@ public class Source implements Comparable<Source> {
     /**
      * The type of REB this source corresponds to.
      * @return The source type.
+     * @throws DAQException
      */
     public SourceType getSourceType() throws DAQException {
         return getMetaData().getSensor();
     }
 
-    Image getImage() {
+    public Image getImage() {
         return image;
     }
     

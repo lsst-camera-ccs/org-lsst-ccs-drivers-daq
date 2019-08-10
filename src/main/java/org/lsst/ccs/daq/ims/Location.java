@@ -82,9 +82,21 @@ public class Location implements Comparable<Location> {
 
     @Override
     public String toString() {
-        return String.format("R%02d/Reb%d", bay, board);
+        return String.format("%s/%s", getRaftName(), getBoardName());
     }
+    
+    public String getRaftName() {
+        return String.format("R%02d", bay);
+    }
+    
+    public String getBoardName() {
+        return type().getBoardName(board);
+    } 
 
+    public String getSensorName(int index) {
+        return type().getSensorName(board, index);
+    }
+    
     @Override
     public int compareTo(Location o) {
         return this.index() - o.index();
