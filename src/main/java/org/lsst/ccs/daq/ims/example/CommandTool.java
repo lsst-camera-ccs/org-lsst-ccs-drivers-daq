@@ -1,5 +1,8 @@
 package org.lsst.ccs.daq.ims.example;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.ByteChannel;
 import java.util.Collections;
 import java.util.List;
 import org.lsst.ccs.command.annotations.Argument;
@@ -92,6 +95,36 @@ public class CommandTool {
             throw new RuntimeException("No such folder: "+target);
         }
         image.moveTo(targetFolderName);
+    }
+    
+    @Command(name="read", description="Read and decode data in image")
+    public void read(String path) throws DAQException, IOException {
+        checkStore();
+        Image image = imageFromPath(path);        
+        List<Source> sources = image.listSources();
+        long totalSize = 0;
+        for (Source source : sources) {
+            totalSize += source.size();
+        }
+        System.out.printf("Expected size %,d bytes\n", totalSize);
+
+        ByteBuffer buffer = ByteBuffer.allocateDirect(1_000_000);
+        long totalReadSize = 0;
+        long start = System.nanoTime();
+        for (Source source : sources) {
+            try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ)) {
+                for (;;) {
+                    buffer.clear();
+                    int l = channel.read(buffer);
+                    if (l < 0) {
+                        break;
+                    }
+                    totalReadSize += l;
+                }
+            }
+        }
+        long stop = System.nanoTime();
+        System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));        
     }
     
     private Image imageFromPath(String path) throws DAQException, RuntimeException {
