@@ -108,7 +108,7 @@ public class CommandTool {
         }
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        ByteBuffer buffer = ByteBuffer.allocateDirect(1_000_000);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(1024*1024);
         long totalReadSize = 0;
         long start = System.nanoTime();
         for (Source source : sources) {

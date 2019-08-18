@@ -27,7 +27,6 @@ class DAQSourceChannel implements ByteChannel {
             default:
                 throw new UnsupportedOperationException("Unsupported mode " + mode);
         }
-
     }
 
     protected final Store store;
