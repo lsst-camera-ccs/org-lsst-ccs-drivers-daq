@@ -43,21 +43,24 @@ public class CommandTool {
             List<Folder> list = store.getCatalog().list();
             Collections.sort(list);
             list.forEach((folder) -> {
-                System.out.println(folder);
+                System.out.println(folder.getName());
             });
             long capacity = store.getCapacity();
             long remaining = store.getRemaining();
-            System.out.printf("%,d/%,d (%g3%%) used\n", capacity-remaining, capacity, 100.0*(capacity-remaining)/capacity);
+            System.out.printf("%,d/%,d (%3g%%) bytes used\n", capacity-remaining, capacity, 100.0*(capacity-remaining)/capacity);
         } else if (!folderName.contains("/")) {
             Folder folder = store.getCatalog().find(folderName);
+            if (folder == null) {
+                throw new RuntimeException("No such folder: "+folderName);
+            }
             List<Image> images = folder.listImages();
             Collections.sort(images);
             images.forEach((image) -> {
-                System.out.printf("%20s %s\n",image.getMetaData().getName(), image.getMetaData().getAnnotation());
+                System.out.printf("%s %s\n",image.getMetaData().getName(), image.getMetaData().getAnnotation());
             });
         } else {
             Image image = imageFromPath(folderName);
-            System.out.printf("%20s %s\n",image.getMetaData().getName(), image.getMetaData().getAnnotation());
+            System.out.printf("%s %s\n",image.getMetaData().getName(), image.getMetaData().getAnnotation());
             List<Source> sources = image.listSources();
             Collections.sort(sources);
             for (Source source : sources) {
@@ -98,7 +101,7 @@ public class CommandTool {
     }
     
     @Command(name="read", description="Read and decode data in image")
-    public void read(String path) throws DAQException, IOException {
+    public void read(String path, int bufferSize) throws DAQException, IOException {
         checkStore();
         Image image = imageFromPath(path);        
         List<Source> sources = image.listSources();
@@ -108,7 +111,7 @@ public class CommandTool {
         }
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        ByteBuffer buffer = ByteBuffer.allocateDirect(1024*1024);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
         long totalReadSize = 0;
         long start = System.nanoTime();
         for (Source source : sources) {
@@ -136,7 +139,7 @@ public class CommandTool {
         if (folder == null) {
             throw new RuntimeException("No such folder: "+tokens[0]);
         }
-        Image image = folder.find(path);
+        Image image = folder.find(tokens[1]);
         if (image == null) {
             throw new RuntimeException("No such image: "+tokens[1]);
         }
