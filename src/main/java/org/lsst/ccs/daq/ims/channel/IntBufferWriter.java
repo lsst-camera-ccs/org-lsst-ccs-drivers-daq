@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.nio.IntBuffer;
 
 /**
- *
+ * A channel for writing data into an IntBuffer.
  * @author tonyj
  */
 public class IntBufferWriter implements WritableIntChannel {
@@ -12,6 +12,10 @@ public class IntBufferWriter implements WritableIntChannel {
     private final IntBuffer output;
     private boolean isClosed = false;
 
+    /**
+     * 
+     * @param output 
+     */
     public IntBufferWriter(IntBuffer output) {
         this.output = output;
     }

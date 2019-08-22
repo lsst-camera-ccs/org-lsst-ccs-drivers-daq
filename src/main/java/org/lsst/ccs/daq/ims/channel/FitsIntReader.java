@@ -32,7 +32,7 @@ public class FitsIntReader implements ReadableIntChannel {
             openFITSFile(segments, file);
         }
 
-        IntBufferReader[] inputs = new IntBufferReader[segments.size()];
+        ReadableIntChannel[] inputs = new ReadableIntChannel[segments.size()];
         int j = 0;
         for (Segment segment : segments) {
             FileChannel channel = segment.getChannel();

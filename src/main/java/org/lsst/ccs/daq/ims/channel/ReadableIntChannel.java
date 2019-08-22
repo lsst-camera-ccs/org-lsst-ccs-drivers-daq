@@ -6,7 +6,9 @@ import java.nio.IntBuffer;
 import java.nio.channels.Channel;
 
 /**
- *
+ * An interface for reading int data from a channel. Supports reading data
+ * into an IntBuffer, or reading data one int at a time. 
+ * 
  * @author tonyj
  */
 public interface ReadableIntChannel extends Channel {
@@ -22,9 +24,13 @@ public interface ReadableIntChannel extends Channel {
     int read() throws IOException;
 
     /**
-     * Reads into the given buffer by continually calling read until the buffer
-     * is full or no more data is available.
-     * @return The number of ints read, or -1 if end of file reached
+     * Reads into the given buffer.
+     * The default implementation continually calls {code #read()} until the buffer
+     * is full or no more data is available. Implementing classes are encouraged 
+     * to override this with something more efficient where possible.
+     * @param buffer The buffer into which the data will be read.
+     * @return The number of ints read, or -1 if end of file reached before any data was 
+     * transferred.
      */
     default int read(IntBuffer buffer) throws IOException {
         int result = 0;

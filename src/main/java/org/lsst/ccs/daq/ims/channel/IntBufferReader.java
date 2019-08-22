@@ -29,7 +29,16 @@ public class IntBufferReader implements ReadableIntChannel {
     @Override
     public int read(IntBuffer buffer) throws IOException {
        int remaining = input.remaining();
-       input.put(buffer);
+       if (remaining == 0) {
+           return -1;
+       } else if (remaining>buffer.remaining()) {
+           int oldLimit = input.limit();
+           input.limit(input.position() + buffer.remaining());
+           buffer.put(input);
+           input.limit(oldLimit);
+       } else {
+           buffer.put(input);
+       }
        return remaining - input.remaining();
     }
 
