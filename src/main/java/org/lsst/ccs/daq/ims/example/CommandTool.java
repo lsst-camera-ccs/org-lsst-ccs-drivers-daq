@@ -69,10 +69,12 @@ public class CommandTool {
     }
 
     @Command(name = "ls", description = "List folders/files")
-    public void list(@Argument(name = "folder", description = "Path", defaultValue = "") String folderName) throws DAQException {
+    public void list(@Argument(name = "folder", description = "Path", defaultValue = "") String path) throws DAQException {
         checkStore();
-        Matcher matcher = PATH_PATTERN.matcher(folderName);
-        if (folderName.trim().isEmpty()) {
+        Matcher matcher = PATH_PATTERN.matcher(path);
+        if (!matcher.matches()) {
+            throw new RuntimeException("Illegal path: " + path);
+        } else if (path.trim().isEmpty()) {
             List<Folder> list = store.getCatalog().list();
             Collections.sort(list);
             list.forEach((folder) -> {
@@ -81,24 +83,24 @@ public class CommandTool {
             long capacity = store.getCapacity();
             long remaining = store.getRemaining();
             System.out.printf("%s/%s (%3.3g%%) bytes used\n", Utils.humanReadableByteCount(capacity - remaining, false), Utils.humanReadableByteCount(capacity, false), 100.0 * (capacity - remaining) / capacity);
-        } else if (matcher.group(2).isEmpty()) {
-            Folder folder = store.getCatalog().find(folderName);
+        } else if (matcher.matches() && matcher.group(2).isEmpty()) {
+            Folder folder = store.getCatalog().find(matcher.group(1));
             if (folder == null) {
-                throw new RuntimeException("No such folder: " + folderName);
+                throw new RuntimeException("No such folder: " + matcher.group(1));
             }
             List<Image> images = folder.listImages();
             Collections.sort(images);
-            images.forEach((image) -> {
-                System.out.printf("%s %s\n", image.getMetaData().getName(), image.getMetaData().getAnnotation());
-            });
+            for (Image image : images) {
+                System.out.printf("%s %s %s %s\n", image.getMetaData().getName(), imageSize(image), image.getMetaData().getTimestamp(), image.getMetaData().getAnnotation());
+            }
         } else {
-            Image image = imageFromPath(folderName);
+            Image image = imageFromPath(matcher);
             System.out.printf("%s %s\n", image.getMetaData().getName(), image.getMetaData().getAnnotation());
             List<Source> sources = image.listSources();
             Collections.sort(sources);
             for (Source source : sources) {
                 SourceMetaData smd = source.getMetaData();
-                System.out.printf("   %s %s\n", smd.getLocation(), smd.getLength());
+                System.out.printf("   %s %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength(), false));
             }
         }
     }
@@ -134,7 +136,8 @@ public class CommandTool {
     }
 
     @Command(name = "read", description = "Read and decode data in image")
-    public void read(String path, @Argument(defaultValue = "1048576") int bufferSize) throws DAQException, IOException {
+    public void read(String path,
+            @Argument(defaultValue = "1048576") int bufferSize) throws DAQException, IOException {
         checkStore();
         Image image = imageFromPath(path);
         List<Source> sources = image.listSources();
@@ -168,7 +171,8 @@ public class CommandTool {
     }
 
     @Command(name = "write", description = "Write a set of FITS files to the store")
-    public void write(String targetFolderName, File dir, @Argument(defaultValue = "*.fits") String pattern) throws IOException, TruncatedFileException, DAQException {
+    public void write(String targetFolderName, File dir,
+             @Argument(defaultValue = "*.fits") String pattern) throws IOException, TruncatedFileException, DAQException {
         checkStore();
         Folder target = store.getCatalog().find(targetFolderName);
         if (target == null) {
@@ -221,7 +225,7 @@ public class CommandTool {
                 int[] registerValues = {1, 2, 3, 4, 5, 6};
                 Source source = image.addSource(ffSource.getLocation(), registerValues);
                 File[] files = ffSource.getFiles().stream().map(FitsFile::getFile).toArray(File[]::new);
-                try (FitsIntReader reader = new FitsIntReader(files); 
+                try (FitsIntReader reader = new FitsIntReader(files);
                         ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
                     ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
                     IntBuffer intBuffer = buffer.asIntBuffer();
@@ -242,17 +246,21 @@ public class CommandTool {
     }
 
     private Image imageFromPath(String path) throws DAQException, RuntimeException {
-        String[] tokens = path.split("/");
-        if (tokens.length != 2) {
+        final Matcher matcher = PATH_PATTERN.matcher(path);
+        if (!matcher.matches()) {
             throw new RuntimeException("Illegal path: " + path);
         }
-        Folder folder = store.getCatalog().find(tokens[0]);
+        return imageFromPath(matcher);
+    }
+
+    private Image imageFromPath(Matcher matcher) throws DAQException {
+        Folder folder = store.getCatalog().find(matcher.group(1));
         if (folder == null) {
-            throw new RuntimeException("No such folder: " + tokens[0]);
+            throw new RuntimeException("No such folder: " + matcher.group(1));
         }
-        Image image = folder.find(tokens[1]);
+        Image image = folder.find(matcher.group(2));
         if (image == null) {
-            throw new RuntimeException("No such image: " + tokens[1]);
+            throw new RuntimeException("No such image: " + matcher.group(2));
         }
         return image;
     }
@@ -261,5 +269,14 @@ public class CommandTool {
         if (store == null) {
             throw new RuntimeException("Please connect to store first");
         }
+    }
+    
+    private String imageSize(Image image) throws DAQException {
+        List<Source> sources = image.listSources();
+        long totalSize = 0;
+        for (Source source : sources) {
+            totalSize += source.getMetaData().getLength();
+        }
+        return String.format("%s(%d)",Utils.humanReadableByteCount(totalSize, false),sources.size());
     }
 }
