@@ -16,6 +16,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.CRC32;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
@@ -32,6 +34,7 @@ import org.lsst.ccs.daq.ims.Source;
 import org.lsst.ccs.daq.ims.Source.ChannelMode;
 import org.lsst.ccs.daq.ims.SourceMetaData;
 import org.lsst.ccs.daq.ims.Store;
+import org.lsst.ccs.daq.ims.Utils;
 import org.lsst.ccs.daq.ims.channel.FitsIntReader;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
 
@@ -40,6 +43,8 @@ import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
  * @author tonyj
  */
 public class CommandTool {
+
+    private static final Pattern PATH_PATTERN = Pattern.compile("(\\w*)/?(\\w*)");
 
     static {
         FitsFactory.setUseHierarch(true);
@@ -66,6 +71,7 @@ public class CommandTool {
     @Command(name = "ls", description = "List folders/files")
     public void list(@Argument(name = "folder", description = "Path", defaultValue = "") String folderName) throws DAQException {
         checkStore();
+        Matcher matcher = PATH_PATTERN.matcher(folderName);
         if (folderName.trim().isEmpty()) {
             List<Folder> list = store.getCatalog().list();
             Collections.sort(list);
@@ -74,8 +80,8 @@ public class CommandTool {
             });
             long capacity = store.getCapacity();
             long remaining = store.getRemaining();
-            System.out.printf("%,d/%,d (%3g%%) bytes used\n", capacity - remaining, capacity, 100.0 * (capacity - remaining) / capacity);
-        } else if (!folderName.contains("/")) {
+            System.out.printf("%s/%s (%3.3g%%) bytes used\n", Utils.humanReadableByteCount(capacity - remaining, false), Utils.humanReadableByteCount(capacity, false), 100.0 * (capacity - remaining) / capacity);
+        } else if (matcher.group(2).isEmpty()) {
             Folder folder = store.getCatalog().find(folderName);
             if (folder == null) {
                 throw new RuntimeException("No such folder: " + folderName);
@@ -230,8 +236,8 @@ public class CommandTool {
                         channel.write(buffer);
                     }
                 }
-            };
-        };
+            }
+        }
 
     }
 

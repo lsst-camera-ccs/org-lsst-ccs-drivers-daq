@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 import org.lsst.ccs.daq.ims.Location;
 
 /**
@@ -82,7 +81,7 @@ public class FitsFile implements Comparable<FitsFile> {
         }
 
         public Set<Location> getLocations() {
-            return sources.keySet().stream().collect(Collectors.toSet());
+            return sources.keySet();
         }
         
         public Map<Location, Source> getSources() {
