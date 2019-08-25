@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
+import java.time.Instant;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Set;
@@ -13,17 +14,17 @@ public class ImageMetaData {
     private final String annotation;
     private final Version release;
     private final int opcode;
-    private final long timestamp;
+    private final Instant timestamp;
     private final LocationSet elements;
     private final long id;
 
-    ImageMetaData(long id, String name, String annotation, Version release, int opcode, long timestamp, BitSet elements) {
+    ImageMetaData(long id, String name, String annotation, Version release, int opcode, long timestampNanos, BitSet elements) {
         this.id = id;
         this.name = name;
         this.annotation = annotation;
         this.release = release;
         this.opcode = opcode;
-        this.timestamp = timestamp;
+        this.timestamp = Instant.ofEpochSecond(timestampNanos/1_000_000_000,timestampNanos%1_000_000_000);
         this.elements = new LocationSet(elements);
     }
 
@@ -44,7 +45,7 @@ public class ImageMetaData {
         this.release = null;
         this.opcode = opcode;
         this.elements = new LocationSet(locationSet);
-        this.timestamp = 0;
+        this.timestamp = Instant.EPOCH;
         this.id = 0;
     }
 
@@ -85,7 +86,7 @@ public class ImageMetaData {
      * Get the timestamp associated with this image.
      * @return The timestamp
      */
-    public long getTimestamp() {
+    public Instant getTimestamp() {
         return timestamp;
     }
 

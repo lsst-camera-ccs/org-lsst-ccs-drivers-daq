@@ -44,7 +44,7 @@ import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
  */
 public class CommandTool {
 
-    private static final Pattern PATH_PATTERN = Pattern.compile("(\\w*)/?(\\w*)");
+    private static final Pattern PATH_PATTERN = Pattern.compile("([0-9a-zA-Z\\-\\_]*)/?([0-9a-zA-Z\\-\\_]*)");
 
     static {
         FitsFactory.setUseHierarch(true);
@@ -95,7 +95,7 @@ public class CommandTool {
             }
         } else {
             Image image = imageFromPath(matcher);
-            System.out.printf("%s %s\n", image.getMetaData().getName(), image.getMetaData().getAnnotation());
+            System.out.printf("%s %s %s %s\n", image.getMetaData().getName(), imageSize(image), image.getMetaData().getTimestamp(), image.getMetaData().getAnnotation());
             List<Source> sources = image.listSources();
             Collections.sort(sources);
             for (Source source : sources) {
