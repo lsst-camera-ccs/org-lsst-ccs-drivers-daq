@@ -29,14 +29,14 @@ public class FitsFile implements Comparable<FitsFile> {
     private final int naxis2;
     private int[] datasec = new int[4];
 
-    FitsFile(File file, Header primary) throws FitsException {
+    FitsFile(File file, Header primary, Header image) throws FitsException {
         this.file = file;
         this.ccdSlot = getNonNullHeader(primary, "CCDSLOT");
         this.raftBay = getNonNullHeader(primary, "RAFTBAY");
         this.obsId = getNonNullHeader(primary, "OBSID");
-        this.naxis1 = primary.getIntValue("NAXIS1");
-        this.naxis2 = primary.getIntValue("NAXIS2");
-        String dataSecString = getNonNullHeader(primary, "DATASEC");
+        this.naxis1 = image.getIntValue("NAXIS1");
+        this.naxis2 = image.getIntValue("NAXIS2");
+        String dataSecString = getNonNullHeader(image, "DATASEC");
         Matcher matcher = DATASEC_PATTERN.matcher(dataSecString);
         if (!matcher.matches()) {
             throw new FitsException("Invalid datasec: " + dataSecString);
@@ -47,10 +47,10 @@ public class FitsFile implements Comparable<FitsFile> {
         this.datasec[3] = Integer.parseInt(matcher.group(4));
     }
 
-    private static String getNonNullHeader(Header primary, String name) throws FitsException {
-        String result = primary.getStringValue(name);
+    private static String getNonNullHeader(Header header, String itemName) throws FitsException {
+        String result = header.getStringValue(itemName);
         if (result == null) {
-            throw new FitsException("Missing " + name + " in FITS header");
+            throw new FitsException("Missing " + itemName + " in FITS header");
         }
         return result;
     }
