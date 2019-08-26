@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.SortedMap;
@@ -100,7 +101,8 @@ public class CommandTool {
             Collections.sort(sources);
             for (Source source : sources) {
                 SourceMetaData smd = source.getMetaData();
-                System.out.printf("   %s %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength(), false));
+                System.out.printf("   %s %s %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength(), false),
+                        Arrays.toString(smd.getRegisterValues()));
             }
         }
     }
@@ -172,7 +174,7 @@ public class CommandTool {
 
     @Command(name = "write", description = "Write a set of FITS files to the store")
     public void write(String targetFolderName, File dir,
-             @Argument(defaultValue = "*.fits") String pattern) throws IOException, TruncatedFileException, DAQException {
+            @Argument(defaultValue = "*.fits") String pattern) throws IOException, TruncatedFileException, DAQException {
         checkStore();
         Folder target = store.getCatalog().find(targetFolderName);
         if (target == null) {
@@ -189,25 +191,13 @@ public class CommandTool {
                 if (matcher.matches(dirPath.relativize(file))) {
                     try (BufferedFile bf = new BufferedFile(file.toFile(), "r")) {
                         Header primary = new Header(bf);
-                        String ccdSlot = primary.getStringValue("CCDSLOT");
-                        if (ccdSlot == null) {
-                            throw new FitsException("Missing CCDSLOT in FITS header");
-                        }
-                        String raftBay = primary.getStringValue("RAFTBAY");
-                        if (raftBay == null) {
-                            throw new FitsException("Missing CCDSLOT in FITS header");
-                        }
-                        String obsId = primary.getStringValue("OBSID");
-                        if (obsId == null) {
-                            throw new FitsException("Missing OBSID in FITS header");
-                        }
-
-                        ObsId id = obsIds.get(obsId);
+                        FitsFile ff = new FitsFile(file.toFile(), primary);
+                        ObsId id = obsIds.get(ff.getObsId());
                         if (id == null) {
-                            id = new ObsId(obsId);
-                            obsIds.put(obsId, id);
+                            id = new ObsId(ff.getObsId());
+                            obsIds.put(ff.getObsId(), id);
                         }
-                        id.add(new FitsFile(file.toFile(), obsId, raftBay, ccdSlot));
+                        id.add(ff);
 
                     } catch (FitsException x) {
                         throw new IOException("Error reading FITS file: " + file, x);
@@ -222,7 +212,7 @@ public class CommandTool {
             Image image = target.insert(meta);
             for (FitsFile.Source ffSource : id.getSources().values()) {
                 System.out.println("\t" + ffSource.getLocation());
-                int[] registerValues = {1, 2, 3, 4, 5, 6};
+                int[] registerValues = ffSource.getFiles().first().getReadOutParameters();
                 Source source = image.addSource(ffSource.getLocation(), registerValues);
                 File[] files = ffSource.getFiles().stream().map(FitsFile::getFile).toArray(File[]::new);
                 try (FitsIntReader reader = new FitsIntReader(files);
@@ -270,13 +260,13 @@ public class CommandTool {
             throw new RuntimeException("Please connect to store first");
         }
     }
-    
+
     private String imageSize(Image image) throws DAQException {
         List<Source> sources = image.listSources();
         long totalSize = 0;
         for (Source source : sources) {
             totalSize += source.getMetaData().getLength();
         }
-        return String.format("%s(%d)",Utils.humanReadableByteCount(totalSize, false),sources.size());
+        return String.format("%s(%d)", Utils.humanReadableByteCount(totalSize, false), sources.size());
     }
 }

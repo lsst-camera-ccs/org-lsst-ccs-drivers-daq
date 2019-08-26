@@ -6,6 +6,7 @@
     <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <url>${org.lsst.ccs.site.url}</url>
+    <name>LSST CCS - DAQ Driver</name>
 
     <parent>
         <groupId>org.lsst</groupId>
