@@ -191,7 +191,8 @@ public class CommandTool {
                 if (matcher.matches(dirPath.relativize(file))) {
                     try (BufferedFile bf = new BufferedFile(file.toFile(), "r")) {
                         Header primary = new Header(bf);
-                        FitsFile ff = new FitsFile(file.toFile(), primary);
+                        Header image = new Header(bf);
+                        FitsFile ff = new FitsFile(file.toFile(), primary, image);
                         ObsId id = obsIds.get(ff.getObsId());
                         if (id == null) {
                             id = new ObsId(ff.getObsId());
