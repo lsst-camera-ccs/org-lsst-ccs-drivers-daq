@@ -36,7 +36,7 @@ public class FitsFile implements Comparable<FitsFile> {
         this.obsId = getNonNullHeader(primary, "OBSID");
         this.naxis1 = primary.getIntValue("NAXIS1");
         this.naxis2 = primary.getIntValue("NAXIS2");
-        String dataSecString = getNonNullHeader(primary, "DATSEC");
+        String dataSecString = getNonNullHeader(primary, "DATASEC");
         Matcher matcher = DATASEC_PATTERN.matcher(dataSecString);
         if (!matcher.matches()) {
             throw new FitsException("Invalid datasec: " + dataSecString);
