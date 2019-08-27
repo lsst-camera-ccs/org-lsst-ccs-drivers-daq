@@ -41,7 +41,7 @@ public class ReadWriteStreamTest {
     public void setUp() throws DAQException {
         // Make sure test folder exists
         System.out.println("LD_LIBRARY_PATH="+System.getenv("LD_LIBRARY_PATH"));
-        String testPartition = System.getenv("DAQ_TEST_PARTITION");
+        String testPartition = System.getProperty("DAQ_TEST_PARTITION");
         System.out.println("DAQ_TEST_PARTITION="+testPartition);
         // This does not appear to work, not sure why
         assumeNotNull(testPartition);

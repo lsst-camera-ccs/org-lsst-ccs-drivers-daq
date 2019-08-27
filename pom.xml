@@ -57,7 +57,6 @@
                     <trimStackTrace>false</trimStackTrace>
                     <environmentVariables>
                         <LD_LIBRARY_PATH>lib64/daq/R4-V2.0/x86/lib</LD_LIBRARY_PATH>
-                        <DAQ_TEST_PARTITION>ccs</DAQ_TEST_PARTITION>
                     </environmentVariables>
                 </configuration>
             </plugin>
