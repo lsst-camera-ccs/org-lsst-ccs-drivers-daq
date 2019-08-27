@@ -52,12 +52,12 @@
             </plugin>    
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
                 <configuration>
                     <argLine>-Djava.library.path=target/classes/lib64/</argLine>
                     <trimStackTrace>false</trimStackTrace>
                     <environmentVariables>
                         <LD_LIBRARY_PATH>lib64/daq/R4-V2.0/x86/lib</LD_LIBRARY_PATH>
+                        <DAQ_TEST_PARTITION>ccs</DAQ_TEST_PARTITION>
                     </environmentVariables>
                 </configuration>
             </plugin>

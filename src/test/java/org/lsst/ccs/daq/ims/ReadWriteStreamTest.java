@@ -16,11 +16,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.zip.CRC32;
 import static org.junit.Assume.assumeNotNull;
-import org.junit.jupiter.api.AfterEach;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.Before;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
+import org.junit.Test;
 
 /**
  *
@@ -38,7 +37,7 @@ public class ReadWriteStreamTest {
     private Folder testFolder;
     private ByteBuffer randomData;
 
-    @BeforeEach
+    @Before
     public void setUp() throws DAQException {
         // Make sure test folder exists
         System.out.println("LD_LIBRARY_PATH="+System.getenv("LD_LIBRARY_PATH"));
@@ -63,11 +62,7 @@ public class ReadWriteStreamTest {
         randomData.flip();
     }
 
-    @AfterEach
-    public void tearDown() {
-    }
-
-    //@Test
+    @Test
     public void testStream() throws DAQException, IOException, InterruptedException, ExecutionException {
         ExecutorService threadPool = Executors.newCachedThreadPool();
         final Queue<Future<long[]>> futureImages = new ArrayBlockingQueue<>(1);

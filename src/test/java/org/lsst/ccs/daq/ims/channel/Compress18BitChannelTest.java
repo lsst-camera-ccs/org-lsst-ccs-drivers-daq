@@ -2,9 +2,9 @@ package org.lsst.ccs.daq.ims.channel;
 
 import java.io.IOException;
 import java.nio.IntBuffer;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.Test;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 /**
  *
