@@ -89,8 +89,8 @@ class FitsFile implements Comparable<FitsFile> {
         result[REG_PRE_ROWS] = datasec[2];
         result[REG_READ_COLS] = datasec[1] - datasec[0];
         result[REG_READ_ROWS] = datasec[3] - datasec[2];
-        result[REG_OVER_COLS] = naxis1 - result[REG_READ_ROWS] - result[REG_PRE_ROWS];
-        result[REG_OVER_ROWS] = naxis2 - result[REG_READ_COLS] - result[REG_PRE_COLS];
+        result[REG_OVER_COLS] = naxis1 - result[REG_READ_COLS] - result[REG_PRE_COLS];
+        result[REG_OVER_ROWS] = naxis2 - result[REG_READ_ROWS] - result[REG_PRE_ROWS];
         return result;
     }
 
