@@ -12,6 +12,7 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -47,7 +48,9 @@ import org.lsst.ccs.daq.ims.channel.WritableIntChannel;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
 import org.lsst.ccs.utilities.image.DefaultImageSet;
 import org.lsst.ccs.utilities.image.FitsFileWriter;
+import org.lsst.ccs.utilities.image.FitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.image.ImageSet;
+import org.lsst.ccs.utilities.readout.PropertiesFitsHeaderMetadataProvider;
 
 /**
  *
@@ -187,7 +190,7 @@ public class CommandTool {
             props.put("SerialNumber", smd.getSerialNumber());
             props.put("DAQVersion", smd.getSoftware().toString());
 
-            //PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(props);
+            PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(props);
             // Open the FITS files (one per CCD) and write headers.
             File[] files = new File[ccdCount];
             FitsFileWriter[] writers = new FitsFileWriter[ccdCount];
@@ -203,12 +206,12 @@ public class CommandTool {
                     //ReadOutParameters readoutParameters = ReadOutParametersBuilder.create(ccd.getType(), smd.getRegisterValues()).build();
                     //ImageSet imageSet = new DaqImageSet(ccd, readoutParameters);
 
-                    //List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
+                    List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
                     //providers.add(rebNode.getFitsService().getFitsHeaderMetadataProvider(ccd.getUniqueId()));
                     //providers.add(new GeometryFitsHeaderMetadataProvider(ccd, readoutParameters));
-                    //providers.add(propsFitsHeaderMetadataProvider);
+                    providers.add(propsFitsHeaderMetadataProvider);
                     ImageSet imageSet = new DefaultImageSet(16, 512 + 64, 2048);
-                    writers[i] = new FitsFileWriter(files[i], imageSet);
+                    writers[i] = new FitsFileWriter(files[i], imageSet,providers);
                     for (int j = 0; j < 16; j++) {
                         fileChannels[i * 16 + j] = new FitsWriteChannel(writers[i], j);
                     }
