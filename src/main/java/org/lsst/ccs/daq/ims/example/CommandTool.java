@@ -196,6 +196,7 @@ public class CommandTool {
                 WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
                 for (int i = 0; i < ccdCount; i++) {
                     props.put("SensorName", source.getLocation().getSensorName(i));
+                    files[i] = new File(String.format("%s_%s_%s.fits",props.get("ImageName"), props.get("RaftName"), props.get("SensorName")));
                     //files[i] = config.getFitsFile(props);
                     //CCD ccd = rebNode.getReb().getCCDs().get(i);
                     // TODO: Readout parameters are currently hard-wired to old meta-data convention
