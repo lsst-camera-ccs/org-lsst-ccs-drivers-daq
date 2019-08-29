@@ -14,7 +14,10 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -36,8 +39,15 @@ import org.lsst.ccs.daq.ims.Source.ChannelMode;
 import org.lsst.ccs.daq.ims.SourceMetaData;
 import org.lsst.ccs.daq.ims.Store;
 import org.lsst.ccs.daq.ims.Utils;
+import org.lsst.ccs.daq.ims.channel.Decompress18BitChannel;
+import org.lsst.ccs.daq.ims.channel.DemultiplexingIntChannel;
 import org.lsst.ccs.daq.ims.channel.FitsIntReader;
+import org.lsst.ccs.daq.ims.channel.FitsWriteChannel;
+import org.lsst.ccs.daq.ims.channel.WritableIntChannel;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
+import org.lsst.ccs.utilities.image.DefaultImageSet;
+import org.lsst.ccs.utilities.image.FitsFileWriter;
+import org.lsst.ccs.utilities.image.ImageSet;
 
 /**
  *
@@ -139,7 +149,7 @@ public class CommandTool {
 
     @Command(name = "read", description = "Read and decode data in image")
     public void read(String path,
-            @Argument(defaultValue = "1048576") int bufferSize) throws DAQException, IOException {
+            @Argument(defaultValue = "1048576") int bufferSize) throws DAQException, IOException, FitsException {
         checkStore();
         Image image = imageFromPath(path);
         List<Source> sources = image.listSources();
@@ -154,16 +164,84 @@ public class CommandTool {
         CRC32 cksum = new CRC32();
         long start = System.nanoTime();
         for (Source source : sources) {
-            try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ)) {
-                for (;;) {
-                    buffer.clear();
-                    int l = channel.read(buffer);
-                    if (l < 0) {
-                        break;
+            int ccdCount = source.getSourceType().getCCDCount();
+            SourceMetaData smd = source.getMetaData();
+            // Note, we are not using a single map for both the FileNameProperties and
+            // for writing FITS file headers
+            Map<String, Object> props = new HashMap<>();
+            // TOOD: DO we need to handle the case where the image name does not match
+            // the LSST conventions?
+//            ImageName in = new ImageName(source.getImage().getMetaData().getName());
+//            props.put("ImageName", in.toString());
+//            props.put("ImageDate", in.getDateString());
+//            props.put("ImageNumber", in.getNumberString());
+//            props.put("ImageController", in.getController().getCode());
+//            props.put("ImageSource", in.getSource().getCode());
+            props.put("ImageName", source.getImage().getMetaData().getName());
+            props.put("FileCreationTime", new Date());
+            props.put("Tag", source.getImage().getMetaData().getId());
+            props.put("RaftName", source.getLocation().getRaftName());
+            props.put("RebName", source.getLocation().getBoardName());
+            props.put("Firmware", smd.getFirmware());
+            props.put("Platform", smd.getPlatform());
+            props.put("SerialNumber", smd.getSerialNumber());
+            props.put("DAQVersion", smd.getSoftware().toString());
+
+            //PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(props);
+            // Open the FITS files (one per CCD) and write headers.
+            File[] files = new File[ccdCount];
+            FitsFileWriter[] writers = new FitsFileWriter[ccdCount];
+            try {
+                // TODO: 16 should not be hard-wired here
+                WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
+                for (int i = 0; i < ccdCount; i++) {
+                    props.put("SensorName", source.getLocation().getSensorName(i));
+                    //files[i] = config.getFitsFile(props);
+                    //CCD ccd = rebNode.getReb().getCCDs().get(i);
+                    // TODO: Readout parameters are currently hard-wired to old meta-data convention
+                    //ReadOutParameters readoutParameters = ReadOutParametersBuilder.create(ccd.getType(), smd.getRegisterValues()).build();
+                    //ImageSet imageSet = new DaqImageSet(ccd, readoutParameters);
+
+                    //List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
+                    //providers.add(rebNode.getFitsService().getFitsHeaderMetadataProvider(ccd.getUniqueId()));
+                    //providers.add(new GeometryFitsHeaderMetadataProvider(ccd, readoutParameters));
+                    //providers.add(propsFitsHeaderMetadataProvider);
+                    ImageSet imageSet = new DefaultImageSet(16, 512 + 64, 2048);
+                    writers[i] = new FitsFileWriter(files[i], imageSet);
+                    for (int j = 0; j < 16; j++) {
+                        fileChannels[i * 16 + j] = new FitsWriteChannel(writers[i], j);
                     }
-                    totalReadSize += l;
-                    buffer.flip();
-                    cksum.update(buffer);
+                }
+                try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
+                        DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
+                        Decompress18BitChannel decompress = new Decompress18BitChannel(demultiplex)) {
+                    for (;;) {
+                        buffer.clear();
+                        int l = channel.read(buffer);
+                        if (l < 0) {
+                            break;
+                        }
+                        totalReadSize += l;
+                        buffer.flip();
+                        cksum.update(buffer);
+                        buffer.rewind();
+                        int leftover = buffer.remaining() % (4 * 9);
+                        if (leftover != 0) {
+                            buffer.limit(buffer.position() + buffer.remaining() - leftover);
+                            decompress.write(buffer.asIntBuffer());
+                            buffer.limit(buffer.limit() + leftover);
+                            buffer.compact();
+                        } else {
+                            decompress.write(buffer.asIntBuffer());
+                            buffer.clear();
+                        }
+                    }
+                }
+            } finally {
+                for (FitsFileWriter writer : writers) {
+                    if (writer != null) {
+                        writer.close();
+                    }
                 }
             }
         }
@@ -174,7 +252,7 @@ public class CommandTool {
 
     @Command(name = "write", description = "Write a set of FITS files to the store")
     public void write(String targetFolderName, File dir,
-            @Argument(defaultValue = "*.fits") String pattern) throws IOException, TruncatedFileException, DAQException {
+             @Argument(defaultValue = "*.fits") String pattern) throws IOException, TruncatedFileException, DAQException {
         checkStore();
         Folder target = store.getCatalog().find(targetFolderName);
         if (target == null) {
