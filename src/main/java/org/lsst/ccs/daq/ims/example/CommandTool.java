@@ -49,9 +49,9 @@ import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
 import org.lsst.ccs.utilities.ccd.CCD;
 import org.lsst.ccs.utilities.ccd.FocalPlane;
 import org.lsst.ccs.utilities.ccd.Reb;
-import org.lsst.ccs.utilities.image.DefaultImageSet;
 import org.lsst.ccs.utilities.image.FitsFileWriter;
 import org.lsst.ccs.utilities.image.FitsHeaderMetadataProvider;
+import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
 import org.lsst.ccs.utilities.image.ImageSet;
 import org.lsst.ccs.utilities.readout.GeometryFitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.readout.PropertiesFitsHeaderMetadataProvider;
@@ -67,8 +67,13 @@ public class CommandTool {
 
     private static final Pattern PATH_PATTERN = Pattern.compile("([0-9a-zA-Z\\-\\_]*)/?([0-9a-zA-Z\\-\\_]*)");
 
+    private static final FitsHeadersSpecificationsBuilder headerSpecsBuilder = new FitsHeadersSpecificationsBuilder();
+    
+    
     static {
         FitsFactory.setUseHierarch(true);
+        headerSpecsBuilder.addSpecFile("primary.spec");
+        headerSpecsBuilder.addSpecFile("extended.spec");
     }
 
     private Store store;
@@ -213,6 +218,7 @@ public class CommandTool {
                     files[i] = new File(String.format("%s_%s_%s.fits",props.get("ImageName"), props.get("RaftName"), props.get("SensorName")));
                     //files[i] = config.getFitsFile(props);
                     CCD ccd = reb.getCCDs().get(i);
+                    //If the type of the CCD needs to be changed, use CCDTypeUtils::changeCCDTypeForGeometry
                     // TODO: Readout parameters are currently hard-wired to old meta-data convention
                     ReadOutParameters readoutParameters = ReadOutParametersBuilder.create(ccd.getType(), smd.getRegisterValues()).build();
                     ImageSet imageSet = new ReadOutImageSet(ccd, readoutParameters);
@@ -222,7 +228,7 @@ public class CommandTool {
                     providers.add(new GeometryFitsHeaderMetadataProvider(ccd, readoutParameters));
                     providers.add(propsFitsHeaderMetadataProvider);
 //                    ImageSet imageSet = new DefaultImageSet(16, 512 + 64, 2048);
-                    writers[i] = new FitsFileWriter(files[i], imageSet,providers);
+                    writers[i] = new FitsFileWriter(files[i], imageSet, headerSpecsBuilder.getHeaderSpecifications(), providers);
                     
                     //TO-DO: use imageSet.getNumberOfImages() rather than hardwiring 16?
                     for (int j = 0; j < 16; j++) {
