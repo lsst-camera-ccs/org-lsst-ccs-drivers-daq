@@ -38,7 +38,7 @@ public class Compress18BitChannel implements ReadableIntChannel {
         result |= in<<bitPosition;
         bitPosition += 18;
         bitsRemaining = bitPosition - 32;
-        dataRemaining = in>>(18-bitsRemaining);
+        dataRemaining = in>>>(18-bitsRemaining);
         return result;    
     }
 

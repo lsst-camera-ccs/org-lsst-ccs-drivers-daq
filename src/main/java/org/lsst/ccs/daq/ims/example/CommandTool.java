@@ -6,6 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.IntBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.FileChannel;
@@ -228,6 +229,7 @@ public class CommandTool {
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
         ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
         long totalReadSize = 0;
         CRC32 cksum = new CRC32();
         long start = System.nanoTime();
