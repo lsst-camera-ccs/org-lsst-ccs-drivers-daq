@@ -2,10 +2,13 @@ package org.lsst.ccs.daq.ims.example;
 
 import org.lsst.ccs.daq.ims.channel.XORWritableIntChannel;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.ByteChannel;
+import java.nio.channels.FileChannel;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -169,6 +172,47 @@ public class CommandTool {
             throw new RuntimeException("No such folder: " + target);
         }
         image.moveTo(targetFolderName);
+    }
+
+    @Command(name = "readRaw")
+    public void readRaw(String path, @Argument(defaultValue = "1048576") int bufferSize) throws FileNotFoundException, DAQException, IOException {
+        checkStore();
+        Image image = imageFromPath(path);
+        List<Source> sources = image.listSources();
+        long totalSize = 0;
+        for (Source source : sources) {
+            totalSize += source.size();
+        }
+        System.out.printf("Expected size %,d bytes\n", totalSize);
+
+        ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
+        long totalReadSize = 0;
+        CRC32 cksum = new CRC32();
+        long start = System.nanoTime();
+        for (Source source : sources) {
+            File file = new File(source.getLocation().toString().replace("/", "_") + ".raw");
+            try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
+                    FileChannel out = new FileOutputStream(file).getChannel()) {
+                for (;;) {
+                    buffer.clear();
+                    int l = channel.read(buffer);
+                    if (l < 0) {
+                        break;
+                    }
+                    totalReadSize += l;
+                    buffer.flip();
+                    cksum.update(buffer);
+                    buffer.rewind();
+                    out.write(buffer);
+                }
+            }
+        }
+        long stop = System.nanoTime();
+
+        System.out.printf(
+                "Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
+        System.out.printf(
+                "Checksum %,d\n", cksum.getValue());
     }
 
     @Command(name = "read", description = "Read and decode data in image")
