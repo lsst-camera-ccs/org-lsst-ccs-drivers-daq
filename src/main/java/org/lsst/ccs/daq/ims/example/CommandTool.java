@@ -46,11 +46,18 @@ import org.lsst.ccs.daq.ims.channel.FitsIntReader;
 import org.lsst.ccs.daq.ims.channel.FitsWriteChannel;
 import org.lsst.ccs.daq.ims.channel.WritableIntChannel;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
+import org.lsst.ccs.utilities.ccd.CCD;
+import org.lsst.ccs.utilities.ccd.FocalPlane;
+import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.image.DefaultImageSet;
 import org.lsst.ccs.utilities.image.FitsFileWriter;
 import org.lsst.ccs.utilities.image.FitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.image.ImageSet;
+import org.lsst.ccs.utilities.readout.GeometryFitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.readout.PropertiesFitsHeaderMetadataProvider;
+import org.lsst.ccs.utilities.readout.ReadOutImageSet;
+import org.lsst.ccs.utilities.readout.ReadOutParameters;
+import org.lsst.ccs.utilities.readout.ReadOutParametersBuilder;
 
 /**
  *
@@ -65,6 +72,8 @@ public class CommandTool {
     }
 
     private Store store;
+    
+    private final FocalPlane focalPlane = FocalPlane.createFocalPlane();
 
     @Command(name = "connect", description = "Connect to a DAQ store")
     public void connect(@Argument(name = "partition", description = "Partition name") String partition) throws DAQException {
@@ -189,6 +198,8 @@ public class CommandTool {
             props.put("Platform", smd.getPlatform());
             props.put("SerialNumber", smd.getSerialNumber());
             props.put("DAQVersion", smd.getSoftware().toString());
+            
+            Reb reb = focalPlane.getReb(source.getLocation().getRaftName()+"/"+source.getLocation().getBoardName());
 
             PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(props);
             // Open the FITS files (one per CCD) and write headers.
@@ -201,17 +212,19 @@ public class CommandTool {
                     props.put("SensorName", source.getLocation().getSensorName(i));
                     files[i] = new File(String.format("%s_%s_%s.fits",props.get("ImageName"), props.get("RaftName"), props.get("SensorName")));
                     //files[i] = config.getFitsFile(props);
-                    //CCD ccd = rebNode.getReb().getCCDs().get(i);
+                    CCD ccd = reb.getCCDs().get(i);
                     // TODO: Readout parameters are currently hard-wired to old meta-data convention
-                    //ReadOutParameters readoutParameters = ReadOutParametersBuilder.create(ccd.getType(), smd.getRegisterValues()).build();
-                    //ImageSet imageSet = new DaqImageSet(ccd, readoutParameters);
+                    ReadOutParameters readoutParameters = ReadOutParametersBuilder.create(ccd.getType(), smd.getRegisterValues()).build();
+                    ImageSet imageSet = new ReadOutImageSet(ccd, readoutParameters);
 
                     List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
                     //providers.add(rebNode.getFitsService().getFitsHeaderMetadataProvider(ccd.getUniqueId()));
-                    //providers.add(new GeometryFitsHeaderMetadataProvider(ccd, readoutParameters));
+                    providers.add(new GeometryFitsHeaderMetadataProvider(ccd, readoutParameters));
                     providers.add(propsFitsHeaderMetadataProvider);
-                    ImageSet imageSet = new DefaultImageSet(16, 512 + 64, 2048);
+//                    ImageSet imageSet = new DefaultImageSet(16, 512 + 64, 2048);
                     writers[i] = new FitsFileWriter(files[i], imageSet,providers);
+                    
+                    //TO-DO: use imageSet.getNumberOfImages() rather than hardwiring 16?
                     for (int j = 0; j < 16; j++) {
                         fileChannels[i * 16 + j] = new FitsWriteChannel(writers[i], j);
                     }
