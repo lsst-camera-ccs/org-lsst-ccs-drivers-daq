@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.ims.example;
 
+import org.lsst.ccs.daq.ims.channel.XORWritableIntChannel;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -47,6 +48,8 @@ import org.lsst.ccs.daq.ims.channel.FitsWriteChannel;
 import org.lsst.ccs.daq.ims.channel.WritableIntChannel;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
 import org.lsst.ccs.utilities.ccd.CCD;
+import org.lsst.ccs.utilities.ccd.CCDType;
+import org.lsst.ccs.utilities.ccd.CCDTypeUtils;
 import org.lsst.ccs.utilities.ccd.FocalPlane;
 import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.image.FitsFileWriter;
@@ -67,18 +70,22 @@ public class CommandTool {
 
     private static final Pattern PATH_PATTERN = Pattern.compile("([0-9a-zA-Z\\-\\_]*)/?([0-9a-zA-Z\\-\\_]*)");
 
-    private static final FitsHeadersSpecificationsBuilder headerSpecsBuilder = new FitsHeadersSpecificationsBuilder();
-    
-    
+    private static final FitsHeadersSpecificationsBuilder HEADER_SPEC_BUILDER = new FitsHeadersSpecificationsBuilder();
+
     static {
         FitsFactory.setUseHierarch(true);
-        headerSpecsBuilder.addSpecFile("primary.spec");
-        headerSpecsBuilder.addSpecFile("extended.spec");
+        HEADER_SPEC_BUILDER.addSpecFile("primary.spec");
+        HEADER_SPEC_BUILDER.addSpecFile("extended.spec");
     }
 
     private Store store;
-    
+
     private final FocalPlane focalPlane = FocalPlane.createFocalPlane();
+
+    public CommandTool() {
+        // TODO: Temporary fix
+        CCDTypeUtils.changeCCDTypeForGeometry(focalPlane.getChild(2, 2), CCDType.getCCDType("itl"));
+    }
 
     @Command(name = "connect", description = "Connect to a DAQ store")
     public void connect(@Argument(name = "partition", description = "Partition name") String partition) throws DAQException {
@@ -203,8 +210,8 @@ public class CommandTool {
             props.put("Platform", smd.getPlatform());
             props.put("SerialNumber", smd.getSerialNumber());
             props.put("DAQVersion", smd.getSoftware().toString());
-            
-            Reb reb = focalPlane.getReb(source.getLocation().getRaftName()+"/"+source.getLocation().getBoardName());
+
+            Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
 
             PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(props);
             // Open the FITS files (one per CCD) and write headers.
@@ -215,7 +222,7 @@ public class CommandTool {
                 WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
                 for (int i = 0; i < ccdCount; i++) {
                     props.put("SensorName", source.getLocation().getSensorName(i));
-                    files[i] = new File(String.format("%s_%s_%s.fits",props.get("ImageName"), props.get("RaftName"), props.get("SensorName")));
+                    files[i] = new File(String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftName"), props.get("SensorName")));
                     //files[i] = config.getFitsFile(props);
                     CCD ccd = reb.getCCDs().get(i);
                     //If the type of the CCD needs to be changed, use CCDTypeUtils::changeCCDTypeForGeometry
@@ -228,8 +235,8 @@ public class CommandTool {
                     providers.add(new GeometryFitsHeaderMetadataProvider(ccd, readoutParameters));
                     providers.add(propsFitsHeaderMetadataProvider);
 //                    ImageSet imageSet = new DefaultImageSet(16, 512 + 64, 2048);
-                    writers[i] = new FitsFileWriter(files[i], imageSet, headerSpecsBuilder.getHeaderSpecifications(), providers);
-                    
+                    writers[i] = new FitsFileWriter(files[i], imageSet, HEADER_SPEC_BUILDER.getHeaderSpecifications(), providers);
+
                     //TO-DO: use imageSet.getNumberOfImages() rather than hardwiring 16?
                     for (int j = 0; j < 16; j++) {
                         fileChannels[i * 16 + j] = new FitsWriteChannel(writers[i], j);
@@ -237,7 +244,8 @@ public class CommandTool {
                 }
                 try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
                         DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
-                        Decompress18BitChannel decompress = new Decompress18BitChannel(demultiplex)) {
+                        XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, 0x1fff);
+                        Decompress18BitChannel decompress = new Decompress18BitChannel(xor)) {
                     for (;;) {
                         buffer.clear();
                         int l = channel.read(buffer);
@@ -275,7 +283,7 @@ public class CommandTool {
 
     @Command(name = "write", description = "Write a set of FITS files to the store")
     public void write(String targetFolderName, File dir,
-             @Argument(defaultValue = "*.fits") String pattern) throws IOException, TruncatedFileException, DAQException {
+            @Argument(defaultValue = "*.fits") String pattern) throws IOException, TruncatedFileException, DAQException {
         checkStore();
         Folder target = store.getCatalog().find(targetFolderName);
         if (target == null) {
