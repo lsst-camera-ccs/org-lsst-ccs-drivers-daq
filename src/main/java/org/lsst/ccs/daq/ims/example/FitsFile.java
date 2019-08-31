@@ -14,10 +14,10 @@ import nom.tam.fits.Header;
 import org.lsst.ccs.daq.ims.Location;
 
 /**
- *
+ * Utilities for reading FITS files
  * @author tonyj
  */
-public class FitsFile implements Comparable<FitsFile> {
+class FitsFile implements Comparable<FitsFile> {
 
     private static final Pattern DATASEC_PATTERN = Pattern.compile("\\[(\\d+):(\\d+),(\\d+):(\\d+)\\]");
 
@@ -27,7 +27,7 @@ public class FitsFile implements Comparable<FitsFile> {
     private final String ccdSlot;
     private final int naxis1;
     private final int naxis2;
-    private int[] datasec = new int[4];
+    private final int[] datasec = new int[4];
 
     FitsFile(File file, Header primary, Header image) throws FitsException {
         this.file = file;
@@ -72,7 +72,7 @@ public class FitsFile implements Comparable<FitsFile> {
     }
 
     int[] getReadOutParameters() {
-        // TODO: This works for science rafts, and the old meta-data scheme.
+        // TODO: This works for science rafts, and the old meta-data scheme only.
         int REG_READ_ROWS = 0,
                 REG_READ_COLS = 1,
                 REG_PRE_ROWS = 2,
@@ -85,12 +85,12 @@ public class FitsFile implements Comparable<FitsFile> {
                 NUM_REGISTERS = 9;
 
         int[] result = new int[NUM_REGISTERS];
-        result[REG_PRE_ROWS] = datasec[0];
-        result[REG_PRE_COLS] = datasec[2];
-        result[REG_READ_ROWS] = datasec[1] - datasec[0];
-        result[REG_READ_COLS] = datasec[3] - datasec[2];
-        result[REG_OVER_ROWS] = naxis1 - result[REG_READ_ROWS] - result[REG_PRE_ROWS];
-        result[REG_OVER_COLS] = naxis2 - result[REG_READ_COLS] - result[REG_PRE_COLS];
+        result[REG_PRE_COLS] = datasec[0];
+        result[REG_PRE_ROWS] = datasec[2];
+        result[REG_READ_COLS] = datasec[1] - datasec[0];
+        result[REG_READ_ROWS] = datasec[3] - datasec[2];
+        result[REG_OVER_COLS] = naxis1 - result[REG_READ_COLS] - result[REG_PRE_COLS];
+        result[REG_OVER_ROWS] = naxis2 - result[REG_READ_ROWS] - result[REG_PRE_ROWS];
         return result;
     }
 

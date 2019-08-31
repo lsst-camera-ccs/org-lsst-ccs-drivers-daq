@@ -146,7 +146,7 @@ class DAQSourceChannel implements ByteChannel {
                 int err;
                 // TODO: Check if synchronizing on store is really necessary. Mike says not.
                 synchronized (store) {
-                    System.out.printf("Read %d %d %d %d\n", channel_, position, offset, l);
+                    //System.out.printf("Read %d %d %d %d\n", channel_, position, offset, l);
                     err = read(channel_, dst, position, offset, l);
                 }
                 if (err != 0) {

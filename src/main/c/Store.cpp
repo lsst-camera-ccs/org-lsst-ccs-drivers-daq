@@ -88,12 +88,13 @@ jobject createImageMetaData(JNIEnv* env, Image& image) {
     const ImageMetadata& metaData = image.metadata();
     jstring name = env->NewStringUTF(metaData.name());
     jstring annotation = env->NewStringUTF(metaData.annotation());
+    jstring folder = env->NewStringUTF(metaData.folder());
     jint opcode = metaData.opcode();
     jlong timestamp = metaData.timestamp();
     jlong id_ = image.id().value();
     jobject bitset = createBitSet(env, metaData.elements());
     jobject version_ = createVersion(env, metaData.release());
-    return env->NewObject(JCimageMetaDataClass, JCimageMetaDataConstructor, id_, name, annotation, version_, opcode, timestamp, bitset);
+    return env->NewObject(JCimageMetaDataClass, JCimageMetaDataConstructor, id_, name, folder, annotation, version_, opcode, timestamp, bitset);
 }
 
 jobject createSourceMetaData(JNIEnv* env, const Source& source) {
@@ -111,7 +112,7 @@ jobject createSourceMetaData(JNIEnv* env, const Source& source) {
     int size = il.size();
     jint register_values[size];
     for (int i = 0; i < size; i++) {
-        register_values[i] = il.lookup(i)->reg();
+        register_values[i] = il.lookup(i)->operand();
     }
     jintArray registerValues = env->NewIntArray(size);
     env->SetIntArrayRegion(registerValues, 0, size, register_values);
@@ -204,7 +205,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     }
     JCimageMetaDataClass = (jclass) env->NewGlobalRef(imageMetaDataClass);
 
-    JCimageMetaDataConstructor = env->GetMethodID(imageMetaDataClass, "<init>", "(JLjava/lang/String;Ljava/lang/String;Lorg/lsst/ccs/daq/ims/Version;IJLjava/util/BitSet;)V");
+    JCimageMetaDataConstructor = env->GetMethodID(imageMetaDataClass, "<init>", "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/lsst/ccs/daq/ims/Version;IJLjava/util/BitSet;)V");
     if (env->ExceptionCheck()) {
         return JNI_ERR;
     }
@@ -400,8 +401,8 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_addImageToFolder
     const char *annotation_ = env->GetStringUTFChars(annotation, 0);
 
     DAQ::LocationSet locations_ = convertLocations(env, locations);
-    ImageMetadata meta(image_name, locations_, opcode, annotation_);
-    Image image(folder_name, meta, *store_);
+    ImageMetadata meta(image_name, folder_name, locations_, opcode, annotation_);
+    Image image(meta, *store_);
     if (!image) {
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Creating image %s in folder %s failed", image_name, folder_name);

@@ -18,7 +18,7 @@ public class ImageMetaData {
     private final LocationSet elements;
     private final long id;
 
-    ImageMetaData(long id, String name, String annotation, Version release, int opcode, long timestampNanos, BitSet elements) {
+    ImageMetaData(long id, String name, String folderName, String annotation, Version release, int opcode, long timestampNanos, BitSet elements) {
         this.id = id;
         this.name = name;
         this.annotation = annotation;

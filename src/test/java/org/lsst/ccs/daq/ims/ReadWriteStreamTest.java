@@ -15,11 +15,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.zip.CRC32;
-import org.junit.jupiter.api.AfterEach;
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static org.junit.Assume.assumeNotNull;
+import org.junit.Before;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
+import org.junit.Test;
 
 /**
  *
@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
  */
 public class ReadWriteStreamTest {
 
-    private static final String TEST_PARTITION = "dev";
     private static final String TEST_FOLDER = "testFolder";
     private static final String TEST_IMAGE_NAME = "testImage";
     private static final int WRITE_BUFFER_SIZE = 1024*1024;
@@ -38,10 +37,15 @@ public class ReadWriteStreamTest {
     private Folder testFolder;
     private ByteBuffer randomData;
 
-    @BeforeEach
+    @Before
     public void setUp() throws DAQException {
         // Make sure test folder exists
-        store = new Store(TEST_PARTITION);
+        System.out.println("LD_LIBRARY_PATH="+System.getenv("LD_LIBRARY_PATH"));
+        String testPartition = System.getProperty("DAQ_TEST_PARTITION");
+        System.out.println("DAQ_TEST_PARTITION="+testPartition);
+        // This does not appear to work, not sure why
+        assumeNotNull(testPartition);
+        store = new Store(testPartition);
         testFolder = store.getCatalog().find(TEST_FOLDER);
         if (testFolder == null) {
             testFolder = store.getCatalog().insert(TEST_FOLDER);
@@ -58,11 +62,7 @@ public class ReadWriteStreamTest {
         randomData.flip();
     }
 
-    @AfterEach
-    public void tearDown() {
-    }
-
-    //@Test -- Commented out for now since requires DAQ
+    @Test
     public void testStream() throws DAQException, IOException, InterruptedException, ExecutionException {
         ExecutorService threadPool = Executors.newCachedThreadPool();
         final Queue<Future<long[]>> futureImages = new ArrayBlockingQueue<>(1);

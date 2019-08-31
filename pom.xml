@@ -50,16 +50,16 @@
                     </compilerArgs>
                 </configuration>
             </plugin>    
-            <!--
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>2.22.2</version>
                 <configuration>
-                    <argLine>-Djava.library.path=target/lib64</argLine>
+                    <argLine>-Djava.library.path=target/classes/lib64/</argLine>
                     <trimStackTrace>false</trimStackTrace>
+                    <environmentVariables>
+                        <LD_LIBRARY_PATH>lib64/daq/R4-V2.0/x86/lib</LD_LIBRARY_PATH>
+                    </environmentVariables>
                 </configuration>
             </plugin>
-            -->
             <!--
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -91,6 +91,12 @@
         <dependency>
             <groupId>org.lsst</groupId>
             <artifactId>org-lsst-ccs-command</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.lsst</groupId>
+            <artifactId>org-lsst-ccs-image-utilities</artifactId>
+            <version>3.0.0-SNAPSHOT</version>
+            <type>jar</type>
         </dependency>
     </dependencies>
 </project>

@@ -5,7 +5,7 @@ LIBTGT = $(TGT)/$(ARCH)
 CC = g++ -std=c++0x -fPIC -Wno-deprecated
 INC = $(TGT)/headers
 
-DAQ_HOME ?= ../../../lib64/daq/R4-V1.0-IR2
+DAQ_HOME ?= ../../../lib64/daq/R4-V2.0
 
 all: $(LIBTGT)/libccs_daq_ims.so
 

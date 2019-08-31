@@ -3,7 +3,7 @@ package org.lsst.ccs.daq.ims.channel;
 import java.io.IOException;
 import java.nio.IntBuffer;
 import java.util.Random;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 /**
  *
