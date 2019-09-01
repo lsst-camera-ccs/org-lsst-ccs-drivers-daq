@@ -50,7 +50,8 @@ public class Compress18BitChannel implements ReadableIntChannel {
     @Override
     public void close() throws IOException {
         input.close();
+        if (bitsRemaining != 0) {
+            throw new IOException("Unused data remaining on close");
+        }
     }
-    
-    
 }

@@ -6,13 +6,12 @@ import java.io.IOException;
  *
  * @author tonyj
  */
-public class XORWritableIntChannel implements WritableIntChannel {
+public class XORWritableIntChannel extends FilterWritableIntChannel {
 
-    private final WritableIntChannel input;
     private final int xorPattern;
 
     public XORWritableIntChannel(WritableIntChannel input, int xorPattern) {
-        this.input = input;
+        super(input);
         this.xorPattern = xorPattern;
     }
 
@@ -21,14 +20,4 @@ public class XORWritableIntChannel implements WritableIntChannel {
         input.write(i ^ xorPattern);
     }
 
-    @Override
-    public boolean isOpen() {
-        return input.isOpen();
-    }
-
-    @Override
-    public void close() throws IOException {
-        input.close();
-    }
-    
 }
