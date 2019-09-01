@@ -216,7 +216,8 @@ public class CommandTool {
     }
 
     @Command(name = "read", description = "Read and decode data in image")
-    public void read(String path,
+    public void read(String path, 
+            @Argument(defaultValue=".",description = "Folder where FITS files will be written") File dir, 
             @Argument(defaultValue = "1048576") int bufferSize) throws DAQException, IOException, FitsException {
         checkStore();
         Image image = imageFromPath(path);
@@ -267,7 +268,7 @@ public class CommandTool {
                 WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
                 for (int i = 0; i < ccdCount; i++) {
                     props.put("SensorName", source.getLocation().getSensorName(i));
-                    files[i] = new File(String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftName"), props.get("SensorName")));
+                    files[i] = new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftName"), props.get("SensorName")));
                     //files[i] = config.getFitsFile(props);
                     CCD ccd = reb.getCCDs().get(i);
                     //If the type of the CCD needs to be changed, use CCDTypeUtils::changeCCDTypeForGeometry
