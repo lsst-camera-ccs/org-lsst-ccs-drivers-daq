@@ -17,26 +17,27 @@ public class MultiplexingIntChannel implements ReadableIntChannel {
         this.size = input.length;
         this.next = 0;
     }
-    
+
     @Override
     public int read() throws IOException {
         int result = input[next].read();
-        next = (next+1) % size;
+        next = (next + 1) % size;
         return result;
     }
 
-
     @Override
     public void close() throws IOException {
-        for (ReadableIntChannel in : input) {
-            in.close();
+        if (input != null) {
+            for (ReadableIntChannel in : input) {
+                in.close();
+            }
+            input = null;
         }
-        input = null;
     }
 
     @Override
     public boolean isOpen() {
         return input != null;
     }
-    
+
 }

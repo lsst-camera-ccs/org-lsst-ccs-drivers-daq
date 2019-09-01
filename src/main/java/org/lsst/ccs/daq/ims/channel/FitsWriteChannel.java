@@ -2,7 +2,7 @@ package org.lsst.ccs.daq.ims.channel;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
+import java.nio.ByteOrder;
 import org.lsst.ccs.utilities.image.FitsFileWriter;
 
 import java.nio.IntBuffer;
@@ -20,6 +20,7 @@ public class FitsWriteChannel implements WritableIntChannel {
     public FitsWriteChannel(FitsFileWriter writer, int segment) {
         this.writer = writer;
         this.segment = segment;
+        bb.order(ByteOrder.BIG_ENDIAN);
     }
 
     @Override

@@ -11,29 +11,31 @@ import org.junit.Test;
  * @author tonyj
  */
 public class Compress18BitChannelTest {
- 
+
     @Test
     public void testDecompressCompress() throws IOException {
-    
+
         int[] data = {1, 2, 3, 4, 5, 6, 7, 8, 9};
         IntBuffer input = IntBuffer.wrap(data);
         IntBuffer output1 = IntBuffer.allocate(8);
         IntBuffer output2 = IntBuffer.allocate(8);
-        WritableIntChannel destination = new DemultiplexingIntChannel(new IntBufferWriter(output1), new IntBufferWriter(output2));
-        Decompress18BitChannel b18 = new Decompress18BitChannel(destination);
-        b18.write(input);
-        assertEquals(8, output1.position());
-        assertEquals(8, output2.position());
-        
+        try (WritableIntChannel destination = new DemultiplexingIntChannel(new IntBufferWriter(output1), new IntBufferWriter(output2));
+                Decompress18BitChannel b18 = new Decompress18BitChannel(destination)) {
+            b18.write(input);
+            assertEquals(8, output1.position());
+            assertEquals(8, output2.position());
+        }
+
         output1.flip();
         output2.flip();
-        
-        MultiplexingIntChannel multi = new MultiplexingIntChannel(new IntBufferReader(output1), new IntBufferReader(output2));
-        Compress18BitChannel compress = new Compress18BitChannel(multi);
-        int[] result = new int[data.length];
-        for (int i=0; i<result.length; i++) {
-            result[i] = compress.read();
+
+        try (MultiplexingIntChannel multi = new MultiplexingIntChannel(new IntBufferReader(output1), new IntBufferReader(output2));
+                Compress18BitChannel compress = new Compress18BitChannel(multi)) {
+            int[] result = new int[data.length];
+            for (int i = 0; i < result.length; i++) {
+                result[i] = compress.read();
+            }
+            assertArrayEquals(data, result);
         }
-        assertArrayEquals(data, result);
     }
 }

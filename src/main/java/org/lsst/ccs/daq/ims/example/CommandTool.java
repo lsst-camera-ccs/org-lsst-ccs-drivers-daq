@@ -1,6 +1,5 @@
 package org.lsst.ccs.daq.ims.example;
 
-import org.lsst.ccs.daq.ims.channel.XORWritableIntChannel;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -290,10 +289,8 @@ public class CommandTool {
                 }
                 try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
                         DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
-                        XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, 0x1fff);
-                        Decompress18BitChannel decompress = new Decompress18BitChannel(xor)) {
+                        Decompress18BitChannel decompress = new Decompress18BitChannel(demultiplex)) {
                     for (;;) {
-                        buffer.clear();
                         int l = channel.read(buffer);
                         if (l < 0) {
                             break;
@@ -302,16 +299,8 @@ public class CommandTool {
                         buffer.flip();
                         cksum.update(buffer);
                         buffer.rewind();
-                        int leftover = buffer.remaining() % (4 * 9);
-                        if (leftover != 0) {
-                            buffer.limit(buffer.position() + buffer.remaining() - leftover);
-                            decompress.write(buffer.asIntBuffer());
-                            buffer.limit(buffer.limit() + leftover);
-                            buffer.compact();
-                        } else {
-                            decompress.write(buffer.asIntBuffer());
-                            buffer.clear();
-                        }
+                        decompress.write(buffer.asIntBuffer());
+                        buffer.clear();
                     }
                 }
             } finally {
