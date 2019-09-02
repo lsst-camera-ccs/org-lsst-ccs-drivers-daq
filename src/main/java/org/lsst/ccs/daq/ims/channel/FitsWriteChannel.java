@@ -12,40 +12,41 @@ import java.nio.IntBuffer;
  */
 public class FitsWriteChannel implements WritableIntChannel {
 
-    ByteBuffer bb = ByteBuffer.allocateDirect(1_000_000);
-    private final int segment;
-    private final FitsFileWriter writer;
-    private boolean isOpen = true;
+    ByteBuffer currentBuffer;
+    final int segment;
+    final FitsFileWriter writer;
+    boolean isOpen = true;
     
     public FitsWriteChannel(FitsFileWriter writer, int segment) {
         this.writer = writer;
         this.segment = segment;
-        bb.order(ByteOrder.BIG_ENDIAN);
+        currentBuffer = ByteBuffer.allocateDirect(1_000_000);
+        currentBuffer.order(ByteOrder.BIG_ENDIAN);
     }
 
     @Override
     public void write(int i) throws IOException {
-        if (bb.remaining()<4) {
+        if (currentBuffer.remaining()<4) {
             flush();
         }
-        bb.putInt(i);
+        currentBuffer.putInt(i);
     }
 
     @Override
     public void write(IntBuffer buffer) throws IOException {
         while (buffer.hasRemaining()) {
-            IntBuffer asIntBuffer = bb.asIntBuffer();
+            IntBuffer asIntBuffer = currentBuffer.asIntBuffer();
             if (buffer.remaining()<asIntBuffer.remaining()) {
                 asIntBuffer.put(buffer);
-                bb.position(bb.position() + asIntBuffer.position());
+                currentBuffer.position(currentBuffer.position() + asIntBuffer.position());
             } else {
                 int oldLimit = buffer.limit();
                 buffer.limit(buffer.position() + asIntBuffer.remaining());
                 asIntBuffer.put(buffer);
-                bb.position(bb.position() + asIntBuffer.position());
+                currentBuffer.position(currentBuffer.position() + asIntBuffer.position());
                 buffer.limit(oldLimit);
             }
-            if (bb.remaining()==0) {
+            if (currentBuffer.remaining()==0) {
                 flush();
             }
         }
@@ -65,10 +66,10 @@ public class FitsWriteChannel implements WritableIntChannel {
         }
     }
 
-    private void flush() throws IOException {
-        bb.flip();
-        writer.write(segment, bb);
-        bb.clear();
+    void flush() throws IOException {
+        currentBuffer.flip();
+        writer.write(segment, currentBuffer);
+        currentBuffer.clear();
     }
     
 }
