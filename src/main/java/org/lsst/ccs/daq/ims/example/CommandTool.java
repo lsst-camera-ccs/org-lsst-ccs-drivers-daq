@@ -93,6 +93,7 @@ public class CommandTool {
      * settable.
      */
     private final int[] dataSegmentMap = {15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7};
+    private final int[] dataSensorMap = {2, 1, 0};
 
     private Store store;
     private final FocalPlane focalPlane = FocalPlane.createFocalPlane();
@@ -204,7 +205,7 @@ public class CommandTool {
         CRC32 cksum = new CRC32();
         long start = System.nanoTime();
         for (Source source : sources) {
-            File file = new File(dir, source.getLocation().toString().replace("/", "_") + ".raw");
+            File file = new File(dir, String.format("%s_%s.raw",source.getImage().getMetaData().getName(), source.getLocation().toString().replace("/", "_")));
             try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
                     FileChannel out = new FileOutputStream(file).getChannel()) {
                 for (;;) {
@@ -281,7 +282,7 @@ public class CommandTool {
                 // TODO: 16 should not be hard-wired here
                 WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
                 for (int i = 0; i < ccdCount; i++) {
-                    props.put("SensorName", source.getLocation().getSensorName(i));
+                    props.put("SensorName", source.getLocation().getSensorName(dataSensorMap[i]));
                     files[i] = new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftName"), props.get("SensorName")));
                     //files[i] = config.getFitsFile(props);
                     CCD ccd = reb.getCCDs().get(i);
