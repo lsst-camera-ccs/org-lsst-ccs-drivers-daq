@@ -49,6 +49,7 @@ import org.lsst.ccs.daq.ims.channel.DemultiplexingIntChannel;
 import org.lsst.ccs.daq.ims.channel.FitsIntReader;
 import org.lsst.ccs.daq.ims.channel.FitsWriteChannel;
 import org.lsst.ccs.daq.ims.channel.WritableIntChannel;
+import org.lsst.ccs.daq.ims.channel.XORWritableIntChannel;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
 import org.lsst.ccs.utilities.ccd.CCD;
 import org.lsst.ccs.utilities.ccd.CCDType;
@@ -72,7 +73,6 @@ import org.lsst.ccs.utilities.readout.ReadOutParametersBuilder;
 public class CommandTool {
 
     private static final Pattern PATH_PATTERN = Pattern.compile("([0-9a-zA-Z\\-\\_]*)/?([0-9a-zA-Z\\-\\_]*)");
-
     private static final FitsHeadersSpecificationsBuilder HEADER_SPEC_BUILDER = new FitsHeadersSpecificationsBuilder();
 
     static {
@@ -81,8 +81,20 @@ public class CommandTool {
         HEADER_SPEC_BUILDER.addSpecFile("extended.spec");
     }
 
-    private Store store;
+    /**
+     * The order of the Segments in the fits files is: S10->...
+     * ->S17->S07->...->S00
+     *
+     * while the order of the segments coming from the DAQ is
+     * S00->...->S07->S10->...->S17
+     *
+     * So we introduce the array below to describe the needed mapping. Note, the
+     * ATS appears to have a different mapping, so this needs to be made
+     * settable.
+     */
+    private final int[] dataSegmentMap = {15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7};
 
+    private Store store;
     private final FocalPlane focalPlane = FocalPlane.createFocalPlane();
 
     public CommandTool() {
@@ -175,7 +187,9 @@ public class CommandTool {
     }
 
     @Command(name = "readRaw")
-    public void readRaw(String path, @Argument(defaultValue = "1048576") int bufferSize) throws FileNotFoundException, DAQException, IOException {
+    public void readRaw(String path,
+            @Argument(defaultValue = ".", description = "Folder where FITS files will be written") File dir,
+            @Argument(defaultValue = "1048576") int bufferSize) throws FileNotFoundException, DAQException, IOException {
         checkStore();
         Image image = imageFromPath(path);
         List<Source> sources = image.listSources();
@@ -190,7 +204,7 @@ public class CommandTool {
         CRC32 cksum = new CRC32();
         long start = System.nanoTime();
         for (Source source : sources) {
-            File file = new File(source.getLocation().toString().replace("/", "_") + ".raw");
+            File file = new File(dir, source.getLocation().toString().replace("/", "_") + ".raw");
             try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
                     FileChannel out = new FileOutputStream(file).getChannel()) {
                 for (;;) {
@@ -216,8 +230,8 @@ public class CommandTool {
     }
 
     @Command(name = "read", description = "Read and decode data in image")
-    public void read(String path, 
-            @Argument(defaultValue=".",description = "Folder where FITS files will be written") File dir, 
+    public void read(String path,
+            @Argument(defaultValue = ".", description = "Folder where FITS files will be written") File dir,
             @Argument(defaultValue = "1048576") int bufferSize) throws DAQException, IOException, FitsException {
         checkStore();
         Image image = imageFromPath(path);
@@ -285,12 +299,13 @@ public class CommandTool {
 
                     //TO-DO: use imageSet.getNumberOfImages() rather than hardwiring 16?
                     for (int j = 0; j < 16; j++) {
-                        fileChannels[i * 16 + j] = new FitsWriteChannel(writers[i], j);
+                        fileChannels[i * 16 + j] = new FitsWriteChannel(writers[i], dataSegmentMap[j]);
                     }
                 }
                 try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
                         DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
-                        Decompress18BitChannel decompress = new Decompress18BitChannel(demultiplex)) {
+                        XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, 0x1FFFF);
+                        Decompress18BitChannel decompress = new Decompress18BitChannel(xor)) {
                     for (;;) {
                         int l = channel.read(buffer);
                         if (l < 0) {

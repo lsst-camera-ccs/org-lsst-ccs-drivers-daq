@@ -18,8 +18,8 @@ public class Decompress18BitChannel extends FilterWritableIntChannel {
     }
 
     @Override
-    public void write(int i) throws IOException {
-        dataRemaining |= (i & 0xFFFFFFFFL) << bitsRemaining;
+    public void write(int data) throws IOException {
+        dataRemaining |= (data & 0xFFFFFFFFL) << bitsRemaining;
         bitsRemaining += 32;
         while (bitsRemaining >= 18) {
            input.write((int) (dataRemaining & 0x2FFFF));
