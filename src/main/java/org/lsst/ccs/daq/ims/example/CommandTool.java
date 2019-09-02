@@ -25,9 +25,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.CRC32;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
 import nom.tam.fits.Header;
@@ -46,8 +50,8 @@ import org.lsst.ccs.daq.ims.Store;
 import org.lsst.ccs.daq.ims.Utils;
 import org.lsst.ccs.daq.ims.channel.Decompress18BitChannel;
 import org.lsst.ccs.daq.ims.channel.DemultiplexingIntChannel;
+import org.lsst.ccs.daq.ims.channel.FitsAsyncWriteChannel;
 import org.lsst.ccs.daq.ims.channel.FitsIntReader;
-import org.lsst.ccs.daq.ims.channel.FitsWriteChannel;
 import org.lsst.ccs.daq.ims.channel.WritableIntChannel;
 import org.lsst.ccs.daq.ims.channel.XORWritableIntChannel;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
@@ -189,8 +193,8 @@ public class CommandTool {
 
     @Command(name = "readRaw")
     public void readRaw(String path,
-            @Argument(defaultValue = ".", description = "Folder where FITS files will be written") File dir,
-            @Argument(defaultValue = "1048576") int bufferSize) throws FileNotFoundException, DAQException, IOException {
+            @Argument(defaultValue = ".", description = "Folder where .raw files will be written") File dir,
+            @Argument(defaultValue = "1048576") int bufferSize) throws FileNotFoundException, DAQException, IOException, InterruptedException, ExecutionException {
         checkStore();
         Image image = imageFromPath(path);
         List<Source> sources = image.listSources();
@@ -200,40 +204,45 @@ public class CommandTool {
         }
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
-        long totalReadSize = 0;
-        CRC32 cksum = new CRC32();
+        ExecutorService executor = Executors.newCachedThreadPool();
+        List<Future<Long>> futures = new ArrayList<>();
         long start = System.nanoTime();
         for (Source source : sources) {
-            File file = new File(dir, String.format("%s_%s.raw",source.getImage().getMetaData().getName(), source.getLocation().toString().replace("/", "_")));
-            try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
-                    FileChannel out = new FileOutputStream(file).getChannel()) {
-                for (;;) {
-                    buffer.clear();
-                    int l = channel.read(buffer);
-                    if (l < 0) {
-                        break;
+            Callable<Long> callable = () -> {
+                File file = new File(dir, String.format("%s_%s.raw", source.getImage().getMetaData().getName(), source.getLocation().toString().replace("/", "_")));
+                ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
+                try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
+                        FileChannel out = new FileOutputStream(file).getChannel()) {
+                    long readSize = 0;
+                    for (;;) {
+                        int l = channel.read(buffer);
+                        if (l < 0) {
+                            break;
+                        }
+                        readSize += l;
+                        buffer.flip();
+                        out.write(buffer);
+                        buffer.clear();
                     }
-                    totalReadSize += l;
-                    buffer.flip();
-                    cksum.update(buffer);
-                    buffer.rewind();
-                    out.write(buffer);
+                    return readSize;
                 }
-            }
+            };
+            futures.add(executor.submit(callable));
+        }
+        long totalReadSize = 0;
+        for (Future<Long> future : futures) {
+            totalReadSize += future.get();
         }
         long stop = System.nanoTime();
 
         System.out.printf(
                 "Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
-        System.out.printf(
-                "Checksum %,d\n", cksum.getValue());
     }
 
     @Command(name = "read", description = "Read and decode data in image")
     public void read(String path,
             @Argument(defaultValue = ".", description = "Folder where FITS files will be written") File dir,
-            @Argument(defaultValue = "1048576") int bufferSize) throws DAQException, IOException, FitsException {
+            @Argument(defaultValue = "1048576") int bufferSize) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
         Image image = imageFromPath(path);
         List<Source> sources = image.listSources();
@@ -243,94 +252,100 @@ public class CommandTool {
         }
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        long totalReadSize = 0;
-        CRC32 cksum = new CRC32();
+        ExecutorService executor = Executors.newCachedThreadPool();
+        List<Future<Long>> futures = new ArrayList<>();
         long start = System.nanoTime();
         for (Source source : sources) {
-            int ccdCount = source.getSourceType().getCCDCount();
-            SourceMetaData smd = source.getMetaData();
-            // Note, we are not using a single map for both the FileNameProperties and
-            // for writing FITS file headers
-            Map<String, Object> props = new HashMap<>();
-            // TOOD: DO we need to handle the case where the image name does not match
-            // the LSST conventions?
+            Callable<Long> callable = () -> {
+
+                int ccdCount = source.getSourceType().getCCDCount();
+                SourceMetaData smd = source.getMetaData();
+                // Note, we are not using a single map for both the FileNameProperties and
+                // for writing FITS file headers
+                Map<String, Object> props = new HashMap<>();
+                // TOOD: DO we need to handle the case where the image name does not match
+                // the LSST conventions?
 //            ImageName in = new ImageName(source.getImage().getMetaData().getName());
 //            props.put("ImageName", in.toString());
 //            props.put("ImageDate", in.getDateString());
 //            props.put("ImageNumber", in.getNumberString());
 //            props.put("ImageController", in.getController().getCode());
 //            props.put("ImageSource", in.getSource().getCode());
-            props.put("ImageName", source.getImage().getMetaData().getName());
-            props.put("FileCreationTime", new Date());
-            props.put("Tag", source.getImage().getMetaData().getId());
-            props.put("RaftName", source.getLocation().getRaftName());
-            props.put("RebName", source.getLocation().getBoardName());
-            props.put("Firmware", smd.getFirmware());
-            props.put("Platform", smd.getPlatform());
-            props.put("SerialNumber", smd.getSerialNumber());
-            props.put("DAQVersion", smd.getSoftware().toString());
+                props.put("ImageName", source.getImage().getMetaData().getName());
+                props.put("FileCreationTime", new Date());
+                props.put("Tag", source.getImage().getMetaData().getId());
+                props.put("RaftName", source.getLocation().getRaftName());
+                props.put("RebName", source.getLocation().getBoardName());
+                props.put("Firmware", smd.getFirmware());
+                props.put("Platform", smd.getPlatform());
+                props.put("SerialNumber", smd.getSerialNumber());
+                props.put("DAQVersion", smd.getSoftware().toString());
 
-            Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
+                Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
 
-            PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(props);
-            // Open the FITS files (one per CCD) and write headers.
-            File[] files = new File[ccdCount];
-            FitsFileWriter[] writers = new FitsFileWriter[ccdCount];
-            try {
-                // TODO: 16 should not be hard-wired here
-                WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
-                for (int i = 0; i < ccdCount; i++) {
-                    props.put("SensorName", source.getLocation().getSensorName(dataSensorMap[i]));
-                    files[i] = new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftName"), props.get("SensorName")));
-                    //files[i] = config.getFitsFile(props);
-                    CCD ccd = reb.getCCDs().get(i);
-                    //If the type of the CCD needs to be changed, use CCDTypeUtils::changeCCDTypeForGeometry
-                    // TODO: Readout parameters are currently hard-wired to old meta-data convention
-                    ReadOutParameters readoutParameters = ReadOutParametersBuilder.create(ccd.getType(), smd.getRegisterValues()).build();
-                    ImageSet imageSet = new ReadOutImageSet(ccd, readoutParameters);
+                PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(props);
+                // Open the FITS files (one per CCD) and write headers.
+                File[] files = new File[ccdCount];
+                FitsFileWriter[] writers = new FitsFileWriter[ccdCount];
+                try {
+                    // TODO: 16 should not be hard-wired here
+                    WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
+                    for (int i = 0; i < ccdCount; i++) {
+                        props.put("SensorName", source.getLocation().getSensorName(dataSensorMap[i]));
+                        files[i] = new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftName"), props.get("SensorName")));
+                        //files[i] = config.getFitsFile(props);
+                        CCD ccd = reb.getCCDs().get(i);
+                        //If the type of the CCD needs to be changed, use CCDTypeUtils::changeCCDTypeForGeometry
+                        // TODO: Readout parameters are currently hard-wired to old meta-data convention
+                        ReadOutParameters readoutParameters = ReadOutParametersBuilder.create(ccd.getType(), smd.getRegisterValues()).build();
+                        ImageSet imageSet = new ReadOutImageSet(ccd, readoutParameters);
 
-                    List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
-                    //providers.add(rebNode.getFitsService().getFitsHeaderMetadataProvider(ccd.getUniqueId()));
-                    providers.add(new GeometryFitsHeaderMetadataProvider(ccd, readoutParameters));
-                    providers.add(propsFitsHeaderMetadataProvider);
+                        List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
+                        //providers.add(rebNode.getFitsService().getFitsHeaderMetadataProvider(ccd.getUniqueId()));
+                        providers.add(new GeometryFitsHeaderMetadataProvider(ccd, readoutParameters));
+                        providers.add(propsFitsHeaderMetadataProvider);
 //                    ImageSet imageSet = new DefaultImageSet(16, 512 + 64, 2048);
-                    writers[i] = new FitsFileWriter(files[i], imageSet, HEADER_SPEC_BUILDER.getHeaderSpecifications(), providers);
+                        writers[i] = new FitsFileWriter(files[i], imageSet, HEADER_SPEC_BUILDER.getHeaderSpecifications(), providers);
 
-                    //TO-DO: use imageSet.getNumberOfImages() rather than hardwiring 16?
-                    for (int j = 0; j < 16; j++) {
-                        fileChannels[i * 16 + j] = new FitsWriteChannel(writers[i], dataSegmentMap[j]);
-                    }
-                }
-                try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
-                        DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
-                        XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, 0x1FFFF);
-                        Decompress18BitChannel decompress = new Decompress18BitChannel(xor)) {
-                    for (;;) {
-                        int l = channel.read(buffer);
-                        if (l < 0) {
-                            break;
+                        //TO-DO: use imageSet.getNumberOfImages() rather than hardwiring 16?
+                        for (int j = 0; j < 16; j++) {
+                            fileChannels[i * 16 + j] = new FitsAsyncWriteChannel(writers[i], dataSegmentMap[j]);
                         }
-                        totalReadSize += l;
-                        buffer.flip();
-                        cksum.update(buffer);
-                        buffer.rewind();
-                        decompress.write(buffer.asIntBuffer());
-                        buffer.clear();
+                    }
+                    try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
+                            DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
+                            XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, 0x1FFFF);
+                            Decompress18BitChannel decompress = new Decompress18BitChannel(xor)) {
+                        long readSize = 0;
+                        ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
+                        buffer.order(ByteOrder.LITTLE_ENDIAN);
+                        for (;;) {
+                            int l = channel.read(buffer);
+                            if (l < 0) {
+                                break;
+                            }
+                            readSize += l;
+                            buffer.flip();
+                            decompress.write(buffer.asIntBuffer());
+                            buffer.clear();
+                        }
+                        return readSize;
+                    }
+                } finally {
+                    for (FitsFileWriter writer : writers) {
+                        if (writer != null) {
+                            writer.close();
+                        }
                     }
                 }
-            } finally {
-                for (FitsFileWriter writer : writers) {
-                    if (writer != null) {
-                        writer.close();
-                    }
-                }
-            }
+            };
+        }
+        long totalReadSize = 0;
+        for (Future<Long> future : futures) {
+            totalReadSize += future.get();
         }
         long stop = System.nanoTime();
         System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
-        System.out.printf("Checksum %,d\n", cksum.getValue());
     }
 
     @Command(name = "write", description = "Write a set of FITS files to the store")
