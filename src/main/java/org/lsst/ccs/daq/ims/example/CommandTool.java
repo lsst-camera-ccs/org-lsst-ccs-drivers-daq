@@ -237,6 +237,7 @@ public class CommandTool {
 
         System.out.printf(
                 "Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
+        executor.shutdown();
     }
 
     @Command(name = "read", description = "Read and decode data in image")
@@ -339,6 +340,7 @@ public class CommandTool {
                     }
                 }
             };
+            futures.add(executor.submit(callable));
         }
         long totalReadSize = 0;
         for (Future<Long> future : futures) {
@@ -346,6 +348,7 @@ public class CommandTool {
         }
         long stop = System.nanoTime();
         System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
+        executor.shutdown();
     }
 
     @Command(name = "write", description = "Write a set of FITS files to the store")
