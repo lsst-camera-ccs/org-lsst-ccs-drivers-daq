@@ -3,7 +3,7 @@ package org.lsst.ccs.daq.ims.channel;
 import java.io.IOException;
 
 /**
- * An abstract channel which can be used by filter data int by int
+ * An abstract channel which can be used to filter data int by int
  * @author tonyj
  */
 public abstract class FilterWritableIntChannel implements WritableIntChannel {

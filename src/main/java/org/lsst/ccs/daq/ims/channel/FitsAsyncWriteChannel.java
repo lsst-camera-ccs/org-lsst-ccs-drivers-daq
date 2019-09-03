@@ -76,7 +76,7 @@ public class FitsAsyncWriteChannel extends FitsWriteChannel {
         if (t instanceof IOException) {
             throw (IOException) t;
         } else if (t != null) {
-            throw new IOException("Unexpected excption during IO", t);
+            throw new IOException("Unexpected exception during IO", t);
         }
     }
 

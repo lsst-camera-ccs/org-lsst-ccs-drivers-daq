@@ -3,43 +3,32 @@ package org.lsst.ccs.daq.ims.channel;
 import java.io.IOException;
 
 /**
- *
+ * Compress data into packed 18bit format, as delivered by DAQ raw data.
  * @author tonyj
  */
 public class Compress18BitChannel implements ReadableIntChannel {
 
     private final ReadableIntChannel input;
-    private int bitsRemaining;
-    private int dataRemaining;
-    
+    private int bitsAvailable;
+    private long dataAvailable;
+
     Compress18BitChannel(ReadableIntChannel input) {
         this.input = input;
-        this.bitsRemaining = 0;
-        this.dataRemaining = 0;
+        this.bitsAvailable = 0;
+        this.dataAvailable = 0;
     }
 
     @Override
     public int read() throws IOException {
-        int result;
-        int bitPosition;
-        if (bitsRemaining > 0) {
-            result = dataRemaining;
-            bitPosition = bitsRemaining;
-        } else {
-            result = 0;
-            bitPosition = 0;
+        while (bitsAvailable < 32) {
+            long in = input.read() & 0xFFFFFFFFL;
+            dataAvailable |= in << bitsAvailable;
+            bitsAvailable += 18;
         }
-        int in = input.read();
-        if (bitPosition < 32-18) {
-            result |= in<<bitPosition;
-            bitPosition += 18;
-            in = input.read();
-        } 
-        result |= in<<bitPosition;
-        bitPosition += 18;
-        bitsRemaining = bitPosition - 32;
-        dataRemaining = in>>>(18-bitsRemaining);
-        return result;    
+        int result = (int) dataAvailable;
+        bitsAvailable -= 32;
+        dataAvailable >>>= 32;
+        return result;
     }
 
     @Override
@@ -50,7 +39,7 @@ public class Compress18BitChannel implements ReadableIntChannel {
     @Override
     public void close() throws IOException {
         input.close();
-        if (bitsRemaining != 0) {
+        if (bitsAvailable != 0) {
             throw new IOException("Unused data remaining on close");
         }
     }

@@ -3,7 +3,7 @@ package org.lsst.ccs.daq.ims.channel;
 import java.io.IOException;
 
 /**
- *
+ * Decompress packed 18 bit data as delivered by DAQ raw data.
  * @author tonyj
  */
 public class Decompress18BitChannel extends FilterWritableIntChannel {
@@ -22,7 +22,7 @@ public class Decompress18BitChannel extends FilterWritableIntChannel {
         dataRemaining |= (data & 0xFFFFFFFFL) << bitsRemaining;
         bitsRemaining += 32;
         while (bitsRemaining >= 18) {
-           input.write((int) (dataRemaining & 0x2FFFF));
+           input.write((int) (dataRemaining & 0x3FFFFL));
            dataRemaining >>>= 18;        
            bitsRemaining -= 18;
         }
