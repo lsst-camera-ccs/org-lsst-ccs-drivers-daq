@@ -27,6 +27,6 @@ public class Version {
 
     @Override
     public String toString() {
-        return String.format("%s %s(%s,%x)", tag, DATE_TIME_FORMATTER.format(buildTime), dirty ? "dirty" : "", hash);
+        return String.format("%s %s (%s%x)", tag, DATE_TIME_FORMATTER.format(buildTime), dirty ? "dirty," : "", hash);
     }
 }

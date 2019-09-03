@@ -83,7 +83,7 @@ public class CommandTool {
     static {
         FitsFactory.setUseHierarch(true);
         HEADER_SPEC_BUILDER.addSpecFile("primary.spec");
-        HEADER_SPEC_BUILDER.addSpecFile("daqv4-primary.spec");
+        HEADER_SPEC_BUILDER.addSpecFile("daqv4-primary.spec", "primary");
         HEADER_SPEC_BUILDER.addSpecFile("extended.spec");
     }
 
@@ -280,9 +280,9 @@ public class CommandTool {
                 props.put("Tag", String.format("%x", source.getImage().getMetaData().getId()));
                 props.put("RaftBay", source.getLocation().getRaftName());
                 props.put("RebSlot", source.getLocation().getBoardName());
-                props.put("Firmware", smd.getFirmware());
+                props.put("Firmware", String.format("%x", smd.getFirmware()));
                 props.put("Platform", smd.getPlatform());
-                props.put("SerialNumber", smd.getSerialNumber());
+                props.put("SerialNumber", String.format("%x", smd.getSerialNumber()));
                 props.put("DAQVersion", smd.getSoftware().toString());
                 props.put("DAQPartition", source.getImage().getStore().getPartition());
                 props.put("DAQFolder", source.getImage().getMetaData().getCreationFolderName());

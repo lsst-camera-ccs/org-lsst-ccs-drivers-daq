@@ -1,14 +1,11 @@
 # Specification file for primary header, DAQv4 specific items
 #
-IMAGETAG    String  ${Tag}                      Image tag (Hex)
-CCD_MANU    String  ${CCDManufacturer}          CCD Manufacturer
-CCD_TYPE    String  ${CCDModel}                 CCD Model Number
-CCD_SERN    String  ${CCDSerialManufacturer}    Manufacturers’ CCD Serial Number
+IMAGETAG    String  ${Tag}                      DAQ Image tag (Hex)
 CCDSLOT     String  ${CCDSlot}                  The CCD Slot
 RAFTBAY     String  ${RAFTBay}                  The RAFT Bay
 FIRMWARE    String  ${Firmware}                 DAQ firmware version (Hex)
 PLATFORM    String  ${Platform}                 DAQ platform version
-SERIAL      String  ${SerialNumber}             ?
+SERIAL      String  ${SerialNumber}             Source serial # (Hex)
 DAQVERS     String  ${DAQVersion}               DAQ version
 DAQPART     String  ${DAQPartition}             DAQ partition
 DAQFOLD     String  ${DAQFolder}                DAQ folder the image was initially created in
