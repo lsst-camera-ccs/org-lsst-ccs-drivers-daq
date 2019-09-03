@@ -97,6 +97,12 @@ public class Image implements Comparable<Image> {
         return new Source(this, store.addSourceToImage(metaData.getId(), location, registerValues));
     }
     
+    /**
+     * Find the source corresponding to the given location
+     * @param location The location to search for
+     * @return The corresponding Source
+     * @throws IllegalArgumentException If the specified source does not exist in this image.
+     */
     public Source findSource(Location location) {
         if (!metaData.getLocations().contains(location)) {
             throw new IllegalArgumentException("Invalid location "+location+" for image "+this);
@@ -104,7 +110,11 @@ public class Image implements Comparable<Image> {
         return new Source(this, location);
     }
     
-    Store getStore() {
+    /**
+     * Get the store in which this image resides.
+     * @return The store.
+     */
+    public Store getStore() {
         return store;
     }
     

@@ -55,6 +55,7 @@ import org.lsst.ccs.daq.ims.channel.FitsIntReader;
 import org.lsst.ccs.daq.ims.channel.WritableIntChannel;
 import org.lsst.ccs.daq.ims.channel.XORWritableIntChannel;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
+import org.lsst.ccs.imagenaming.ImageName;
 import org.lsst.ccs.utilities.ccd.CCD;
 import org.lsst.ccs.utilities.ccd.CCDType;
 import org.lsst.ccs.utilities.ccd.CCDTypeUtils;
@@ -82,6 +83,7 @@ public class CommandTool {
     static {
         FitsFactory.setUseHierarch(true);
         HEADER_SPEC_BUILDER.addSpecFile("primary.spec");
+        HEADER_SPEC_BUILDER.addSpecFile("daqv4-primary.spec");
         HEADER_SPEC_BUILDER.addSpecFile("extended.spec");
     }
 
@@ -264,23 +266,27 @@ public class CommandTool {
                 // Note, we are not using a single map for both the FileNameProperties and
                 // for writing FITS file headers
                 Map<String, Object> props = new HashMap<>();
-                // TOOD: DO we need to handle the case where the image name does not match
-                // the LSST conventions?
-//            ImageName in = new ImageName(source.getImage().getMetaData().getName());
-//            props.put("ImageName", in.toString());
-//            props.put("ImageDate", in.getDateString());
-//            props.put("ImageNumber", in.getNumberString());
-//            props.put("ImageController", in.getController().getCode());
-//            props.put("ImageSource", in.getSource().getCode());
-                props.put("ImageName", source.getImage().getMetaData().getName());
+                try {
+                    ImageName in = new ImageName(source.getImage().getMetaData().getName());
+                    props.put("ImageName", in.toString());
+                    props.put("ImageDate", in.getDateString());
+                    props.put("ImageNumber", in.getNumberString());
+                    props.put("ImageController", in.getController().getCode());
+                    props.put("ImageSource", in.getSource().getCode());
+                } catch (IllegalArgumentException x) {
+                    props.put("ImageName", source.getImage().getMetaData().getName());
+                }
                 props.put("FileCreationTime", new Date());
-                props.put("Tag", source.getImage().getMetaData().getId());
-                props.put("RaftName", source.getLocation().getRaftName());
-                props.put("RebName", source.getLocation().getBoardName());
+                props.put("Tag", String.format("%x", source.getImage().getMetaData().getId()));
+                props.put("RaftBay", source.getLocation().getRaftName());
+                props.put("RebSlot", source.getLocation().getBoardName());
                 props.put("Firmware", smd.getFirmware());
                 props.put("Platform", smd.getPlatform());
                 props.put("SerialNumber", smd.getSerialNumber());
                 props.put("DAQVersion", smd.getSoftware().toString());
+                props.put("DAQPartition", source.getImage().getStore().getPartition());
+                props.put("DAQFolder", source.getImage().getMetaData().getCreationFolderName());
+                props.put("DAQAnnotation", source.getImage().getMetaData().getAnnotation());
 
                 Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
 
@@ -292,8 +298,8 @@ public class CommandTool {
                     // TODO: 16 should not be hard-wired here
                     WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
                     for (int i = 0; i < ccdCount; i++) {
-                        props.put("SensorName", source.getLocation().getSensorName(dataSensorMap[i]));
-                        files[i] = new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftName"), props.get("SensorName")));
+                        props.put("CCDSlot", source.getLocation().getSensorName(dataSensorMap[i]));
+                        files[i] = new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
                         //files[i] = config.getFitsFile(props);
                         CCD ccd = reb.getCCDs().get(i);
                         //If the type of the CCD needs to be changed, use CCDTypeUtils::changeCCDTypeForGeometry
@@ -305,7 +311,6 @@ public class CommandTool {
                         //providers.add(rebNode.getFitsService().getFitsHeaderMetadataProvider(ccd.getUniqueId()));
                         providers.add(new GeometryFitsHeaderMetadataProvider(ccd, readoutParameters));
                         providers.add(propsFitsHeaderMetadataProvider);
-//                    ImageSet imageSet = new DefaultImageSet(16, 512 + 64, 2048);
                         writers[i] = new FitsFileWriter(files[i], imageSet, HEADER_SPEC_BUILDER.getHeaderSpecifications(), providers);
 
                         //TO-DO: use imageSet.getNumberOfImages() rather than hardwiring 16?

@@ -17,6 +17,7 @@ public class ImageMetaData {
     private final Instant timestamp;
     private final LocationSet elements;
     private final long id;
+    private String creationFolder;
 
     ImageMetaData(long id, String name, String folderName, String annotation, Version release, int opcode, long timestampNanos, BitSet elements) {
         this.id = id;
@@ -26,6 +27,7 @@ public class ImageMetaData {
         this.opcode = opcode;
         this.timestamp = Instant.ofEpochSecond(timestampNanos/1_000_000_000,timestampNanos%1_000_000_000);
         this.elements = new LocationSet(elements);
+        this.creationFolder = folderName;
     }
 
     /**
@@ -106,6 +108,14 @@ public class ImageMetaData {
         return id;
     }
 
+    /**
+     * Get the folder in which the image was originally created
+     * @return The image creation folder name
+     */
+    public String getCreationFolderName() {
+        return creationFolder;
+    }
+    
     BitSet getLocationBitSet() {
         return elements.getBitSet();
     }
