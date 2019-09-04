@@ -277,12 +277,13 @@ public class CommandTool {
                     props.put("ImageName", source.getImage().getMetaData().getName());
                 }
                 props.put("FileCreationTime", new Date());
+                props.put("DAQTriggerTime", source.getImage().getMetaData().getTimestamp());
                 props.put("Tag", String.format("%x", source.getImage().getMetaData().getId()));
                 props.put("RaftBay", source.getLocation().getRaftName());
                 props.put("RebSlot", source.getLocation().getBoardName());
                 props.put("Firmware", String.format("%x", smd.getFirmware()));
                 props.put("Platform", smd.getPlatform());
-                props.put("SerialNumber", String.format("%x", smd.getSerialNumber()));
+                props.put("CCDControllerSerial", String.format("%08x", smd.getSerialNumber()));
                 props.put("DAQVersion", smd.getSoftware().toString());
                 props.put("DAQPartition", source.getImage().getStore().getPartition());
                 props.put("DAQFolder", source.getImage().getMetaData().getCreationFolderName());

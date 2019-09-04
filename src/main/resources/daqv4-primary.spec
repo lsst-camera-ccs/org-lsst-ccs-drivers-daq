@@ -1,11 +1,13 @@
 # Specification file for primary header, DAQv4 specific items
 #
-IMAGETAG    String  ${Tag}                      DAQ Image tag (Hex)
+DATE-TRG    Date    ${DAQTriggerTime}           Date of the image trigger (readout), UTC
+MJD-TRG     MJD     ${DAQTriggerTime}           Modified Julian Date of image trigger
+IMAGETAG    String  ${Tag}                      DAQ Image id (Hex)
 CCDSLOT     String  ${CCDSlot}                  The CCD Slot
 RAFTBAY     String  ${RAFTBay}                  The RAFT Bay
 FIRMWARE    String  ${Firmware}                 DAQ firmware version (Hex)
 PLATFORM    String  ${Platform}                 DAQ platform version
-SERIAL      String  ${SerialNumber}             Source serial # (Hex)
+CONTNUM     String  ${CCDControllerSerial}      REB serial # (Hex)
 DAQVERS     String  ${DAQVersion}               DAQ version
 DAQPART     String  ${DAQPartition}             DAQ partition
 DAQFOLD     String  ${DAQFolder}                DAQ folder the image was initially created in
