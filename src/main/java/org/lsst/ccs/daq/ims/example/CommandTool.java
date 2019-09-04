@@ -283,7 +283,7 @@ public class CommandTool {
                 props.put("RebSlot", source.getLocation().getBoardName());
                 props.put("Firmware", String.format("%x", smd.getFirmware()));
                 props.put("Platform", smd.getPlatform());
-                props.put("CCDControllerSerial", String.format("%08x", smd.getSerialNumber()));
+                props.put("CCDControllerSerial", String.format("%x", smd.getSerialNumber() & 0xFFFFFFFFL));
                 props.put("DAQVersion", smd.getSoftware().toString());
                 props.put("DAQPartition", source.getImage().getStore().getPartition());
                 props.put("DAQFolder", source.getImage().getMetaData().getCreationFolderName());

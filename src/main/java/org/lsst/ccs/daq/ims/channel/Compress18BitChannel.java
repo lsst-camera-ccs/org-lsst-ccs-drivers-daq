@@ -6,14 +6,13 @@ import java.io.IOException;
  * Compress data into packed 18bit format, as delivered by DAQ raw data.
  * @author tonyj
  */
-public class Compress18BitChannel implements ReadableIntChannel {
+public class Compress18BitChannel extends FilterReadableIntChannel {
 
-    private final ReadableIntChannel input;
     private int bitsAvailable;
     private long dataAvailable;
 
     Compress18BitChannel(ReadableIntChannel input) {
-        this.input = input;
+        super(input);
         this.bitsAvailable = 0;
         this.dataAvailable = 0;
     }
@@ -29,11 +28,6 @@ public class Compress18BitChannel implements ReadableIntChannel {
         bitsAvailable -= 32;
         dataAvailable >>>= 32;
         return result;
-    }
-
-    @Override
-    public boolean isOpen() {
-        return input.isOpen();
     }
 
     @Override
