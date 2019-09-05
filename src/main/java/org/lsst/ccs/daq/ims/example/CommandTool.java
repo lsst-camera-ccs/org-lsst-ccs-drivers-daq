@@ -310,7 +310,7 @@ public class CommandTool {
 
                         List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
                         //providers.add(rebNode.getFitsService().getFitsHeaderMetadataProvider(ccd.getUniqueId()));
-                        providers.add(new GeometryFitsHeaderMetadataProvider(ccd, readoutParameters));
+                        providers.add(new GeometryFitsHeaderMetadataProvider(ccd));
                         providers.add(propsFitsHeaderMetadataProvider);
                         writers[i] = new FitsFileWriter(files[i], imageSet, HEADER_SPEC_BUILDER.getHeaderSpecifications(), providers);
 
