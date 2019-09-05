@@ -70,6 +70,8 @@ import org.lsst.ccs.utilities.readout.PropertiesFitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.readout.ReadOutImageSet;
 import org.lsst.ccs.utilities.readout.ReadOutParameters;
 import org.lsst.ccs.utilities.readout.ReadOutParametersBuilder;
+import org.lsst.ccs.utilities.readout.ReadOutParametersNew;
+import org.lsst.ccs.utilities.readout.ReadOutParametersOld;
 
 /**
  *
@@ -303,14 +305,21 @@ public class CommandTool {
                         files[i] = new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
                         //files[i] = config.getFitsFile(props);
                         CCD ccd = reb.getCCDs().get(i);
-                        //If the type of the CCD needs to be changed, use CCDTypeUtils::changeCCDTypeForGeometry
-                        // TODO: Readout parameters are currently hard-wired to old meta-data convention
-                        ReadOutParameters readoutParameters = ReadOutParametersBuilder.create(ccd.getType(), smd.getRegisterValues()).build();
+                        int[] registerValues = smd.getRegisterValues();
+                        ReadOutParametersBuilder builder = ReadOutParametersBuilder.create();
+                        builder.readoutParameterValues(registerValues);
+                        if (registerValues.length == 9) {
+                            // Assume old style meta-data
+                            builder.ccdType(ccd.getType()).readoutParameterNames(ReadOutParametersOld.DEFAULT_NAMES);
+                        } else {
+                            builder.readoutParameterNames(ReadOutParametersNew.DEFAULT_NAMES);
+                        }
+                        ReadOutParameters readoutParameters = builder.build();
                         ImageSet imageSet = new ReadOutImageSet(ccd, readoutParameters);
 
                         List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
                         //providers.add(rebNode.getFitsService().getFitsHeaderMetadataProvider(ccd.getUniqueId()));
-                        providers.add(new GeometryFitsHeaderMetadataProvider(ccd, readoutParameters));
+                        providers.add(new GeometryFitsHeaderMetadataProvider(ccd));
                         providers.add(propsFitsHeaderMetadataProvider);
                         writers[i] = new FitsFileWriter(files[i], imageSet, HEADER_SPEC_BUILDER.getHeaderSpecifications(), providers);
 
