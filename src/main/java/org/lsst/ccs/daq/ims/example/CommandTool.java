@@ -30,6 +30,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import nom.tam.fits.FitsException;
@@ -42,6 +44,7 @@ import org.lsst.ccs.command.annotations.Command;
 import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.daq.ims.Folder;
 import org.lsst.ccs.daq.ims.Image;
+import org.lsst.ccs.daq.ims.ImageListener;
 import org.lsst.ccs.daq.ims.ImageMetaData;
 import org.lsst.ccs.daq.ims.Source;
 import org.lsst.ccs.daq.ims.Source.ChannelMode;
@@ -78,6 +81,8 @@ import org.lsst.ccs.utilities.readout.ReadOutParametersOld;
  * @author tonyj
  */
 public class CommandTool {
+
+    private static final Logger LOG = Logger.getLogger(CommandTool.class.getName());
 
     private static final Pattern PATH_PATTERN = Pattern.compile("([0-9a-zA-Z\\-\\_]*)/?([0-9a-zA-Z\\-\\_]*)");
     private static final FitsHeadersSpecificationsBuilder HEADER_SPEC_BUILDER = new FitsHeadersSpecificationsBuilder();
@@ -244,6 +249,37 @@ public class CommandTool {
         executor.shutdown();
     }
 
+    @Command(name = "listen", description = "Listen for images")
+    public void listen() {
+        store.addImageListener(new ImageListener() {
+            @Override
+            public void imageCreated(Image image) {
+                try {
+                    System.out.println("Image created " + image);
+                    List<Source> sources = image.listSources();
+                    for (Source source : sources) {
+                        System.out.println(source);
+                    }
+                } catch (DAQException ex) {
+                    LOG.log(Level.SEVERE, "Exception in imageCreated listener", ex);
+                }
+            }
+
+            @Override
+            public void imageComplete(Image image) {
+                try {
+                    System.out.println("Image complete " + image);
+                    List<Source> sources = image.listSources();
+                    for (Source source : sources) {
+                        System.out.println(source);
+                    }
+                } catch (DAQException ex) {
+                    LOG.log(Level.SEVERE, "Exception in imageComplete listener", ex);
+                }
+            }
+        });
+    }
+
     @Command(name = "read", description = "Read and decode data in image")
     public void read(String path,
             @Argument(defaultValue = ".", description = "Folder where FITS files will be written") File dir,
@@ -265,7 +301,7 @@ public class CommandTool {
 
                 int ccdCount = source.getSourceType().getCCDCount();
                 SourceMetaData smd = source.getMetaData();
-                // Note, we are not using a single map for both the FileNameProperties and
+                // Note, we are now using a single map for both the FileNameProperties and
                 // for writing FITS file headers
                 Map<String, Object> props = new HashMap<>();
                 try {
