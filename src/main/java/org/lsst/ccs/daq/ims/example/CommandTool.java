@@ -119,7 +119,7 @@ public class CommandTool {
         dataSegmentMap.put(SourceType.SCIENCE, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
         dataSegmentMap.put(SourceType.GUIDER, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
         dataSegmentMap.put(SourceType.WAVEFRONT, new int[]{0, 1, 2, 3, 4, 5, 6, 7});
-        
+
         dataSensorMap.put(SourceType.SCIENCE, new int[]{2, 1, 0});
         dataSensorMap.put(SourceType.GUIDER, new int[]{0, 1});
         dataSensorMap.put(SourceType.WAVEFRONT, new int[]{0, 1});
@@ -350,6 +350,10 @@ public class CommandTool {
                         files[i] = new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
                         //files[i] = config.getFitsFile(props);
                         CCD ccd = reb.getCCDs().get(i);
+                        if (!ccd.getName().equals(props.get("CCDSlot"))) {
+                            throw new IOException(String.format("Geometry (%s) inconsistent with DAQ location (%s)",
+                                    ccd.getName(), props.get("CCDSlot")));
+                        }
                         int[] registerValues = smd.getRegisterValues();
                         ReadOutParametersBuilder builder = ReadOutParametersBuilder.create();
                         builder.readoutParameterValues(registerValues);
