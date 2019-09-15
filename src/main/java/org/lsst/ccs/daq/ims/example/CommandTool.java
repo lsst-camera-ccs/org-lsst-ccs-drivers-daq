@@ -48,6 +48,7 @@ import org.lsst.ccs.daq.ims.ImageListener;
 import org.lsst.ccs.daq.ims.ImageMetaData;
 import org.lsst.ccs.daq.ims.Source;
 import org.lsst.ccs.daq.ims.Source.ChannelMode;
+import org.lsst.ccs.daq.ims.Source.SourceType;
 import org.lsst.ccs.daq.ims.SourceMetaData;
 import org.lsst.ccs.daq.ims.Store;
 import org.lsst.ccs.daq.ims.Utils;
@@ -105,8 +106,8 @@ public class CommandTool {
      * ATS appears to have a different mapping, so this needs to be made
      * settable.
      */
-    private final int[] dataSegmentMap = {15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7};
-    private final int[] dataSensorMap = {2, 1, 0};
+    private final Map<SourceType, int[]> dataSegmentMap = new HashMap<>();
+    private final Map<SourceType, int[]> dataSensorMap = new HashMap<>();
 
     private Store store;
     private final FocalPlane focalPlane = FocalPlane.createFocalPlane();
@@ -114,6 +115,14 @@ public class CommandTool {
     public CommandTool() {
         // TODO: Temporary fix
         CCDTypeUtils.changeCCDTypeForGeometry(focalPlane.getChild(2, 2), CCDType.getCCDType("itl"));
+
+        dataSegmentMap.put(SourceType.SCIENCE, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
+        dataSegmentMap.put(SourceType.GUIDER, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
+        dataSegmentMap.put(SourceType.WAVEFRONT, new int[]{0, 1, 2, 3, 4, 5, 6, 7});
+        
+        dataSensorMap.put(SourceType.SCIENCE, new int[]{2, 1, 0});
+        dataSensorMap.put(SourceType.GUIDER, new int[]{0, 1});
+        dataSensorMap.put(SourceType.WAVEFRONT, new int[]{0, 1});
     }
 
     @Command(name = "connect", description = "Connect to a DAQ store")
@@ -331,13 +340,13 @@ public class CommandTool {
 
                 PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(props);
                 // Open the FITS files (one per CCD) and write headers.
-                File[] files = new File[ccdCount];
-                FitsFileWriter[] writers = new FitsFileWriter[ccdCount];
+                File[] files = new File[source.getSourceType() == SourceType.WAVEFRONT ? 2 : ccdCount];
+                FitsFileWriter[] writers = new FitsFileWriter[files.length];
                 try {
                     // TODO: 16 should not be hard-wired here
                     WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
-                    for (int i = 0; i < ccdCount; i++) {
-                        props.put("CCDSlot", source.getLocation().getSensorName(dataSensorMap[i]));
+                    for (int i = 0; i < files.length; i++) {
+                        props.put("CCDSlot", source.getLocation().getSensorName(dataSensorMap.get(source.getSourceType())[i]));
                         files[i] = new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
                         //files[i] = config.getFitsFile(props);
                         CCD ccd = reb.getCCDs().get(i);
@@ -359,9 +368,8 @@ public class CommandTool {
                         providers.add(propsFitsHeaderMetadataProvider);
                         writers[i] = new FitsFileWriter(files[i], imageSet, HEADER_SPEC_BUILDER.getHeaderSpecifications(), providers);
 
-                        //TO-DO: use imageSet.getNumberOfImages() rather than hardwiring 16?
-                        for (int j = 0; j < 16; j++) {
-                            fileChannels[i * 16 + j] = new FitsAsyncWriteChannel(writers[i], dataSegmentMap[j]);
+                        for (int j = 0; j < imageSet.getNumberOfImages(); j++) {
+                            fileChannels[i * imageSet.getNumberOfImages() + j] = new FitsAsyncWriteChannel(writers[i], dataSegmentMap.get(source.getSourceType())[j]);
                         }
                     }
                     try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);

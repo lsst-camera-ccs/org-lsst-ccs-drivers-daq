@@ -43,11 +43,29 @@ public class Source implements Comparable<Source> {
         }
 
         String getBoardName(int board) {
-            return String.format("Reb%d", board);
+            switch (this) {
+                case SCIENCE: 
+                    return String.format("Reb%d", board);
+                case WAVEFRONT:
+                    return String.format("RebW");
+                case GUIDER:
+                    return String.format("RebG");
+                default:
+                    throw new RuntimeException("Unknown source type: "+this);
+            }
         }
 
         String getSensorName(int board, int sensor) {
-            return String.format("S%d%d", board, sensor);
+            switch (this) {
+                case SCIENCE: 
+                    return String.format("S%d%d", board, sensor);
+                case WAVEFRONT:
+                    return String.format("SW%d", sensor);
+                case GUIDER:
+                    return String.format("SG%d", sensor);
+                default:
+                    throw new RuntimeException("Unknown source type: "+this);
+            }
         }
     }
     
