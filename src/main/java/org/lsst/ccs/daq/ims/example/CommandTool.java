@@ -346,10 +346,11 @@ public class CommandTool {
                     // TODO: 16 should not be hard-wired here
                     WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
                     for (int i = 0; i < files.length; i++) {
-                        props.put("CCDSlot", source.getLocation().getSensorName(dataSensorMap.get(source.getSourceType())[i]));
+                        int sensorIndex = dataSensorMap.get(source.getSourceType())[i];
+                        props.put("CCDSlot", source.getLocation().getSensorName(sensorIndex));
                         files[i] = new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
                         //files[i] = config.getFitsFile(props);
-                        CCD ccd = reb.getCCDs().get(i);
+                        CCD ccd = reb.getCCDs().get(sensorIndex);
                         if (!ccd.getName().equals(props.get("CCDSlot"))) {
                             throw new IOException(String.format("Geometry (%s) inconsistent with DAQ location (%s)",
                                     ccd.getName(), props.get("CCDSlot")));
