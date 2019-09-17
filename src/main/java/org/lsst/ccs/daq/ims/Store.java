@@ -99,7 +99,8 @@ public class Store implements AutoCloseable {
                     public void run() {
                         try {
                             for (;;) {
-                                waitForImage(store);
+                                int rc = waitForImage(store, 20_000_000);
+                                System.out.println("waitForImage rc="+rc);
                             }
                         } catch (Throwable x) {
                             LOG.log(Level.SEVERE, "ImageStreamThread exiting",x);
@@ -308,7 +309,7 @@ public class Store implements AutoCloseable {
 
     private synchronized native SourceMetaData addSourceToImage(long store, long id, int index, byte type, String platform, int[] registerValues) throws DAQException;
 
-    private native void waitForImage(long store) throws DAQException;
+    private native int waitForImage(long store, int timeoutMicros) throws DAQException;
 
     static native String decodeException(int rc);
 }

@@ -467,16 +467,17 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_addSourceToImage
     return createSourceMetaData(env, source);
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_waitForImage
-(JNIEnv *env, jobject obj, jlong store) {
+JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_waitForImage
+(JNIEnv *env, jobject obj, jlong store, jint timeoutMicros) {
     Store* store_ = (Store*) store;
-    Stream stream(*store_);
+    Stream stream(*store_, timeoutMicros);
     Image image(*store_, stream);
-    if (!image) return;
+    if (!image) return image.error();
     env->CallVoidMethod(obj, JCimageCreatedCallbackMethod, createImageMetaData(env, image));
     MyBarrier barrier(*store_, env, image, obj, JCimageSourceStreamCallbackMethod);
     barrier.run();
     env->CallVoidMethod(obj, JCimageCompleteCallbackMethod, createImageMetaData(env, image));
+    return 0;
 }
 
 JNIEXPORT jstring JNICALL Java_org_lsst_ccs_daq_ims_Store_decodeException
