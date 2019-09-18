@@ -15,7 +15,6 @@ import java.util.Set;
 public class LocationSet extends AbstractSet<Location> implements Serializable {
 
     private static final long serialVersionUID = -4332892191028786738L;
-
     private final BitSet locations;
 
     /**
