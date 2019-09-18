@@ -41,7 +41,8 @@ public class LocationSet extends AbstractSet<Location> implements Serializable {
     }
 
     /**
-     * Creates a LocationSet from a list of strings
+     * Creates a LocationSet from a list of strings. Also works for a 
+     * single comma delimited String.
      *
      * @see Location#of(java.lang.String)
      * @param location The location(s)
@@ -50,7 +51,14 @@ public class LocationSet extends AbstractSet<Location> implements Serializable {
     public static LocationSet of(String... location) {
         BitSet locations = new BitSet();
         for (String l : location) {
-            locations.set(Location.of(l).index());
+            if (l.contains(",")) {
+                String[] ll = l.split("\\s*,\\s*");
+                for (String lll : ll) {
+                    locations.set(Location.of(lll).index());
+                }
+            } else {
+                locations.set(Location.of(l).index());
+            }
         }
         return new LocationSet(locations);
     }

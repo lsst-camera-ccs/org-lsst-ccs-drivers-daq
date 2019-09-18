@@ -33,6 +33,13 @@ public class LocationTest {
     }
     
     @Test
+    public void commaDelitedStringTest() {
+       LocationSet l1 = LocationSet.of("R22/Reb1", "R11/Reb0");
+       LocationSet l2 = LocationSet.of("R22/Reb1 , R11/Reb0");
+       assertEquals(l1, l2);
+    }
+    
+    @Test
     public void illegalTest() {
         try {
             Location l = Location.of("R22/RebX");
