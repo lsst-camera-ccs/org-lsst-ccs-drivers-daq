@@ -259,7 +259,7 @@ public class CommandTool {
                 Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
                 FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
                 try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
-                        FitsIntWriter decompress = new FitsIntWriter(source, reb, namer)){
+                        FitsIntWriter decompress = new FitsIntWriter(source, reb, namer, null)){
                     long readSize = 0;
                     ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);

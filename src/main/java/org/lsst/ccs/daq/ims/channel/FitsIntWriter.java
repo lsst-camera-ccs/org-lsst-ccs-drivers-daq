@@ -29,7 +29,8 @@ import org.lsst.ccs.utilities.readout.ReadOutParametersNew;
 import org.lsst.ccs.utilities.readout.ReadOutParametersOld;
 
 /**
- *
+ * A writable int channel for writing a set of FITS files corresponding
+ * to a single source.
  * @author tonyj
  */
 public class FitsIntWriter implements WritableIntChannel {
@@ -44,8 +45,19 @@ public class FitsIntWriter implements WritableIntChannel {
     }
 
     private final Decompress18BitChannel decompress;
+    private final FitsFileWriter[] writers;
 
-    public FitsIntWriter(Source source, Reb reb, FileNamer fileNamer) throws DAQException, IOException, FitsException {
+    /**
+     * Create a FitsIntWriter
+     * @param source The source for which data is to be written
+     * @param reb The corresponding REB
+     * @param fileNamer An interface for generating the names of the fits files to write
+     * @param extraMetaDataProvider Additional per-ccd fits header meta-data providers
+     * @throws DAQException
+     * @throws IOException
+     * @throws FitsException 
+     */
+    public FitsIntWriter(Source source, Reb reb, FileNamer fileNamer, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException, FitsException {
         int ccdCount = source.getSourceType().getCCDCount();
         SourceMetaData smd = source.getMetaData();
         // Note, we are now using a single map for both the FileNameProperties and
@@ -79,7 +91,6 @@ public class FitsIntWriter implements WritableIntChannel {
         File[] files = new File[source.getSourceType() == Source.SourceType.WAVEFRONT ? 2 : ccdCount];
         writers = new FitsFileWriter[files.length];
         ReadoutConfig readoutConfig = new ReadoutConfig(source.getSourceType());
-        // TODO: 16 should not be hard-wired here
         WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
         for (int i = 0; i < files.length; i++) {
             int sensorIndex = readoutConfig.getDataSensorMap()[i];
@@ -103,9 +114,11 @@ public class FitsIntWriter implements WritableIntChannel {
             ImageSet imageSet = new ReadOutImageSet(ccd, readoutParameters);
 
             List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
-            //providers.add(rebNode.getFitsService().getFitsHeaderMetadataProvider(ccd.getUniqueId()));
             providers.add(new GeometryFitsHeaderMetadataProvider(ccd));
             providers.add(propsFitsHeaderMetadataProvider);
+            if (extraMetaDataProvider != null) {
+                providers.addAll(extraMetaDataProvider.getMetaDataProvider(ccd));
+            }
             writers[i] = new FitsFileWriter(files[i], imageSet, HEADER_SPEC_BUILDER.getHeaderSpecifications(), providers);
 
             for (int j = 0; j < imageSet.getNumberOfImages(); j++) {
@@ -116,7 +129,6 @@ public class FitsIntWriter implements WritableIntChannel {
         XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, readoutConfig.getXor());
         decompress = new Decompress18BitChannel(xor);
     }
-    private final FitsFileWriter[] writers;
 
     @Override
     public void write(int i) throws IOException {
@@ -143,9 +155,20 @@ public class FitsIntWriter implements WritableIntChannel {
         }
     }
 
+    /**
+     * Interface for computing name of FITS file based on provided properties.
+     */
     public static interface FileNamer {
 
         File computeFileName(Map<String, Object> props);
     }
+    
+    /**
+     * Interface for providing additional meta-data providers
+     */
+    public static interface PerCCDMetaDataProvider {
 
+        List<FitsHeaderMetadataProvider> getMetaDataProvider(CCD ccd);
+    }
+    
 }
