@@ -22,7 +22,7 @@ public class Location implements Comparable<Location> {
     private final static int[] INDEX_TO_BAY = new int[]{
         0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 30, 31, 32, 33, 34, 40, 41, 42, 43, 44};
 
-    private final static Pattern PATTERN = Pattern.compile("R(\\d\\d)/Reb(\\d)");
+    private final static Pattern PATTERN = Pattern.compile("R(\\d\\d)/Reb(.)");
 
     private final byte bay;
     private final byte board;
@@ -59,7 +59,19 @@ public class Location implements Comparable<Location> {
             throw new IllegalArgumentException("Illegal location: " + location);
         }
         int bay = Integer.parseInt(matcher.group(1));
-        int board = Integer.parseInt(matcher.group(2));
+        int board;
+        String boardName = matcher.group(2);
+        switch (boardName) {
+            case "W":
+                board = 0;
+                break;
+            case "G":
+                board = 1;
+                break;
+            default:
+                board = Integer.parseInt(boardName);
+                break;
+        }
         return new Location(bay, board);
     }
     
