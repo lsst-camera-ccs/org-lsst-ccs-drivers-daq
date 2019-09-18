@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
+import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -8,7 +9,9 @@ import java.util.regex.Pattern;
  *
  * @author tonyj
  */
-public class Location implements Comparable<Location> {
+public class Location implements Comparable<Location>, Serializable {
+
+    private static final long serialVersionUID = 9188620871451731827L;
 
     // Note: This is chosen for compatibility with DAQ::LocationSet
     private static final int BAY_MULTIPLIER = 4;
@@ -34,6 +37,7 @@ public class Location implements Comparable<Location> {
 
     /**
      * Create location from bay number and board number
+     *
      * @param bay Bay (e.g.\ 22, 10, 04 etc)
      * @param board Board (0-2)
      */
@@ -50,6 +54,7 @@ public class Location implements Comparable<Location> {
 
     /**
      * Create location from string
+     *
      * @param location String representation of location, of form Rnn/Rebm
      * @return The corresponding location
      */
@@ -74,18 +79,22 @@ public class Location implements Comparable<Location> {
         }
         return new Location(bay, board);
     }
-    
+
     /**
      * The source type for this location
+     *
      * @return The source type
      */
     public Source.SourceType type() {
-       if (bay == 0 || bay == 40 || bay == 44 || bay == 04) {
-           if (board == 0) return  Source.SourceType.WAVEFRONT;
-           else return Source.SourceType.GUIDER;
-       } else {
-           return Source.SourceType.SCIENCE;
-       }
+        if (bay == 0 || bay == 40 || bay == 44 || bay == 04) {
+            if (board == 0) {
+                return Source.SourceType.WAVEFRONT;
+            } else {
+                return Source.SourceType.GUIDER;
+            }
+        } else {
+            return Source.SourceType.SCIENCE;
+        }
     }
 
     int index() {
@@ -96,19 +105,19 @@ public class Location implements Comparable<Location> {
     public String toString() {
         return String.format("%s/%s", getRaftName(), getBoardName());
     }
-    
+
     public String getRaftName() {
         return String.format("R%02d", bay);
     }
-    
+
     public String getBoardName() {
         return type().getBoardName(board);
-    } 
+    }
 
     public String getSensorName(int index) {
         return type().getSensorName(board, index);
     }
-    
+
     @Override
     public int compareTo(Location o) {
         return this.index() - o.index();

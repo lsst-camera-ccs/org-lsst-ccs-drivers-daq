@@ -1,16 +1,20 @@
 package org.lsst.ccs.daq.ims;
 
+import java.io.Serializable;
 import java.util.AbstractSet;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.Set;
 
 /**
- * Default implementation of Set&lt;Location&gt;. This implementation
- * uses a bitmap to represent the selected locations.
+ * Default implementation of Set&lt;Location&gt;. This implementation uses a
+ * bitmap to represent the selected locations.
+ *
  * @author tonyj
  */
-public class LocationSet extends AbstractSet<Location> {
+public class LocationSet extends AbstractSet<Location> implements Serializable {
+
+    private static final long serialVersionUID = -4332892191028786738L;
 
     private final BitSet locations;
 
@@ -23,6 +27,7 @@ public class LocationSet extends AbstractSet<Location> {
 
     /**
      * Creates a location set which is a copy of the provided set
+     *
      * @param input The location set to copy
      */
     public LocationSet(Set<Location> input) {
@@ -35,9 +40,11 @@ public class LocationSet extends AbstractSet<Location> {
             });
         }
     }
+
     /**
      * Creates a LocationSet from a list of strings
-     * @see Location#of(java.lang.String) 
+     *
+     * @see Location#of(java.lang.String)
      * @param location The location(s)
      * @return The LocationSet
      */
@@ -48,8 +55,7 @@ public class LocationSet extends AbstractSet<Location> {
         }
         return new LocationSet(locations);
     }
-    
-    
+
     LocationSet(BitSet bitset) {
         locations = bitset;
     }
@@ -86,16 +92,17 @@ public class LocationSet extends AbstractSet<Location> {
     public Iterator<Location> iterator() {
         return new Iterator<Location>() {
             private int current = -1;
+
             @Override
             public boolean hasNext() {
-                return locations.nextSetBit(current+1)>=0;
+                return locations.nextSetBit(current + 1) >= 0;
             }
 
             @Override
             public Location next() {
-                current = locations.nextSetBit(current+1);
+                current = locations.nextSetBit(current + 1);
                 return new Location(current);
-            }  
+            }
         };
     }
 
