@@ -18,7 +18,7 @@ import org.lsst.ccs.utilities.ccd.CCD;
 import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.image.FitsFileWriter;
 import org.lsst.ccs.utilities.image.FitsHeaderMetadataProvider;
-import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
+import org.lsst.ccs.utilities.image.HeaderSpecification;
 import org.lsst.ccs.utilities.image.ImageSet;
 import org.lsst.ccs.utilities.readout.GeometryFitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.readout.PropertiesFitsHeaderMetadataProvider;
@@ -35,13 +35,8 @@ import org.lsst.ccs.utilities.readout.ReadOutParametersOld;
  */
 public class FitsIntWriter implements WritableIntChannel {
 
-    private static final FitsHeadersSpecificationsBuilder HEADER_SPEC_BUILDER = new FitsHeadersSpecificationsBuilder();
-
     static {
         FitsFactory.setUseHierarch(true);
-        HEADER_SPEC_BUILDER.addSpecFile("primary.spec");
-        HEADER_SPEC_BUILDER.addSpecFile("daqv4-primary.spec", "primary");
-        HEADER_SPEC_BUILDER.addSpecFile("extended.spec");
     }
 
     private final Decompress18BitChannel decompress;
@@ -51,13 +46,14 @@ public class FitsIntWriter implements WritableIntChannel {
      * Create a FitsIntWriter
      * @param source The source for which data is to be written
      * @param reb The corresponding REB
+     * @param headerSpecifications Fits header specifications
      * @param fileNamer An interface for generating the names of the fits files to write
      * @param extraMetaDataProvider Additional per-ccd fits header meta-data providers
      * @throws DAQException
      * @throws IOException
      * @throws FitsException 
      */
-    public FitsIntWriter(Source source, Reb reb, FileNamer fileNamer, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException, FitsException {
+    public FitsIntWriter(Source source, Reb reb, Map<String, HeaderSpecification> headerSpecifications, FileNamer fileNamer, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException, FitsException {
         int ccdCount = source.getSourceType().getCCDCount();
         SourceMetaData smd = source.getMetaData();
         // Note, we are now using a single map for both the FileNameProperties and
@@ -119,7 +115,7 @@ public class FitsIntWriter implements WritableIntChannel {
             if (extraMetaDataProvider != null) {
                 providers.addAll(extraMetaDataProvider.getMetaDataProvider(ccd));
             }
-            writers[i] = new FitsFileWriter(files[i], imageSet, HEADER_SPEC_BUILDER.getHeaderSpecifications(), providers);
+            writers[i] = new FitsFileWriter(files[i], imageSet, headerSpecifications, providers);
 
             for (int j = 0; j < imageSet.getNumberOfImages(); j++) {
                 fileChannels[i * imageSet.getNumberOfImages() + j] = new FitsAsyncWriteChannel(writers[i], readoutConfig.getDataSegmentMap()[j]);

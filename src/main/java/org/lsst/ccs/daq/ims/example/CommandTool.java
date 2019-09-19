@@ -55,13 +55,20 @@ import org.lsst.ccs.utilities.ccd.CCDType;
 import org.lsst.ccs.utilities.ccd.CCDTypeUtils;
 import org.lsst.ccs.utilities.ccd.FocalPlane;
 import org.lsst.ccs.utilities.ccd.Reb;
+import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
 
 /**
  *
  * @author tonyj
  */
 public class CommandTool {
+    private static final FitsHeadersSpecificationsBuilder HEADER_SPEC_BUILDER = new FitsHeadersSpecificationsBuilder();
 
+    static {
+        HEADER_SPEC_BUILDER.addSpecFile("primary.spec");
+        HEADER_SPEC_BUILDER.addSpecFile("daqv4-primary.spec", "primary");
+        HEADER_SPEC_BUILDER.addSpecFile("extended.spec");
+    }
     private static final Logger LOG = Logger.getLogger(CommandTool.class.getName());
 
     private static final Pattern PATH_PATTERN = Pattern.compile("([0-9a-zA-Z\\-\\_]*)/?([0-9a-zA-Z\\-\\_]*)");
@@ -259,7 +266,7 @@ public class CommandTool {
                 Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
                 FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
                 try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
-                        FitsIntWriter decompress = new FitsIntWriter(source, reb, namer, null)){
+                        FitsIntWriter decompress = new FitsIntWriter(source, reb, HEADER_SPEC_BUILDER.getHeaderSpecifications(), namer, null)){
                     long readSize = 0;
                     ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
