@@ -56,8 +56,13 @@ public class FitsIntWriter implements WritableIntChannel {
     public FitsIntWriter(Source source, Reb reb, Map<String, HeaderSpecification> headerSpecifications, FileNamer fileNamer, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException, FitsException {
         int ccdCount = source.getSourceType().getCCDCount();
         SourceMetaData smd = source.getMetaData();
+        //Set the CCDType on SCIENCE rebs
+        if ( source.getSourceType() == Source.SourceType.SCIENCE ) {
+            //How do we get the type from the DAQ?
+            reb.setCCDType("e2v");
+        }
         // Note, we are now using a single map for both the FileNameProperties and
-        // for writing FITS file headers
+        // for writing FITS file headers        
         Map<String, Object> props = new HashMap<>();
         try {
             ImageName in = new ImageName(source.getImage().getMetaData().getName());
@@ -81,7 +86,6 @@ public class FitsIntWriter implements WritableIntChannel {
         props.put("DAQPartition", source.getImage().getStore().getPartition());
         props.put("DAQFolder", source.getImage().getMetaData().getCreationFolderName());
         props.put("DAQAnnotation", source.getImage().getMetaData().getAnnotation());
-
         PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(props);
         // Open the FITS files (one per CCD) and write headers.
         File[] files = new File[source.getSourceType() == Source.SourceType.WAVEFRONT ? 2 : ccdCount];
