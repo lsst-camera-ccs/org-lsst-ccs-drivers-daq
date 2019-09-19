@@ -56,11 +56,6 @@ public class FitsIntWriter implements WritableIntChannel {
     public FitsIntWriter(Source source, Reb reb, Map<String, HeaderSpecification> headerSpecifications, FileNamer fileNamer, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException, FitsException {
         int ccdCount = source.getSourceType().getCCDCount();
         SourceMetaData smd = source.getMetaData();
-        //Set the CCDType on SCIENCE rebs
-        if ( source.getSourceType() == Source.SourceType.SCIENCE ) {
-            //How do we get the type from the DAQ?
-            reb.setCCDType("e2v");
-        }
         // Note, we are now using a single map for both the FileNameProperties and
         // for writing FITS file headers        
         Map<String, Object> props = new HashMap<>();
@@ -87,6 +82,20 @@ public class FitsIntWriter implements WritableIntChannel {
         props.put("DAQFolder", source.getImage().getMetaData().getCreationFolderName());
         props.put("DAQAnnotation", source.getImage().getMetaData().getAnnotation());
         PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(props);
+
+        //Build the ReadoutParameters
+        int[] registerValues = smd.getRegisterValues();
+        ReadOutParametersBuilder builder = ReadOutParametersBuilder.create();
+        builder.readoutParameterValues(registerValues);
+        builder.readoutParameterNames(ReadOutParametersNew.DEFAULT_NAMES);           
+        ReadOutParameters readoutParameters = builder.build();
+        //Set the CCDType on SCIENCE rebs
+        //as they are the only ones that can have different types
+        if ( source.getSourceType() == Source.SourceType.SCIENCE ) {
+            reb.setCCDType(readoutParameters.getCCDType());
+        }
+
+
         // Open the FITS files (one per CCD) and write headers.
         File[] files = new File[source.getSourceType() == Source.SourceType.WAVEFRONT ? 2 : ccdCount];
         writers = new FitsFileWriter[files.length];
@@ -101,18 +110,7 @@ public class FitsIntWriter implements WritableIntChannel {
                 throw new IOException(String.format("Geometry (%s) inconsistent with DAQ location (%s)",
                         ccd.getName(), props.get("CCDSlot")));
             }
-            int[] registerValues = smd.getRegisterValues();
-            ReadOutParametersBuilder builder = ReadOutParametersBuilder.create();
-            builder.readoutParameterValues(registerValues);
-            if (registerValues.length == 9) {
-                // Assume old style meta-data
-                builder.ccdType(ccd.getType()).readoutParameterNames(ReadOutParametersOld.DEFAULT_NAMES);
-            } else {
-                builder.readoutParameterNames(ReadOutParametersNew.DEFAULT_NAMES);
-            }
-            ReadOutParameters readoutParameters = builder.build();
             ImageSet imageSet = new ReadOutImageSet(ccd, readoutParameters);
-
             List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
             providers.add(new GeometryFitsHeaderMetadataProvider(ccd));
             providers.add(propsFitsHeaderMetadataProvider);
