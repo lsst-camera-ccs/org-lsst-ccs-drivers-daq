@@ -1,15 +1,20 @@
 package org.lsst.ccs.daq.ims;
 
+import org.lsst.ccs.utilities.location.Location;
+import java.io.Serializable;
 import java.util.Arrays;
-import org.lsst.ccs.daq.ims.Source.SourceType;
+import org.lsst.ccs.utilities.location.Location.LocationType;
 
 /**
  *
  * @author tonyj
  */
-public class SourceMetaData {
+public class SourceMetaData implements Serializable {
+
+    private static final long serialVersionUID = 397370667275465591L;
+
     private final Location location;
-    private final SourceType sensor;
+    private final LocationType sensor;
     private final byte lane;
     private final String platform;
     private final Version software;
@@ -19,18 +24,18 @@ public class SourceMetaData {
     private final int[] registerValues;
 
     SourceMetaData(byte sensor, byte lane, String platform, Version software, int firmware, long serialNumber, long length, byte bay, byte board, int[] registerValues) {
-        this.sensor = Source.SourceType.values()[sensor-1];
+        this.sensor = Location.LocationType.values()[sensor - 1];
         this.lane = lane;
         this.platform = platform;
         this.software = software;
         this.firmware = firmware;
         this.serialNumber = serialNumber;
         this.length = length;
-        this.location = new Location(bay,board);
+        this.location = new Location(bay, board);
         this.registerValues = registerValues;
     }
 
-    public SourceType getSensor() {
+    public LocationType getSensor() {
         return sensor;
     }
 
@@ -65,9 +70,10 @@ public class SourceMetaData {
     public int[] getRegisterValues() {
         return registerValues;
     }
-    
+
     @Override
     public String toString() {
-        return "SourceMetaData{" + "location=" + location + ", sensor=" + sensor + ", lane=" + lane + ", platform=" + platform + ", software=" + software + ", firmware=" + firmware + ", serialNumber=" + serialNumber + ", length=" + length + ", registerValues=" + Arrays.toString(registerValues) + '}';
+        return String.format("SourceMetaData{" + "location=%s, sensor=%s, lane=%d, platform=%s, software=%s, firmware=%x, serialNumber=%x, length=%s, registerValues=%s}",
+                location, sensor, lane, platform, software, firmware, serialNumber, Utils.humanReadableByteCount(length), Arrays.toString(registerValues));
     }
 }

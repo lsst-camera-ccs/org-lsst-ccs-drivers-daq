@@ -11,7 +11,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
-import org.lsst.ccs.daq.ims.Location;
+import org.lsst.ccs.utilities.location.Location;
 
 /**
  * Utilities for reading FITS files

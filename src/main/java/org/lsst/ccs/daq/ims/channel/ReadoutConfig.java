@@ -2,7 +2,7 @@ package org.lsst.ccs.daq.ims.channel;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.lsst.ccs.daq.ims.Source;
+import org.lsst.ccs.utilities.location.Location;
 
 /**
  * Constants used to control conversion of raw data to FITS pixels
@@ -22,26 +22,26 @@ class ReadoutConfig {
      * ATS appears to have a different mapping, so this needs to be made
      * settable.
      */
-    private static final Map<Source.SourceType, int[]> DATA_SEGMENT_MAP = new HashMap<>();
-    private static final Map<Source.SourceType, int[]> DATA_SENSOR_MAP = new HashMap<>();
-    private static final Map<Source.SourceType, Integer> XOR_MAP = new HashMap<>();
+    private static final Map<Location.LocationType, int[]> DATA_SEGMENT_MAP = new HashMap<>();
+    private static final Map<Location.LocationType, int[]> DATA_SENSOR_MAP = new HashMap<>();
+    private static final Map<Location.LocationType, Integer> XOR_MAP = new HashMap<>();
 
     static {
-        DATA_SEGMENT_MAP.put(Source.SourceType.SCIENCE, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
-        DATA_SEGMENT_MAP.put(Source.SourceType.GUIDER, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
-        DATA_SEGMENT_MAP.put(Source.SourceType.WAVEFRONT, new int[]{0, 1, 2, 3, 4, 5, 6, 7});
+        DATA_SEGMENT_MAP.put(Location.LocationType.SCIENCE, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
+        DATA_SEGMENT_MAP.put(Location.LocationType.GUIDER, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
+        DATA_SEGMENT_MAP.put(Location.LocationType.WAVEFRONT, new int[]{0, 1, 2, 3, 4, 5, 6, 7});
 
-        DATA_SENSOR_MAP.put(Source.SourceType.SCIENCE, new int[]{2, 1, 0});
-        DATA_SENSOR_MAP.put(Source.SourceType.GUIDER, new int[]{0, 1});
-        DATA_SENSOR_MAP.put(Source.SourceType.WAVEFRONT, new int[]{0, 1});
+        DATA_SENSOR_MAP.put(Location.LocationType.SCIENCE, new int[]{2, 1, 0});
+        DATA_SENSOR_MAP.put(Location.LocationType.GUIDER, new int[]{0, 1});
+        DATA_SENSOR_MAP.put(Location.LocationType.WAVEFRONT, new int[]{0, 1});
 
-        XOR_MAP.put(Source.SourceType.SCIENCE, 0x1FFFF);
-        XOR_MAP.put(Source.SourceType.GUIDER, 0x20000);
-        XOR_MAP.put(Source.SourceType.WAVEFRONT, 0x20000);
+        XOR_MAP.put(Location.LocationType.SCIENCE, 0x1FFFF);
+        XOR_MAP.put(Location.LocationType.GUIDER, 0x20000);
+        XOR_MAP.put(Location.LocationType.WAVEFRONT, 0x20000);
     }
-    private final Source.SourceType sourceType;
+    private final Location.LocationType sourceType;
     
-    ReadoutConfig(Source.SourceType sourceType) {
+    ReadoutConfig(Location.LocationType sourceType) {
         this.sourceType = sourceType;
 
     }

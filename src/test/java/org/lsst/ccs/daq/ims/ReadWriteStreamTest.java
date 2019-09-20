@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
+import org.lsst.ccs.utilities.location.Location;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;

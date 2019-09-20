@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
+import org.lsst.ccs.utilities.location.Location;
 import java.nio.channels.ByteChannel;
 
 /**
@@ -14,60 +15,6 @@ public class Source implements Comparable<Source> {
     private SourceMetaData metaData;
     private final Image image;
     private final Location location;
-
-    public enum SourceType {
-        /**
-         * A WREB source.
-         */
-        WAVEFRONT(1), 
-        /**
-         * A GREB source
-         */
-        GUIDER(2), 
-        /**
-         * A Science REB source
-         */
-        SCIENCE(3);
-        private final int CCDCount;
-
-        SourceType(int CCDCount) {
-            this.CCDCount = CCDCount;
-        }
-
-        /**
-         * The number of CCDs associated with the source type.
-         * @return 
-         */
-        public int getCCDCount() {
-            return CCDCount;
-        }
-
-        String getBoardName(int board) {
-            switch (this) {
-                case SCIENCE: 
-                    return String.format("Reb%d", board);
-                case WAVEFRONT:
-                    return String.format("RebW");
-                case GUIDER:
-                    return String.format("RebG");
-                default:
-                    throw new RuntimeException("Unknown source type: "+this);
-            }
-        }
-
-        String getSensorName(int board, int sensor) {
-            switch (this) {
-                case SCIENCE: 
-                    return String.format("S%d%d", board, sensor);
-                case WAVEFRONT:
-                    return String.format("SW%d", sensor);
-                case GUIDER:
-                    return String.format("SG%d", sensor);
-                default:
-                    throw new RuntimeException("Unknown source type: "+this);
-            }
-        }
-    }
     
     public enum ChannelMode {
         /**
@@ -138,7 +85,7 @@ public class Source implements Comparable<Source> {
      * @return The source type.
      * @throws DAQException
      */
-    public SourceType getSourceType() throws DAQException {
+    public Location.LocationType getSourceType() throws DAQException {
         return getMetaData().getSensor();
     }
 

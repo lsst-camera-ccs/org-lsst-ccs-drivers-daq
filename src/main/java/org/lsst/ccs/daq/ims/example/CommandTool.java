@@ -104,7 +104,7 @@ public class CommandTool {
             });
             long capacity = store.getCapacity();
             long remaining = store.getRemaining();
-            System.out.printf("%s/%s (%3.3g%%) bytes used\n", Utils.humanReadableByteCount(capacity - remaining, false), Utils.humanReadableByteCount(capacity, false), 100.0 * (capacity - remaining) / capacity);
+            System.out.printf("%s/%s (%3.3g%%) bytes used\n", Utils.humanReadableByteCount(capacity - remaining), Utils.humanReadableByteCount(capacity, false), 100.0 * (capacity - remaining) / capacity);
         } else if (matcher.matches() && matcher.group(2).isEmpty()) {
             Folder folder = store.getCatalog().find(matcher.group(1));
             if (folder == null) {
@@ -122,7 +122,7 @@ public class CommandTool {
             Collections.sort(sources);
             for (Source source : sources) {
                 SourceMetaData smd = source.getMetaData();
-                System.out.printf("   %s %s %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength(), false),
+                System.out.printf("   %s %s %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength()),
                         Arrays.toString(smd.getRegisterValues()));
             }
         }
@@ -383,6 +383,6 @@ public class CommandTool {
         for (Source source : sources) {
             totalSize += source.getMetaData().getLength();
         }
-        return String.format("%s(%d)", Utils.humanReadableByteCount(totalSize, false), sources.size());
+        return String.format("%s(%d)", Utils.humanReadableByteCount(totalSize), sources.size());
     }
 }
