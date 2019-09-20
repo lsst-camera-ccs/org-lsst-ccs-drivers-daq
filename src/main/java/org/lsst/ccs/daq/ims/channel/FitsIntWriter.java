@@ -27,7 +27,6 @@ import org.lsst.ccs.utilities.readout.ReadOutImageSet;
 import org.lsst.ccs.utilities.readout.ReadOutParameters;
 import org.lsst.ccs.utilities.readout.ReadOutParametersBuilder;
 import org.lsst.ccs.utilities.readout.ReadOutParametersNew;
-import org.lsst.ccs.utilities.readout.ReadOutParametersOld;
 
 /**
  * A writable int channel for writing a set of FITS files corresponding
@@ -92,7 +91,7 @@ public class FitsIntWriter implements WritableIntChannel {
         ReadOutParameters readoutParameters = builder.build();
         //Set the CCDType on SCIENCE rebs
         //as they are the only ones that can have different types
-        if ( source.getSourceType() == Source.SourceType.SCIENCE ) {
+        if ( source.getSourceType() == Location.LocationType.SCIENCE ) {
             reb.setCCDType(readoutParameters.getCCDType());
         }
 
