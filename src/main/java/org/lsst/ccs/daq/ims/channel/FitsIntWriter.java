@@ -11,6 +11,7 @@ import java.util.Map;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
 import org.lsst.ccs.daq.ims.DAQException;
+import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.daq.ims.Source;
 import org.lsst.ccs.daq.ims.SourceMetaData;
 import org.lsst.ccs.imagenaming.ImageName;
@@ -97,7 +98,7 @@ public class FitsIntWriter implements WritableIntChannel {
 
 
         // Open the FITS files (one per CCD) and write headers.
-        File[] files = new File[source.getSourceType() == Source.SourceType.WAVEFRONT ? 2 : ccdCount];
+        File[] files = new File[source.getSourceType() == Location.LocationType.WAVEFRONT ? 2 : ccdCount];
         writers = new FitsFileWriter[files.length];
         ReadoutConfig readoutConfig = new ReadoutConfig(source.getSourceType());
         WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];

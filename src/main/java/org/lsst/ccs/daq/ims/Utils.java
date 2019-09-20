@@ -6,6 +6,10 @@ package org.lsst.ccs.daq.ims;
  */
 public class Utils {
 
+    public static String humanReadableByteCount(long bytes) {
+        return humanReadableByteCount(bytes, true);
+    }
+    
     public static String humanReadableByteCount(long bytes, boolean si) {
         int unit = si ? 1000 : 1024;
         if (bytes < unit) {

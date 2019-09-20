@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -9,7 +10,9 @@ import java.time.format.DateTimeFormatter;
  *
  * @author tonyj
  */
-public class Version {
+public class Version implements Serializable {
+
+    private static final long serialVersionUID = -1977918511697870015L;
 
     private final static DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
             .withZone(ZoneId.of("UTC"));
