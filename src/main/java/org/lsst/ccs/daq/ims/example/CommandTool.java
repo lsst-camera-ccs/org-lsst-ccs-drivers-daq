@@ -16,9 +16,12 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -355,9 +358,27 @@ public class CommandTool {
                 }
             }
         }
-
     }
-
+    
+    @Command(name = "purge", description = "Purge files in a folder older than some delta to make space")
+    public void purge(String folderName, Duration delta) throws DAQException {
+        checkStore();
+        Folder folder = store.getCatalog().find(folderName);
+        if (folder == null) {
+            throw new IllegalArgumentException("Invalid folder: "+folder);
+        }
+        List<Image> images = folder.listImages();
+        images.sort((Image i1, Image i2) -> i1.getMetaData().getTimestamp().compareTo(i2.getMetaData().getTimestamp()));
+        Instant cutOff = Instant.now().minus(delta);
+        for (Image image : images) {
+            if (image.getMetaData().getTimestamp().isBefore(cutOff)) {
+                System.out.println("Deleting: "+image);
+                //image.delete();
+            } else {
+                break;
+            }
+        }
+    }
     private Image imageFromPath(String path) throws DAQException, RuntimeException {
         final Matcher matcher = PATH_PATTERN.matcher(path);
         if (!matcher.matches()) {

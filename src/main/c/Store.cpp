@@ -156,101 +156,101 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     // Obtain the JNIEnv from the VM and confirm JNI_VERSION
     JNIEnv* env;
     if (vm->GetEnv(reinterpret_cast<void**> (&env), JNI_VERSION) != JNI_OK) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
 
     jclass versionClass = env->FindClass("org/lsst/ccs/daq/ims/Version");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
     JCversionClass = (jclass) env->NewGlobalRef(versionClass);
 
     JCversionConstructor = env->GetMethodID(JCversionClass, "<init>", "(Ljava/lang/String;JZI)V");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
 
     jclass bitSetClass = env->FindClass("java/util/BitSet");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
     JCbitSetClass = (jclass) env->NewGlobalRef(bitSetClass);
 
     JCbitSetConstructor = env->GetMethodID(JCbitSetClass, "<init>", "()V");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
     JCbitSetSetMethodId = env->GetMethodID(JCbitSetClass, "set", "(I)V");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
     JCbitSetGetMethodId = env->GetMethodID(JCbitSetClass, "get", "(I)Z");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
     jclass listClass = env->FindClass("java/util/List");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
     JClistClass = (jclass) env->NewGlobalRef(listClass);
 
     JClistAddMethodID = env->GetMethodID(JClistClass, "add", "(Ljava/lang/Object;)Z");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
 
     jclass imageMetaDataClass = env->FindClass("org/lsst/ccs/daq/ims/ImageMetaData");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
     JCimageMetaDataClass = (jclass) env->NewGlobalRef(imageMetaDataClass);
 
     JCimageMetaDataConstructor = env->GetMethodID(imageMetaDataClass, "<init>", "(JLjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/lsst/ccs/daq/ims/Version;IJLjava/util/BitSet;)V");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
 
     jclass sourceMetaDataClass = env->FindClass("org/lsst/ccs/daq/ims/SourceMetaData");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
     JCsourceMetaDataClass = (jclass) env->NewGlobalRef(sourceMetaDataClass);
 
     JCsourceMetaDataConstructor = env->GetMethodID(JCsourceMetaDataClass, "<init>", "(BBLjava/lang/String;Lorg/lsst/ccs/daq/ims/Version;IJJBB[I)V");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
 
     jclass storeClass = env->FindClass("org/lsst/ccs/daq/ims/Store");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
     JCstoreClass = (jclass) env->NewGlobalRef(storeClass);
 
     JCimageCreatedCallbackMethod = env->GetMethodID(JCstoreClass, "imageCreatedCallback", "(Lorg/lsst/ccs/daq/ims/ImageMetaData;)V");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
 
     JCimageCompleteCallbackMethod = env->GetMethodID(JCstoreClass, "imageCompleteCallback", "(Lorg/lsst/ccs/daq/ims/ImageMetaData;)V");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
 
     JCimageSourceStreamCallbackMethod = env->GetMethodID(JCstoreClass, "imageSourceStreamCallback", "(JIJ)V");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
 
     jclass exClass = env->FindClass("org/lsst/ccs/daq/ims/DAQException");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }
     JCexClass = (jclass) env->NewGlobalRef(exClass);
 
     JCexConstructor = env->GetMethodID(JCexClass, "<init>", "(Ljava/lang/String;ILjava/lang/String;)V");
     if (env->ExceptionCheck()) {
-        return JNI_ERR;
+        return JNI_VERSION;
     }    
     
     // Return the JNI Version as required by method

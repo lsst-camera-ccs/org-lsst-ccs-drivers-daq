@@ -141,7 +141,7 @@ public class ImageMetaData implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("ImageMetaData{" + "name=%s, annotation=%s, release=$s, opcode=%d, timestamp=%s, elements=%s, id=%x",
+        return String.format("ImageMetaData{" + "name=%s, annotation=%s, release=%s, opcode=%d, timestamp=%s, elements=%s, id=%x",
                 name, annotation, release, opcode, timestamp, elements, id);
     }
 
