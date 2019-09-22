@@ -361,7 +361,7 @@ public class CommandTool {
     }
     
     @Command(name = "purge", description = "Purge files in a folder older than some delta to make space")
-    public void purge(String folderName, Duration delta) throws DAQException {
+    public void purge(String folderName, String delta) throws DAQException {
         checkStore();
         Folder folder = store.getCatalog().find(folderName);
         if (folder == null) {
@@ -369,11 +369,11 @@ public class CommandTool {
         }
         List<Image> images = folder.listImages();
         images.sort((Image i1, Image i2) -> i1.getMetaData().getTimestamp().compareTo(i2.getMetaData().getTimestamp()));
-        Instant cutOff = Instant.now().minus(delta);
+        Instant cutOff = Instant.now().minus(Duration.parse(delta));
         for (Image image : images) {
             if (image.getMetaData().getTimestamp().isBefore(cutOff)) {
-                System.out.println("Deleting: "+image);
-                //image.delete();
+                System.out.println("Deleting: "+image.getMetaData().getName());
+                image.delete();
             } else {
                 break;
             }
