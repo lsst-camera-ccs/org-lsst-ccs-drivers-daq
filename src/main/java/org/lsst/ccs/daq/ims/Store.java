@@ -26,6 +26,9 @@ public class Store implements AutoCloseable {
     private Thread imageThread;
     private static final Logger LOG = Logger.getLogger(Store.class.getName());
 
+    private static final int IMAGE_TIMEOUT_MICROS = 0;
+    private static final int SOURCE_TIMEOUT_MICROS = 10_000_000;
+
     static {
         System.loadLibrary("ccs_daq_ims");
     }
@@ -100,11 +103,13 @@ public class Store implements AutoCloseable {
                     public void run() {
                         try {
                             for (;;) {
-                                int rc = waitForImage(store, 10_000_000, 10_000_000);
-                                System.out.println("waitForImage rc="+rc);
+                                int rc = waitForImage(store, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
+                                if (rc != 0 && rc != 68) { // 68 appears to mean timeout
+                                    LOG.log(Level.SEVERE, "Unexpected rc from waitForImage: {0}", rc);
+                                }
                             }
                         } catch (Throwable x) {
-                            LOG.log(Level.SEVERE, "ImageStreamThread exiting",x);
+                            LOG.log(Level.SEVERE, "ImageStreamThread exiting", x);
                         }
                     }
                 };
@@ -132,7 +137,7 @@ public class Store implements AutoCloseable {
     void imageCreatedCallback(ImageMetaData meta) {
         Image image = new Image(Store.this, meta);
         LOG.log(Level.INFO, "Image created: {0}", image);
-        synchronized(imageStreamMap) {
+        synchronized (imageStreamMap) {
             imageStreamMap.put(image.getMetaData().getId(), new ConcurrentHashMap<>());
         }
         imageListeners.forEach((l) -> {
@@ -159,7 +164,7 @@ public class Store implements AutoCloseable {
                     l.imageComplete(sourceMeta.getLength());
                 });
             } catch (DAQException ex) {
-                LOG.log(Level.SEVERE,"Exception during image complete callback", ex);
+                LOG.log(Level.SEVERE, "Exception during image complete callback", ex);
             }
         });
         imageListeners.forEach((l) -> {
@@ -206,7 +211,7 @@ public class Store implements AutoCloseable {
             List<StreamListener> listeners = streamListeners.get(location);
             if (listeners == null) {
                 listeners = new CopyOnWriteArrayList<>();
-                streamListeners.put(location,listeners);
+                streamListeners.put(location, listeners);
             }
             listeners.add(listener);
         }

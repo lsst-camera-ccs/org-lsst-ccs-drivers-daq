@@ -21,7 +21,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -65,6 +64,7 @@ import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
  * @author tonyj
  */
 public class CommandTool {
+
     private static final FitsHeadersSpecificationsBuilder HEADER_SPEC_BUILDER = new FitsHeadersSpecificationsBuilder();
 
     static {
@@ -81,7 +81,7 @@ public class CommandTool {
 
     public CommandTool() {
         // TODO: Temporary fix
-        ((Raft)focalPlane.getChild(2, 2)).setCCDType(CCDType.getCCDType("itl"));
+        ((Raft) focalPlane.getChild(2, 2)).setCCDType(CCDType.getCCDType("itl"));
     }
 
     @Command(name = "connect", description = "Connect to a DAQ store")
@@ -222,24 +222,17 @@ public class CommandTool {
         store.addImageListener(new ImageListener() {
             @Override
             public void imageCreated(Image image) {
-                try {
-                    System.out.println("Image created " + image);
-                    List<Source> sources = image.listSources();
-                    for (Source source : sources) {
-                        System.out.println(source);
-                    }
-                } catch (DAQException ex) {
-                    LOG.log(Level.SEVERE, "Exception in imageCreated listener", ex);
-                }
+                System.out.println("Image created " + image.getMetaData().getName());
             }
 
             @Override
             public void imageComplete(Image image) {
                 try {
-                    System.out.println("Image complete " + image);
+                    System.out.println("Image complete " + image.getMetaData().getName());
                     List<Source> sources = image.listSources();
                     for (Source source : sources) {
-                        System.out.println(source);
+                        SourceMetaData smd = source.getMetaData();
+                        System.out.printf("Source location: %s length: %s\n",smd.getLocation(),Utils.humanReadableByteCount(smd.getLength()));
                     }
                 } catch (DAQException ex) {
                     LOG.log(Level.SEVERE, "Exception in imageComplete listener", ex);
@@ -269,7 +262,7 @@ public class CommandTool {
                 Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
                 FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
                 try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
-                        FitsIntWriter decompress = new FitsIntWriter(source, reb, HEADER_SPEC_BUILDER.getHeaderSpecifications(), namer, null)){
+                        FitsIntWriter decompress = new FitsIntWriter(source, reb, HEADER_SPEC_BUILDER.getHeaderSpecifications(), namer, null)) {
                     long readSize = 0;
                     ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -359,26 +352,27 @@ public class CommandTool {
             }
         }
     }
-    
+
     @Command(name = "purge", description = "Purge files in a folder older than some delta to make space")
     public void purge(String folderName, String delta) throws DAQException {
         checkStore();
         Folder folder = store.getCatalog().find(folderName);
         if (folder == null) {
-            throw new IllegalArgumentException("Invalid folder: "+folder);
+            throw new IllegalArgumentException("Invalid folder: " + folder);
         }
         List<Image> images = folder.listImages();
         images.sort((Image i1, Image i2) -> i1.getMetaData().getTimestamp().compareTo(i2.getMetaData().getTimestamp()));
         Instant cutOff = Instant.now().minus(Duration.parse(delta));
         for (Image image : images) {
             if (image.getMetaData().getTimestamp().isBefore(cutOff)) {
-                System.out.println("Deleting: "+image.getMetaData().getName());
+                System.out.println("Deleting: " + image.getMetaData().getName());
                 image.delete();
             } else {
                 break;
             }
         }
     }
+
     private Image imageFromPath(String path) throws DAQException, RuntimeException {
         final Matcher matcher = PATH_PATTERN.matcher(path);
         if (!matcher.matches()) {
