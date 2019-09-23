@@ -1,18 +1,17 @@
 package org.lsst.ccs.daq.ims;
 
+import java.io.Serializable;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Representation of a DAQ version.
  *
  * @author tonyj
  */
-public class Version {
+public class Version implements Serializable {
 
-    private final static DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
-            .withZone(ZoneId.of("UTC"));
+    private static final long serialVersionUID = -1977918511697870015L;
+
     private final String tag;
     private final Instant buildTime;
     private final boolean dirty;
@@ -27,6 +26,6 @@ public class Version {
 
     @Override
     public String toString() {
-        return String.format("%s %s (%s%x)", tag, DATE_TIME_FORMATTER.format(buildTime), dirty ? "dirty," : "", hash);
+        return String.format("%s %s (%s%x)", tag, buildTime, dirty ? "dirty," : "", hash);
     }
 }

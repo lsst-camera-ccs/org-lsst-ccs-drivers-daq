@@ -1,5 +1,8 @@
 package org.lsst.ccs.daq.ims;
 
+import org.lsst.ccs.utilities.location.Location;
+import org.lsst.ccs.utilities.location.LocationSet;
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.BitSet;
 import java.util.Collections;
@@ -7,9 +10,13 @@ import java.util.Set;
 
 /**
  * Meta-data associated with an image.
+ *
  * @author tonyj
  */
-public class ImageMetaData {
+public class ImageMetaData implements Serializable {
+
+    private static final long serialVersionUID = 6128502939552309548L;
+
     private final String name;
     private final String annotation;
     private final Version release;
@@ -25,21 +32,25 @@ public class ImageMetaData {
         this.annotation = annotation;
         this.release = release;
         this.opcode = opcode;
-        this.timestamp = Instant.ofEpochSecond(timestampNanos/1_000_000_000,timestampNanos%1_000_000_000);
+        this.timestamp = Instant.ofEpochSecond(timestampNanos / 1_000_000_000, timestampNanos % 1_000_000_000);
         this.elements = new LocationSet(elements);
         this.creationFolder = folderName;
     }
 
     /**
-     * A constructor to be used when creating new images to be written into the Store.
+     * A constructor to be used when creating new images to be written into the
+     * Store.
+     *
      * @param imageName The name of the newly created image.
      * @param annotation An annotation string to be associated with the image.
-     * @param opcode The "opcode" associated with the image. This normally corresponds to the index of 
-     * the main routine in the sequencer which created this image.
-     * @param locationSet The set of locations to be associated with the image. After creating the imaqe
-     * a {@code Source} should be added for each location specified in the locationSet.
-     * @see Folder#insert(ImageMetaData) 
-     * @see Image#addSource(Location, int[]) 
+     * @param opcode The "opcode" associated with the image. This normally
+     * corresponds to the index of the main routine in the sequencer which
+     * created this image.
+     * @param locationSet The set of locations to be associated with the image.
+     * After creating the imaqe a {@code Source} should be added for each
+     * location specified in the locationSet.
+     * @see Folder#insert(ImageMetaData)
+     * @see Image#addSource(Location, int[])
      */
     public ImageMetaData(String imageName, String annotation, int opcode, Set<Location> locationSet) {
         this.name = imageName;
@@ -53,6 +64,7 @@ public class ImageMetaData {
 
     /**
      * Get the image name.
+     *
      * @return The name.
      */
     public String getName() {
@@ -61,6 +73,7 @@ public class ImageMetaData {
 
     /**
      * Get the annotation associated with the image when it was created.
+     *
      * @return The annotation
      */
     public String getAnnotation() {
@@ -69,6 +82,7 @@ public class ImageMetaData {
 
     /**
      * Get the DAQ release which created this image.
+     *
      * @return The DAQ version
      */
     public Version getRelease() {
@@ -76,8 +90,9 @@ public class ImageMetaData {
     }
 
     /**
-     * Get the opcode associated with this image. This normally corresponds to the index of 
-     * the main routine in the sequencer which created this image. 
+     * Get the opcode associated with this image. This normally corresponds to
+     * the index of the main routine in the sequencer which created this image.
+     *
      * @return The opcode.
      */
     public int getOpcode() {
@@ -86,6 +101,7 @@ public class ImageMetaData {
 
     /**
      * Get the timestamp associated with this image.
+     *
      * @return The timestamp
      */
     public Instant getTimestamp() {
@@ -94,7 +110,8 @@ public class ImageMetaData {
 
     /**
      * Get the set of locations (REBs) associated with this image
-     * @return 
+     *
+     * @return
      */
     public Set<Location> getLocations() {
         return Collections.unmodifiableSet(elements);
@@ -102,6 +119,7 @@ public class ImageMetaData {
 
     /**
      * The opaque id associated with the image by the DAQ.
+     *
      * @return The id
      */
     public long getId() {
@@ -110,19 +128,21 @@ public class ImageMetaData {
 
     /**
      * Get the folder in which the image was originally created
+     *
      * @return The image creation folder name
      */
     public String getCreationFolderName() {
         return creationFolder;
     }
-    
+
     BitSet getLocationBitSet() {
         return elements.getBitSet();
     }
-    
+
     @Override
     public String toString() {
-        return "ImageMetaData{" + "name=" + name + ", annotation=" + annotation + ", release=" + release + ", opcode=" + opcode + ", timestamp=" + timestamp + ", elements=" + elements + ", id=" + id + '}';
+        return String.format("ImageMetaData{" + "name=%s, annotation=%s, release=%s, opcode=%d, timestamp=%s, elements=%s, id=%x",
+                name, annotation, release, opcode, timestamp, elements, id);
     }
 
 }

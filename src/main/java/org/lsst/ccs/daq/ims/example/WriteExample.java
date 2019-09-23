@@ -10,7 +10,7 @@ import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.daq.ims.Folder;
 import org.lsst.ccs.daq.ims.Image;
 import org.lsst.ccs.daq.ims.ImageMetaData;
-import org.lsst.ccs.daq.ims.Location;
+import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.daq.ims.Source;
 import org.lsst.ccs.daq.ims.Store;
 

@@ -16,11 +16,12 @@ import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -35,7 +36,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import nom.tam.fits.FitsException;
-import nom.tam.fits.FitsFactory;
 import nom.tam.fits.Header;
 import nom.tam.fits.TruncatedFileException;
 import nom.tam.util.BufferedFile;
@@ -48,81 +48,40 @@ import org.lsst.ccs.daq.ims.ImageListener;
 import org.lsst.ccs.daq.ims.ImageMetaData;
 import org.lsst.ccs.daq.ims.Source;
 import org.lsst.ccs.daq.ims.Source.ChannelMode;
-import org.lsst.ccs.daq.ims.Source.SourceType;
 import org.lsst.ccs.daq.ims.SourceMetaData;
 import org.lsst.ccs.daq.ims.Store;
 import org.lsst.ccs.daq.ims.Utils;
-import org.lsst.ccs.daq.ims.channel.Decompress18BitChannel;
-import org.lsst.ccs.daq.ims.channel.DemultiplexingIntChannel;
-import org.lsst.ccs.daq.ims.channel.FitsAsyncWriteChannel;
 import org.lsst.ccs.daq.ims.channel.FitsIntReader;
-import org.lsst.ccs.daq.ims.channel.WritableIntChannel;
-import org.lsst.ccs.daq.ims.channel.XORWritableIntChannel;
+import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
-import org.lsst.ccs.imagenaming.ImageName;
-import org.lsst.ccs.utilities.ccd.CCD;
 import org.lsst.ccs.utilities.ccd.CCDType;
-import org.lsst.ccs.utilities.ccd.CCDTypeUtils;
 import org.lsst.ccs.utilities.ccd.FocalPlane;
+import org.lsst.ccs.utilities.ccd.Raft;
 import org.lsst.ccs.utilities.ccd.Reb;
-import org.lsst.ccs.utilities.image.FitsFileWriter;
-import org.lsst.ccs.utilities.image.FitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
-import org.lsst.ccs.utilities.image.ImageSet;
-import org.lsst.ccs.utilities.readout.GeometryFitsHeaderMetadataProvider;
-import org.lsst.ccs.utilities.readout.PropertiesFitsHeaderMetadataProvider;
-import org.lsst.ccs.utilities.readout.ReadOutImageSet;
-import org.lsst.ccs.utilities.readout.ReadOutParameters;
-import org.lsst.ccs.utilities.readout.ReadOutParametersBuilder;
-import org.lsst.ccs.utilities.readout.ReadOutParametersNew;
-import org.lsst.ccs.utilities.readout.ReadOutParametersOld;
 
 /**
  *
  * @author tonyj
  */
 public class CommandTool {
-
-    private static final Logger LOG = Logger.getLogger(CommandTool.class.getName());
-
-    private static final Pattern PATH_PATTERN = Pattern.compile("([0-9a-zA-Z\\-\\_]*)/?([0-9a-zA-Z\\-\\_]*)");
     private static final FitsHeadersSpecificationsBuilder HEADER_SPEC_BUILDER = new FitsHeadersSpecificationsBuilder();
 
     static {
-        FitsFactory.setUseHierarch(true);
         HEADER_SPEC_BUILDER.addSpecFile("primary.spec");
         HEADER_SPEC_BUILDER.addSpecFile("daqv4-primary.spec", "primary");
         HEADER_SPEC_BUILDER.addSpecFile("extended.spec");
     }
+    private static final Logger LOG = Logger.getLogger(CommandTool.class.getName());
 
-    /**
-     * The order of the Segments in the fits files is: S10->...
-     * ->S17->S07->...->S00
-     *
-     * while the order of the segments coming from the DAQ is
-     * S00->...->S07->S10->...->S17
-     *
-     * So we introduce the array below to describe the needed mapping. Note, the
-     * ATS appears to have a different mapping, so this needs to be made
-     * settable.
-     */
-    private final Map<SourceType, int[]> dataSegmentMap = new HashMap<>();
-    private final Map<SourceType, int[]> dataSensorMap = new HashMap<>();
+    private static final Pattern PATH_PATTERN = Pattern.compile("([0-9a-zA-Z\\-\\_]*)/?([0-9a-zA-Z\\-\\_]*)");
 
     private Store store;
     private final FocalPlane focalPlane = FocalPlane.createFocalPlane();
 
     public CommandTool() {
         // TODO: Temporary fix
-        CCDTypeUtils.changeCCDTypeForGeometry(focalPlane.getChild(2, 2), CCDType.getCCDType("itl"));
-
-        dataSegmentMap.put(SourceType.SCIENCE, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
-        dataSegmentMap.put(SourceType.GUIDER, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
-        dataSegmentMap.put(SourceType.WAVEFRONT, new int[]{0, 1, 2, 3, 4, 5, 6, 7});
-
-        dataSensorMap.put(SourceType.SCIENCE, new int[]{2, 1, 0});
-        dataSensorMap.put(SourceType.GUIDER, new int[]{0, 1});
-        dataSensorMap.put(SourceType.WAVEFRONT, new int[]{0, 1});
+        ((Raft)focalPlane.getChild(2, 2)).setCCDType(CCDType.getCCDType("itl"));
     }
 
     @Command(name = "connect", description = "Connect to a DAQ store")
@@ -155,7 +114,7 @@ public class CommandTool {
             });
             long capacity = store.getCapacity();
             long remaining = store.getRemaining();
-            System.out.printf("%s/%s (%3.3g%%) bytes used\n", Utils.humanReadableByteCount(capacity - remaining, false), Utils.humanReadableByteCount(capacity, false), 100.0 * (capacity - remaining) / capacity);
+            System.out.printf("%s/%s (%3.3g%%) bytes used\n", Utils.humanReadableByteCount(capacity - remaining), Utils.humanReadableByteCount(capacity, false), 100.0 * (capacity - remaining) / capacity);
         } else if (matcher.matches() && matcher.group(2).isEmpty()) {
             Folder folder = store.getCatalog().find(matcher.group(1));
             if (folder == null) {
@@ -173,7 +132,7 @@ public class CommandTool {
             Collections.sort(sources);
             for (Source source : sources) {
                 SourceMetaData smd = source.getMetaData();
-                System.out.printf("   %s %s %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength(), false),
+                System.out.printf("   %s %s %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength()),
                         Arrays.toString(smd.getRegisterValues()));
             }
         }
@@ -307,101 +266,24 @@ public class CommandTool {
         long start = System.nanoTime();
         for (Source source : sources) {
             Callable<Long> callable = () -> {
-
-                int ccdCount = source.getSourceType().getCCDCount();
-                SourceMetaData smd = source.getMetaData();
-                // Note, we are now using a single map for both the FileNameProperties and
-                // for writing FITS file headers
-                Map<String, Object> props = new HashMap<>();
-                try {
-                    ImageName in = new ImageName(source.getImage().getMetaData().getName());
-                    props.put("ImageName", in.toString());
-                    props.put("ImageDate", in.getDateString());
-                    props.put("ImageNumber", in.getNumberString());
-                    props.put("ImageController", in.getController().getCode());
-                    props.put("ImageSource", in.getSource().getCode());
-                } catch (IllegalArgumentException x) {
-                    props.put("ImageName", source.getImage().getMetaData().getName());
-                }
-                props.put("FileCreationTime", new Date());
-                props.put("DAQTriggerTime", source.getImage().getMetaData().getTimestamp());
-                props.put("Tag", String.format("%x", source.getImage().getMetaData().getId()));
-                props.put("RaftBay", source.getLocation().getRaftName());
-                props.put("RebSlot", source.getLocation().getBoardName());
-                props.put("Firmware", String.format("%x", smd.getFirmware()));
-                props.put("Platform", smd.getPlatform());
-                props.put("CCDControllerSerial", String.format("%x", smd.getSerialNumber() & 0xFFFFFFFFL));
-                props.put("DAQVersion", smd.getSoftware().toString());
-                props.put("DAQPartition", source.getImage().getStore().getPartition());
-                props.put("DAQFolder", source.getImage().getMetaData().getCreationFolderName());
-                props.put("DAQAnnotation", source.getImage().getMetaData().getAnnotation());
-
                 Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
-
-                PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(props);
-                // Open the FITS files (one per CCD) and write headers.
-                File[] files = new File[source.getSourceType() == SourceType.WAVEFRONT ? 2 : ccdCount];
-                FitsFileWriter[] writers = new FitsFileWriter[files.length];
-                try {
-                    // TODO: 16 should not be hard-wired here
-                    WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
-                    for (int i = 0; i < files.length; i++) {
-                        int sensorIndex = dataSensorMap.get(source.getSourceType())[i];
-                        props.put("CCDSlot", source.getLocation().getSensorName(sensorIndex));
-                        files[i] = new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
-                        //files[i] = config.getFitsFile(props);
-                        CCD ccd = reb.getCCDs().get(sensorIndex);
-                        if (!ccd.getName().equals(props.get("CCDSlot"))) {
-                            throw new IOException(String.format("Geometry (%s) inconsistent with DAQ location (%s)",
-                                    ccd.getName(), props.get("CCDSlot")));
+                FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
+                try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
+                        FitsIntWriter decompress = new FitsIntWriter(source, reb, HEADER_SPEC_BUILDER.getHeaderSpecifications(), namer, null)){
+                    long readSize = 0;
+                    ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
+                    buffer.order(ByteOrder.LITTLE_ENDIAN);
+                    for (;;) {
+                        int l = channel.read(buffer);
+                        if (l < 0) {
+                            break;
                         }
-                        int[] registerValues = smd.getRegisterValues();
-                        ReadOutParametersBuilder builder = ReadOutParametersBuilder.create();
-                        builder.readoutParameterValues(registerValues);
-                        if (registerValues.length == 9) {
-                            // Assume old style meta-data
-                            builder.ccdType(ccd.getType()).readoutParameterNames(ReadOutParametersOld.DEFAULT_NAMES);
-                        } else {
-                            builder.readoutParameterNames(ReadOutParametersNew.DEFAULT_NAMES);
-                        }
-                        ReadOutParameters readoutParameters = builder.build();
-                        ImageSet imageSet = new ReadOutImageSet(ccd, readoutParameters);
-
-                        List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
-                        //providers.add(rebNode.getFitsService().getFitsHeaderMetadataProvider(ccd.getUniqueId()));
-                        providers.add(new GeometryFitsHeaderMetadataProvider(ccd));
-                        providers.add(propsFitsHeaderMetadataProvider);
-                        writers[i] = new FitsFileWriter(files[i], imageSet, HEADER_SPEC_BUILDER.getHeaderSpecifications(), providers);
-
-                        for (int j = 0; j < imageSet.getNumberOfImages(); j++) {
-                            fileChannels[i * imageSet.getNumberOfImages() + j] = new FitsAsyncWriteChannel(writers[i], dataSegmentMap.get(source.getSourceType())[j]);
-                        }
+                        readSize += l;
+                        buffer.flip();
+                        decompress.write(buffer.asIntBuffer());
+                        buffer.clear();
                     }
-                    try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
-                            DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
-                            XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, 0x1FFFF);
-                            Decompress18BitChannel decompress = new Decompress18BitChannel(xor)) {
-                        long readSize = 0;
-                        ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
-                        buffer.order(ByteOrder.LITTLE_ENDIAN);
-                        for (;;) {
-                            int l = channel.read(buffer);
-                            if (l < 0) {
-                                break;
-                            }
-                            readSize += l;
-                            buffer.flip();
-                            decompress.write(buffer.asIntBuffer());
-                            buffer.clear();
-                        }
-                        return readSize;
-                    }
-                } finally {
-                    for (FitsFileWriter writer : writers) {
-                        if (writer != null) {
-                            writer.close();
-                        }
-                    }
+                    return readSize;
                 }
             };
             futures.add(executor.submit(callable));
@@ -476,9 +358,27 @@ public class CommandTool {
                 }
             }
         }
-
     }
-
+    
+    @Command(name = "purge", description = "Purge files in a folder older than some delta to make space")
+    public void purge(String folderName, String delta) throws DAQException {
+        checkStore();
+        Folder folder = store.getCatalog().find(folderName);
+        if (folder == null) {
+            throw new IllegalArgumentException("Invalid folder: "+folder);
+        }
+        List<Image> images = folder.listImages();
+        images.sort((Image i1, Image i2) -> i1.getMetaData().getTimestamp().compareTo(i2.getMetaData().getTimestamp()));
+        Instant cutOff = Instant.now().minus(Duration.parse(delta));
+        for (Image image : images) {
+            if (image.getMetaData().getTimestamp().isBefore(cutOff)) {
+                System.out.println("Deleting: "+image.getMetaData().getName());
+                image.delete();
+            } else {
+                break;
+            }
+        }
+    }
     private Image imageFromPath(String path) throws DAQException, RuntimeException {
         final Matcher matcher = PATH_PATTERN.matcher(path);
         if (!matcher.matches()) {
@@ -511,6 +411,6 @@ public class CommandTool {
         for (Source source : sources) {
             totalSize += source.getMetaData().getLength();
         }
-        return String.format("%s(%d)", Utils.humanReadableByteCount(totalSize, false), sources.size());
+        return String.format("%s(%d)", Utils.humanReadableByteCount(totalSize), sources.size());
     }
 }

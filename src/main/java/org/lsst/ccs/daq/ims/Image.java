@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
+import org.lsst.ccs.utilities.location.Location;
 import java.util.ArrayList;
 import java.util.List;
 
