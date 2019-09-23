@@ -468,10 +468,10 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_addSourceToImage
 }
 
 JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_waitForImage
-(JNIEnv *env, jobject obj, jlong store, jint timeoutMicros) {
+(JNIEnv *env, jobject obj, jlong store, jint imageTimeoutMicros, jint sourceTimeoutMicros) {
     Store* store_ = (Store*) store;
-    Stream stream(*store_, timeoutMicros);
-    Image image(*store_, stream);
+    Stream stream(*store_, sourceTimeoutMicros);
+    Image image(*store_, stream, imageTimeoutMicros);
     if (!image) return image.error();
     env->CallVoidMethod(obj, JCimageCreatedCallbackMethod, createImageMetaData(env, image));
     MyBarrier barrier(*store_, env, image, obj, JCimageSourceStreamCallbackMethod);

@@ -100,7 +100,7 @@ public class Store implements AutoCloseable {
                     public void run() {
                         try {
                             for (;;) {
-                                int rc = waitForImage(store, 20_000_000);
+                                int rc = waitForImage(store, 10_000_000, 10_000_000);
                                 System.out.println("waitForImage rc="+rc);
                             }
                         } catch (Throwable x) {
@@ -310,7 +310,7 @@ public class Store implements AutoCloseable {
 
     private synchronized native SourceMetaData addSourceToImage(long store, long id, int index, byte type, String platform, int[] registerValues) throws DAQException;
 
-    private native int waitForImage(long store, int timeoutMicros) throws DAQException;
+    private native int waitForImage(long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
 
     static native String decodeException(int rc);
 }
