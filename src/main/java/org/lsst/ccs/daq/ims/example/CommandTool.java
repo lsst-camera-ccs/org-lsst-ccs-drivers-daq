@@ -55,8 +55,8 @@ import org.lsst.ccs.daq.ims.channel.FitsIntReader;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
 import org.lsst.ccs.utilities.ccd.CCDType;
-import org.lsst.ccs.utilities.ccd.CCDTypeUtils;
 import org.lsst.ccs.utilities.ccd.FocalPlane;
+import org.lsst.ccs.utilities.ccd.Raft;
 import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
 
@@ -81,7 +81,7 @@ public class CommandTool {
 
     public CommandTool() {
         // TODO: Temporary fix
-        CCDTypeUtils.changeCCDTypeForGeometry(focalPlane.getChild(2, 2), CCDType.getCCDType("itl"));
+        ((Raft)focalPlane.getChild(2, 2)).setCCDType(CCDType.getCCDType("itl"));
     }
 
     @Command(name = "connect", description = "Connect to a DAQ store")
