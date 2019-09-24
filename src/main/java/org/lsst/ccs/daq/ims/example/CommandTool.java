@@ -219,6 +219,7 @@ public class CommandTool {
 
     @Command(name = "listen", description = "Listen for images")
     public void listen() {
+        checkStore();
         store.addImageListener(new ImageListener() {
             @Override
             public void imageCreated(Image image) {
