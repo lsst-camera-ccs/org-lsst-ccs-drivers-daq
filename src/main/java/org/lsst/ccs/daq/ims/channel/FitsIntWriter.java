@@ -46,14 +46,14 @@ public class FitsIntWriter implements WritableIntChannel {
      * Create a FitsIntWriter
      * @param source The source for which data is to be written
      * @param reb The corresponding REB
-     * @param headerSpecificationsForCCDMap Fits header specifications for the CCDs.
+     * @param headerSpecifications Fits header specifications
      * @param fileNamer An interface for generating the names of the fits files to write
      * @param extraMetaDataProvider Additional per-ccd fits header meta-data providers
      * @throws DAQException
      * @throws IOException
      * @throws FitsException 
      */
-    public FitsIntWriter(Source source, Reb reb, Map<CCD,Map<String, HeaderSpecification>> headerSpecificationsForCCDMap, FileNamer fileNamer, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException, FitsException {
+    public FitsIntWriter(Source source, Reb reb, Map<String, HeaderSpecification> headerSpecifications, FileNamer fileNamer, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException, FitsException {
         int ccdCount = source.getSourceType().getCCDCount();
         SourceMetaData smd = source.getMetaData();
         // Note, we are now using a single map for both the FileNameProperties and
@@ -117,7 +117,7 @@ public class FitsIntWriter implements WritableIntChannel {
             if (extraMetaDataProvider != null) {
                 providers.addAll(extraMetaDataProvider.getMetaDataProvider(ccd));
             }
-            writers[i] = new FitsFileWriter(files[i], imageSet, headerSpecificationsForCCDMap.get(ccd), providers);
+            writers[i] = new FitsFileWriter(files[i], imageSet, headerSpecifications, providers);
 
             for (int j = 0; j < imageSet.getNumberOfImages(); j++) {
                 fileChannels[i * imageSet.getNumberOfImages() + j] = new FitsAsyncWriteChannel(writers[i], readoutConfig.getDataSegmentMap()[j]);

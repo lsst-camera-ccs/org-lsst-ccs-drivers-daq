@@ -21,7 +21,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -54,13 +53,11 @@ import org.lsst.ccs.daq.ims.Utils;
 import org.lsst.ccs.daq.ims.channel.FitsIntReader;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
-import org.lsst.ccs.utilities.ccd.CCD;
 import org.lsst.ccs.utilities.ccd.CCDType;
 import org.lsst.ccs.utilities.ccd.FocalPlane;
 import org.lsst.ccs.utilities.ccd.Raft;
 import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
-import org.lsst.ccs.utilities.image.HeaderSpecification;
 
 /**
  *
@@ -265,14 +262,8 @@ public class CommandTool {
             Callable<Long> callable = () -> {
                 Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
                 FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
-                
-                Map<CCD,Map<String, HeaderSpecification>> specs = new HashMap<>();
-                for ( CCD ccd : reb.getCCDs() ) {
-                    specs.put(ccd,HEADER_SPEC_BUILDER.getHeaderSpecifications());
-                }
-                
                 try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
-                        FitsIntWriter decompress = new FitsIntWriter(source, reb, specs, namer, null)) {
+                        FitsIntWriter decompress = new FitsIntWriter(source, reb, HEADER_SPEC_BUILDER.getHeaderSpecifications(), namer, null)) {
                     long readSize = 0;
                     ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
