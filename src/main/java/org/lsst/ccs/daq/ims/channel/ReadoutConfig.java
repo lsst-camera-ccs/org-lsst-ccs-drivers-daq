@@ -28,7 +28,7 @@ class ReadoutConfig {
 
     static {
         DATA_SEGMENT_MAP.put(Location.LocationType.SCIENCE, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
-        DATA_SEGMENT_MAP.put(Location.LocationType.GUIDER, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
+        DATA_SEGMENT_MAP.put(Location.LocationType.GUIDER, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0});
         DATA_SEGMENT_MAP.put(Location.LocationType.WAVEFRONT, new int[]{0, 1, 2, 3, 4, 5, 6, 7});
 
         DATA_SENSOR_MAP.put(Location.LocationType.SCIENCE, new int[]{2, 1, 0});
@@ -43,7 +43,6 @@ class ReadoutConfig {
     
     ReadoutConfig(Location.LocationType sourceType) {
         this.sourceType = sourceType;
-
     }
 
     int[] getDataSegmentMap() {
