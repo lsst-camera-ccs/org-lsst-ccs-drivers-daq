@@ -3,6 +3,7 @@ package org.lsst.ccs.daq.ims.channel;
 import java.io.File;
 import java.io.IOException;
 import java.nio.IntBuffer;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -29,8 +30,9 @@ import org.lsst.ccs.utilities.readout.ReadOutParametersBuilder;
 import org.lsst.ccs.utilities.readout.ReadOutParametersNew;
 
 /**
- * A writable int channel for writing a set of FITS files corresponding
- * to a single source.
+ * A writable int channel for writing a set of FITS files corresponding to a
+ * single source.
+ *
  * @author tonyj
  */
 public class FitsIntWriter implements WritableIntChannel {
@@ -39,19 +41,23 @@ public class FitsIntWriter implements WritableIntChannel {
         FitsFactory.setUseHierarch(true);
     }
 
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final Decompress18BitChannel decompress;
     private final FitsFileWriter[] writers;
 
     /**
      * Create a FitsIntWriter
+     *
      * @param source The source for which data is to be written
      * @param reb The corresponding REB
      * @param headerSpecifications Fits header specifications
-     * @param fileNamer An interface for generating the names of the fits files to write
-     * @param extraMetaDataProvider Additional per-ccd fits header meta-data providers
+     * @param fileNamer An interface for generating the names of the fits files
+     * to write
+     * @param extraMetaDataProvider Additional per-ccd fits header meta-data
+     * providers
      * @throws DAQException
      * @throws IOException
-     * @throws FitsException 
+     * @throws FitsException
      */
     public FitsIntWriter(Source source, Reb reb, Map<String, HeaderSpecification> headerSpecifications, FileNamer fileNamer, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException, FitsException {
         int ccdCount = source.getSourceType().getCCDCount();
@@ -68,6 +74,7 @@ public class FitsIntWriter implements WritableIntChannel {
             props.put("ImageSource", in.getSource().getCode());
         } catch (IllegalArgumentException x) {
             props.put("ImageName", source.getImage().getMetaData().getName());
+            props.put("ImageDate", DATE_FORMAT.format(source.getImage().getMetaData().getTimestamp()));
         }
         props.put("FileCreationTime", new Date());
         props.put("DAQTriggerTime", source.getImage().getMetaData().getTimestamp());
@@ -87,45 +94,58 @@ public class FitsIntWriter implements WritableIntChannel {
         int[] registerValues = smd.getRegisterValues();
         ReadOutParametersBuilder builder = ReadOutParametersBuilder.create();
         builder.readoutParameterValues(registerValues);
-        builder.readoutParameterNames(ReadOutParametersNew.DEFAULT_NAMES);           
+        builder.readoutParameterNames(ReadOutParametersNew.DEFAULT_NAMES);
         ReadOutParameters readoutParameters = builder.build();
         //Set the CCDType on SCIENCE rebs
         //as they are the only ones that can have different types
-        if ( source.getSourceType() == Location.LocationType.SCIENCE ) {
+        if (source.getSourceType() == Location.LocationType.SCIENCE) {
             reb.setCCDType(readoutParameters.getCCDType());
         }
-
 
         // Open the FITS files (one per CCD) and write headers.
         File[] files = new File[source.getSourceType() == Location.LocationType.WAVEFRONT ? 2 : ccdCount];
         writers = new FitsFileWriter[files.length];
         ReadoutConfig readoutConfig = new ReadoutConfig(source.getSourceType());
         WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
-        for (int i = 0; i < files.length; i++) {
-            int sensorIndex = readoutConfig.getDataSensorMap()[i];
-            props.put("CCDSlot", source.getLocation().getSensorName(sensorIndex));
-            files[i] = fileNamer.computeFileName(props);
-            CCD ccd = reb.getCCDs().get(sensorIndex);
-            if (!ccd.getName().equals(props.get("CCDSlot"))) {
-                throw new IOException(String.format("Geometry (%s) inconsistent with DAQ location (%s)",
-                        ccd.getName(), props.get("CCDSlot")));
-            }
-            ImageSet imageSet = new ReadOutImageSet(ccd, readoutParameters);
-            List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
-            providers.add(new GeometryFitsHeaderMetadataProvider(ccd));
-            providers.add(propsFitsHeaderMetadataProvider);
-            if (extraMetaDataProvider != null) {
-                providers.addAll(extraMetaDataProvider.getMetaDataProvider(ccd));
-            }
-            writers[i] = new FitsFileWriter(files[i], imageSet, headerSpecifications, providers);
+        try {
+            for (int i = 0; i < files.length; i++) {
+                int sensorIndex = readoutConfig.getDataSensorMap()[i];
+                props.put("CCDSlot", source.getLocation().getSensorName(sensorIndex));
+                files[i] = fileNamer.computeFileName(props);
+                CCD ccd = reb.getCCDs().get(sensorIndex);
+                if (!ccd.getName().equals(props.get("CCDSlot"))) {
+                    throw new IOException(String.format("Geometry (%s) inconsistent with DAQ location (%s)",
+                            ccd.getName(), props.get("CCDSlot")));
+                }
+                ImageSet imageSet = new ReadOutImageSet(ccd, readoutParameters);
+                List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
+                providers.add(new GeometryFitsHeaderMetadataProvider(ccd));
+                providers.add(propsFitsHeaderMetadataProvider);
+                if (extraMetaDataProvider != null) {
+                    providers.addAll(extraMetaDataProvider.getMetaDataProvider(ccd));
+                }
+                writers[i] = new FitsFileWriter(files[i], imageSet, headerSpecifications, providers);
 
-            for (int j = 0; j < imageSet.getNumberOfImages(); j++) {
-                fileChannels[i * imageSet.getNumberOfImages() + j] = new FitsAsyncWriteChannel(writers[i], readoutConfig.getDataSegmentMap()[j]);
+                for (int j = 0; j < imageSet.getNumberOfImages(); j++) {
+                    fileChannels[i * imageSet.getNumberOfImages() + j] = new FitsAsyncWriteChannel(writers[i], readoutConfig.getDataSegmentMap()[j]);
+                }
             }
+            DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
+            XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, readoutConfig.getXor());
+            decompress = new Decompress18BitChannel(xor);
+        } catch (Throwable t) {
+            // Cleanup any files which were already opened
+            for (FitsFileWriter writer : writers) {
+                if (writer != null) {
+                    try {
+                        writer.close();
+                    } catch (IOException x) {
+                        // Silently ignore, so we continue to (try to) close other files
+                    }
+                }
+            }
+            throw t;
         }
-        DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
-        XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, readoutConfig.getXor());
-        decompress = new Decompress18BitChannel(xor);
     }
 
     @Override
@@ -160,7 +180,7 @@ public class FitsIntWriter implements WritableIntChannel {
 
         File computeFileName(Map<String, Object> props);
     }
-    
+
     /**
      * Interface for providing additional meta-data providers
      */
@@ -168,5 +188,5 @@ public class FitsIntWriter implements WritableIntChannel {
 
         List<FitsHeaderMetadataProvider> getMetaDataProvider(CCD ccd);
     }
-    
+
 }
