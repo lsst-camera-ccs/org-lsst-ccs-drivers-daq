@@ -1,6 +1,10 @@
 # Specification file for primary header, DAQv4 specific items
 #
-DATE-TRG    Date    ${DAQTriggerTime}           Date of the image trigger (readout), UTC
+# Temporary fix for LSSTCCSRAFTS-488
+DATE-OBS    Date    ${DAQTriggerTime}           Date of the image trigger (readout), UTC for now
+MJD-OBS     MJD     ${DAQTriggerTime}           Modified Julian Date of image trigger
+#
+DATE-TRG    Date    ${DAQTriggerTime}           Date of the image trigger (readout), UTC for now
 MJD-TRG     MJD     ${DAQTriggerTime}           Modified Julian Date of image trigger
 IMAGETAG    String  ${Tag}                      DAQ Image id (Hex)
 CCDSLOT     String  ${CCDSlot}                  The CCD Slot
