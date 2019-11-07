@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.lsst</groupId>
         <artifactId>org-lsst-ccs-drivers</artifactId>
-        <version>5.3.5-SNAPSHOT</version>
+        <version>5.3.6</version>
     </parent>
 
 
@@ -95,7 +95,7 @@
         <dependency>
             <groupId>org.lsst</groupId>
             <artifactId>org-lsst-ccs-image-utilities</artifactId>
-            <version>3.0.0-SNAPSHOT</version>
+            <version>3.0.0</version>
             <type>jar</type>
         </dependency>
     </dependencies>
