@@ -13,11 +13,11 @@ import java.nio.IntBuffer;
 public class FitsWriteChannel implements WritableIntChannel {
 
     ByteBuffer currentBuffer;
-    final int segment;
+    final String segment;
     final FitsFileWriter writer;
     boolean isOpen = true;
     
-    public FitsWriteChannel(FitsFileWriter writer, int segment) {
+    public FitsWriteChannel(FitsFileWriter writer, String segment) {
         this.writer = writer;
         this.segment = segment;
         currentBuffer = ByteBuffer.allocateDirect(1_000_000);

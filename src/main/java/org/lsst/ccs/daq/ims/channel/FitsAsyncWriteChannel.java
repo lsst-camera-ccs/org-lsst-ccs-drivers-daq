@@ -20,7 +20,7 @@ public class FitsAsyncWriteChannel extends FitsWriteChannel {
     private final BlockingQueue<ByteBuffer> availableBuffers = new ArrayBlockingQueue<>(NBUFFERS);
     private final BlockingQueue<Throwable> exceptions = new LinkedBlockingQueue<>();
 
-    public FitsAsyncWriteChannel(FitsFileWriter writer, int segment) throws IOException {
+    public FitsAsyncWriteChannel(FitsFileWriter writer, String segment) throws IOException {
         super(writer, segment);
         for (int n = 0; n < NBUFFERS; n++) {
             ByteBuffer bb = ByteBuffer.allocateDirect(500_000);

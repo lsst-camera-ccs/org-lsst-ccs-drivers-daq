@@ -126,8 +126,9 @@ public class FitsIntWriter implements WritableIntChannel {
                 }
                 writers[i] = new FitsFileWriter(files[i], imageSet, headerSpecifications, providers);
 
-                for (int j = 0; j < imageSet.getNumberOfImages(); j++) {
-                    fileChannels[i * imageSet.getNumberOfImages() + j] = new FitsAsyncWriteChannel(writers[i], readoutConfig.getDataSegmentMap()[j]);
+                int nImageExtensions = imageSet.getImageExtensionNames().size();
+                for (int j = 0; j < nImageExtensions; j++) {
+                    fileChannels[i * nImageExtensions + j] = new FitsAsyncWriteChannel(writers[i], readoutConfig.getDataSegmentNames()[readoutConfig.getDataSegmentMap()[j]]);
                 }
             }
             DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
