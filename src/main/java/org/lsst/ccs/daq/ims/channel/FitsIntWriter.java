@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.IntBuffer;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -117,7 +118,7 @@ public class FitsIntWriter implements WritableIntChannel {
                     throw new IOException(String.format("Geometry (%s) inconsistent with DAQ location (%s)",
                             ccd.getName(), props.get("CCDSlot")));
                 }
-                ImageSet imageSet = new ReadOutImageSet(ccd, readoutParameters);
+                ImageSet imageSet = new ReadOutImageSet(Arrays.asList(readoutConfig.getDataSegmentNames()), readoutParameters);
                 List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
                 providers.add(new GeometryFitsHeaderMetadataProvider(ccd));
                 providers.add(propsFitsHeaderMetadataProvider);
