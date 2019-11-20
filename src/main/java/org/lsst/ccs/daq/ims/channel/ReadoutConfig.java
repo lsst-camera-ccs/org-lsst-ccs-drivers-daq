@@ -40,7 +40,7 @@ class ReadoutConfig {
             "Segment10", "Segment11", "Segment12", "Segment13", "Segment14", "Segment15", "Segment16", "Segment17",
         });
         DATA_SEGMENT_MAP.put(Location.LocationType.SCIENCE, new int[]{15, 14, 13, 12, 11, 10, 9, 8, 0, 1, 2, 3, 4, 5, 6, 7});
-        DATA_SEGMENT_MAP.put(Location.LocationType.GUIDER, new int[]{7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8});
+        DATA_SEGMENT_MAP.put(Location.LocationType.GUIDER, new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15});
         DATA_SEGMENT_MAP.put(Location.LocationType.WAVEFRONT, new int[]{0, 1, 2, 3, 4, 5, 6, 7});
 
         DATA_SENSOR_MAP.put(Location.LocationType.SCIENCE, new int[]{2, 1, 0});
