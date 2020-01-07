@@ -29,7 +29,10 @@ $(OBJ)/Channel.o: Channel.cpp Channel.h $(INC)/org_lsst_ccs_daq_ims_DAQSourceCha
 	mkdir -p $(OBJ)
 	$(CC) -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -o $@ -c $<
 
-$(LIBTGT)/libccs_daq_ims.so: $(OBJ)/Store.o $(OBJ)/MyFolders.o $(OBJ)/MyProcessor.o $(OBJ)/Channel.o $(OBJ)/MyBarrier.o
+$(OBJ)/Statistics.o: Statistics.cpp $(INC)/org_lsst_ccs_daq_ims_Statistics.h
+	mkdir -p $(OBJ)
+	$(CC) -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -o $@ -c $<
+
+$(LIBTGT)/libccs_daq_ims.so: $(OBJ)/Store.o $(OBJ)/MyFolders.o $(OBJ)/MyProcessor.o $(OBJ)/Channel.o $(OBJ)/MyBarrier.o $(OBJ)/Statistics.o
 	mkdir -p ${LIBTGT}
 	$(CC) -shared -Wl,-rpath=$(DAQ_HOME)/x86/lib -L$(DAQ_HOME)/x86/lib -ldaq_ims -ldaq_dsm -o $@ $^
-	
