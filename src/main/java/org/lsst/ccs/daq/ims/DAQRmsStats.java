@@ -2,7 +2,7 @@ package org.lsst.ccs.daq.ims;
 
 import org.lsst.ccs.utilities.location.Location;
 
-public class DaqRmsStats {
+public class DAQRmsStats {
 
     private final Location location;
 

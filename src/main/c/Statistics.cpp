@@ -41,7 +41,7 @@ void throwDAQStatsException(JNIEnv* env, char* message, jint error) {
     env->Throw(exception);
 }
 
-jobject createDaqRmsStats(JNIEnv* env, const DAQ::Location& location, 
+jobject createDAQRmsStats(JNIEnv* env, const DAQ::Location& location, 
                           RMS::Client* client) {
     RMS::Stats rmsStats;
     int32_t error;
@@ -66,7 +66,7 @@ jobject createDaqRmsStats(JNIEnv* env, const DAQ::Location& location,
 
     } else {
       char x[MESSAGE_LENGTH];
-      snprintf(x, MESSAGE_LENGTH, "createDaqRmsStats failed");
+      snprintf(x, MESSAGE_LENGTH, "createDAQRmsStats failed");
       throwDAQStatsException(env, x, error);
     }
 }
@@ -78,7 +78,7 @@ jobject createDaqRmsStats(JNIEnv* env, const DAQ::Location& location,
 
 void JNI_Stats_OnLoad(JNIEnv* env) {
 
-    jclass daqRmsStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DaqRmsStats");
+    jclass daqRmsStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DAQRmsStats");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -89,7 +89,7 @@ void JNI_Stats_OnLoad(JNIEnv* env) {
         return;
     }
 
-    jclass daqRdsStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DaqRdsStats");
+    jclass daqRdsStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DAQRdsStats");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -100,7 +100,7 @@ void JNI_Stats_OnLoad(JNIEnv* env) {
         return;
     }
 
-    jclass daqFirmwareStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DaqFirmwareStats");
+    jclass daqFirmwareStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DAQFirmwareStats");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -111,7 +111,7 @@ void JNI_Stats_OnLoad(JNIEnv* env) {
         return;
     }
 
-    jclass daqDriverStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DaqDriverStats");
+    jclass daqDriverStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DAQDriverStats");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -130,7 +130,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Statistics_getRmsStats
 (JNIEnv *env, jobject obj, jlong client, jint elementIndex) {
     RMS::Client* client_ = (RMS::Client*)client;
     DAQ::Location element(elementIndex);
-    return createDaqRmsStats(env, element, client_);
+    return createDAQRmsStats(env, element, client_);
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_rms_Client_attachRmsClient
