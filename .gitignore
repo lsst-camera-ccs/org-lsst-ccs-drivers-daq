@@ -1,4 +1,5 @@
 target/
 *.log
+logs/
 /nbproject/
 /src/main/cpp/nbproject/

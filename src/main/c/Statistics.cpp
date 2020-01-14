@@ -138,10 +138,11 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_rms_Client_attachRmsClient
 
     const char *partition_name = env->GetStringUTFChars(partition, 0);
     try {
-      RMS::Client* client = new RMS::Client(partition_name);
+        RMS::Client* client = new RMS::Client(partition_name);
         env->ReleaseStringUTFChars(partition, partition_name);
         return (jlong) client;
     } catch (DSM::Exception& x) {
+        env->ReleaseStringUTFChars(partition, partition_name);
         return env->ThrowNew(JCexClass, x.what());
     }
 }

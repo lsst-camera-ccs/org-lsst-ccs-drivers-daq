@@ -27,27 +27,44 @@ public class Statistics implements AutoCloseable {
         System.loadLibrary("ccs_daq_ims");
     }
 
-    /**
-     * Connects to a DAQ store.
-     *
-     * @param partition The name of the partition
-     * @throws DAQException If the partition does not exist, or something else
-     * goes wrong
-     */
+   /**
+    * Connects to DAQ Statistics clients
+    *
+    * @param partition The name of the partition
+    * @throws DAQException If the partition does not exist, or something else
+    * goes wrong
+    */
     public Statistics(String partition) throws DAQException {
         this.partition = partition;
         rmsClient = attachRmsClient(partition);
     }
 
+   /**
+    * Detaches DAQ clients
+    *
+    * @throws DAQException 
+    */
     @Override
     public void close() throws DAQException {
         detachRmsClient(rmsClient);
     }
 
-    // Native methods    
+   /**
+    * Get DAQ Rms Statistics for specified Location
+    *
+    * @param  Location requested (25 rafts times 3 REB)
+    * @return DAQRmsStats object
+    * @throws DAQException
+    */
+    public DAQRmsStats getDAQRmsStats(Location location) throws DAQException {
+        return getRmsStats(rmsClient, location.index());
+    }
+
+    /* Native methods  */
+
     private synchronized native long attachRmsClient(String partition) throws DAQException;
     private synchronized native void detachRmsClient(long rmsClient) throws DAQException;
-    private synchronized native DaqRmsStats getRmsStats(long rmsClient) throws DAQException;
+    private synchronized native DAQRmsStats getRmsStats(long rmsClient, int index) throws DAQException;
 
     static native String decodeException(int rc);
 }
