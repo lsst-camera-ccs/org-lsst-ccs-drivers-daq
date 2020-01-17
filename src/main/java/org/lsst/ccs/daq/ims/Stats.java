@@ -15,13 +15,13 @@ import java.util.logging.Logger;
  *
  * @author  Al Eisner
  */
-public class Statistics implements AutoCloseable {
+public class Stats implements AutoCloseable {
 
     private final String partition;
     private final long rmsClient;
     //private final long rdsClient;
 
-    private static final Logger LOG = Logger.getLogger(Statistics.class.getName());
+    private static final Logger LOG = Logger.getLogger(Stats.class.getName());
 
     static {
         System.loadLibrary("ccs_daq_ims");
@@ -34,7 +34,7 @@ public class Statistics implements AutoCloseable {
     * @throws DAQException If the partition does not exist, or something else
     * goes wrong
     */
-    public Statistics(String partition) throws DAQException {
+    public Stats(String partition) throws DAQException {
         this.partition = partition;
         rmsClient = attachRmsClient(partition);
     }
