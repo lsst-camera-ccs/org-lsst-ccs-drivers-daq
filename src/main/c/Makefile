@@ -29,7 +29,7 @@ $(OBJ)/Channel.o: Channel.cpp Channel.h $(INC)/org_lsst_ccs_daq_ims_DAQSourceCha
 	mkdir -p $(OBJ)
 	$(CC) -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -o $@ -c $<
 
-$(OBJ)/Statistics.o: Statistics.cpp $(INC)/org_lsst_ccs_daq_ims_Statistics.h
+$(OBJ)/Statistics.o: Statistics.cpp $(INC)/org_lsst_ccs_daq_ims_Stats.h
 	mkdir -p $(OBJ)
 	$(CC) -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -o $@ -c $<
 

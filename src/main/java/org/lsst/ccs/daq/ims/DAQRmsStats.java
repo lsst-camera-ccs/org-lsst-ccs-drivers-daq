@@ -59,13 +59,13 @@ public class DAQRmsStats {
 
     /* Accessor is via String name, using Map */
 
-    Long getRmsStat(String statName) {
+    public Long getRmsStat(String statName) {
         return statMap.get(statName);
     }
 
     /* Accessor to entire Map  */
 
-    public Map<String,Long> getRmsStatNap() {
+    public Map<String,Long> getRmsStatMap() {
         return statMap;
     }
 

@@ -1,6 +1,6 @@
 #include "Statistics.h"
 
-#include "org_lsst_ccs_daq_ims_Statistics.h"
+#include "org_lsst_ccs_daq_ims_Stats.h"
 #include "daq/Location.hh"
 #include "daq/LocationSet.hh"
 #include "rms/Client.hh"
