@@ -100,27 +100,27 @@ void JNI_Stats_OnLoad(JNIEnv* env) {
         return;
     }
 
-    jclass daqFirmwareStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DAQFirmwareStats");
-    if (env->ExceptionCheck()) {
-        return;
-    }
-    JCdaqFirmwareStatsClass = (jclass) env->NewGlobalRef(daqFirmwareStatsClass);
-
-    JCdaqFirmwareStatsConstructor = env->GetMethodID(JCdaqFirmwareStatsClass, "<init>", "(BBJJJJJJJJJJJJJJJJ)V");
-    if (env->ExceptionCheck()) {
-        return;
-    }
-
-    jclass daqDriverStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DAQDriverStats");
-    if (env->ExceptionCheck()) {
-        return;
-    }
-    JCdaqDriverStatsClass = (jclass) env->NewGlobalRef(daqDriverStatsClass);
-
-    JCdaqDriverStatsConstructor = env->GetMethodID(JCdaqDriverStatsClass, "<init>", "(BBJJJ)V");
-    if (env->ExceptionCheck()) {
-        return;
-    }
+//    jclass daqFirmwareStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DAQFirmwareStats");
+//    if (env->ExceptionCheck()) {
+//        return;
+//    }
+//    JCdaqFirmwareStatsClass = (jclass) env->NewGlobalRef(daqFirmwareStatsClass);
+//
+//    JCdaqFirmwareStatsConstructor = env->GetMethodID(JCdaqFirmwareStatsClass, "<init>", "(BBJJJJJJJJJJJJJJJJ)V");
+//    if (env->ExceptionCheck()) {
+//        return;
+//    }
+//
+//    jclass daqDriverStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DAQDriverStats");
+//    if (env->ExceptionCheck()) {
+//        return;
+//    }
+//    JCdaqDriverStatsClass = (jclass) env->NewGlobalRef(daqDriverStatsClass);
+//
+//    JCdaqDriverStatsConstructor = env->GetMethodID(JCdaqDriverStatsClass, "<init>", "(BBJJJ)V");
+//    if (env->ExceptionCheck()) {
+//        return;
+//    }
 
     return;
 }

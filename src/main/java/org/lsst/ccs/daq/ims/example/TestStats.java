@@ -1,4 +1,4 @@
-package org.lsst.ccs.drivers.daq.ims.example;
+package org.lsst.ccs.daq.ims.example;
 
 import java.util.Date;
 import java.util.Map;
@@ -39,9 +39,9 @@ public class TestStats {
     *  @param  Name of DAQ partition
     *  @throws DAQException
     */
-    @Command(name="open", description="Open connection to DAQ partition")
-    public void open(@Argument(name="partition", description="DAQ partition")
-                     String partition) throws DAQException
+    @Command(name="connect", description="Open connection to DAQ partition")
+    public void connect(@Argument(name="partition", description="DAQ partition")
+                        String partition) throws DAQException
     {
         if (stats != null) {
             stats.close();
