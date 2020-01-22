@@ -79,7 +79,7 @@ public class TestStats {
         Set<String> keys = statMap.keySet();
         String table = "DAQ Rms Stats for " + location +"\n" + timestamp()+"\n";
         for (String key : keys) {
-            table += String.format("\n" + key + "%-22d", statMap.get(key));
+            table += String.format("\n  %-22s %d", key, statMap.get(key));
         }
         table += "\n";
         return table;

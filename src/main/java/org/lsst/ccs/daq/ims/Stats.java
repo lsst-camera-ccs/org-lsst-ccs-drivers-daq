@@ -1,7 +1,5 @@
 package org.lsst.ccs.daq.ims;
 
-import java.io.OutputStream;
-
 import org.lsst.ccs.utilities.location.Location;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +57,6 @@ public class Stats implements AutoCloseable {
     * @throws DAQException
     */
     public DAQRmsStats getDAQRmsStats(Location location) throws DAQException {
-        System.out.println("Args to getRmsStats:  rmsClient = " + Long.toString(rmsClient) + "  location.index() = " + Integer.toString(location.index()) + "\n");
         return getRmsStats(rmsClient, location.index());
     }
 

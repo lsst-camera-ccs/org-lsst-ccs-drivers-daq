@@ -45,7 +45,7 @@ jobject createDAQRmsStats(JNIEnv* env, const DAQ::Location& location,
                           RMS::Client* client) {
     RMS::Stats rmsStats;
     int32_t error;
-    if (client->stats(location, true, rmsStats, error)) {
+    if (client->stats(location, false, rmsStats, error)) {
 
         jbyte bay          = (jbyte) location.bay();
         jbyte board        = (jbyte) location.board();        
@@ -95,7 +95,7 @@ void JNI_Stats_OnLoad(JNIEnv* env) {
     }
     JCdaqRdsStatsClass = (jclass) env->NewGlobalRef(daqRdsStatsClass);
 
-    JCdaqRdsStatsConstructor = env->GetMethodID(JCdaqRdsStatsClass, "<init>", "(BBJJJJJJJJJ)V");
+    JCdaqRdsStatsConstructor = env->GetMethodID(JCdaqRdsStatsClass, "<init>", "(BBJJJJJJJJJJ)V");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -106,7 +106,7 @@ void JNI_Stats_OnLoad(JNIEnv* env) {
 //    }
 //    JCdaqFirmwareStatsClass = (jclass) env->NewGlobalRef(daqFirmwareStatsClass);
 //
-//    JCdaqFirmwareStatsConstructor = env->GetMethodID(JCdaqFirmwareStatsClass, "<init>", "(BBJJJJJJJJJJJJJJJJ)V");
+//    JCdaqFirmwareStatsConstructor = env->GetMethodID(JCdaqFirmwareStatsClass, "<init>", "(BBJJJJJJJJJJJJJJJJJ)V");
 //    if (env->ExceptionCheck()) {
 //        return;
 //    }
@@ -126,14 +126,14 @@ void JNI_Stats_OnLoad(JNIEnv* env) {
 }
 
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Statistics_getRmsStats
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Stats_getRmsStats
 (JNIEnv *env, jobject obj, jlong client, jint elementIndex) {
     RMS::Client* client_ = (RMS::Client*)client;
     DAQ::Location element(elementIndex);
     return createDAQRmsStats(env, element, client_);
 }
 
-JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_rms_Client_attachRmsClient
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Stats_attachRmsClient
 (JNIEnv* env, jobject obj, jstring partition) {
 
     const char *partition_name = env->GetStringUTFChars(partition, 0);
@@ -147,7 +147,7 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_rms_Client_attachRmsClient
     }
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_rms_Client_detachRmsClient
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Stats_detachRmsClient
 (JNIEnv* env, jobject obj, jlong client) {
   delete ((RMS::Client*) client);
 }
