@@ -35,4 +35,4 @@ $(OBJ)/Statistics.o: Statistics.cpp $(INC)/org_lsst_ccs_daq_ims_Stats.h
 
 $(LIBTGT)/libccs_daq_ims.so: $(OBJ)/Store.o $(OBJ)/MyFolders.o $(OBJ)/MyProcessor.o $(OBJ)/Channel.o $(OBJ)/MyBarrier.o $(OBJ)/Statistics.o
 	mkdir -p ${LIBTGT}
-	$(CC) -shared -Wl,-rpath=$(DAQ_HOME)/x86/lib -L$(DAQ_HOME)/x86/lib -ldaq_ims -ldaq_dsm -o $@ $^
+	$(CC) -shared -Wl,-rpath=$(DAQ_HOME)/x86/lib -L$(DAQ_HOME)/x86/lib -ldaq_ims -ldaq_dsm -ldaq_rms -ldaq_rds -o $@ $^

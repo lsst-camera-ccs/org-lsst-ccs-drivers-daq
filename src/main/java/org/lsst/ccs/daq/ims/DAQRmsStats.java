@@ -1,6 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.lsst.ccs.utilities.location.Location;
 
@@ -42,7 +42,7 @@ public class DAQRmsStats {
         this.rundowns     =  rundowns;     
         this.tid_hwm      =  tid_hwm;     
 
-        statMap = new HashMap<>();
+        statMap = new LinkedHashMap<>(20);
         statMap.put("probes"      , probes      );
         statMap.put("unopened"    , unopened    );
         statMap.put("in_reset"    , in_reset    );
