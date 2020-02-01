@@ -19,7 +19,7 @@
         <repository>
             <id>lsst-maven2-public</id>
             <name>LSST Maven 2 central repository</name>
-            <url>http://repo-nexus.lsst.org/nexus/content/groups/ccs-maven2-public/</url>
+            <url>https://repo-nexus.lsst.org/nexus/content/groups/ccs-maven2-public/</url>
         </repository>
     </repositories>
 
