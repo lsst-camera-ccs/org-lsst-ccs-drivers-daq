@@ -11,7 +11,7 @@
     <parent>
         <groupId>org.lsst</groupId>
         <artifactId>org-lsst-ccs-drivers</artifactId>
-        <version>5.3.7-SNAPSHOT</version>
+        <version>5.3.10</version>
     </parent>
 
 
@@ -60,25 +60,6 @@
                     </environmentVariables>
                 </configuration>
             </plugin>
-            <!--
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.6.0</version>
-                <executions>
-                    <execution>
-                        <phase>compile</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <workingDirectory>src/main/cpp/</workingDirectory>
-                            <executable>make</executable>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>  
-            -->
         </plugins>
     </build>
     <dependencies>
