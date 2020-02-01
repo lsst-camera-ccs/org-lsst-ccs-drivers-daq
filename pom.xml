@@ -14,6 +14,9 @@
         <version>5.3.10</version>
     </parent>
 
+    <properties>
+        <org.lsst.ccs.site.url>https://repo-nexus.lsst.org/nexus/content/sites/${org.lsst.ccs.site.name}/site-root/drivers/${project.artifactId}/${project.version}</org.lsst.ccs.site.url>
+    </properties>
 
     <repositories>
         <repository>
