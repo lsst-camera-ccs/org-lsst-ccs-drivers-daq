@@ -6,6 +6,7 @@ import java.nio.IntBuffer;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -45,9 +46,11 @@ public class FitsIntWriter implements WritableIntChannel {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
     private final Decompress18BitChannel decompress;
     private final FitsFileWriter[] writers;
+    private final File[] files;
 
     /**
-     * Create a FitsIntWriter
+     * Create a FitsIntWriter. If an exception occurs while writing files they will
+     * be closed, but may be left in a partially written state.
      *
      * @param source The source for which data is to be written
      * @param reb The corresponding REB
@@ -56,9 +59,9 @@ public class FitsIntWriter implements WritableIntChannel {
      * to write
      * @param extraMetaDataProvider Additional per-ccd fits header meta-data
      * providers
-     * @throws DAQException
-     * @throws IOException
-     * @throws FitsException
+     * @throws DAQException If unable to obtain information about the source.
+     * @throws IOException If an error occurs while writing the file
+     * @throws FitsException If a FITS problem (such as illegal headers) occurs
      */
     public FitsIntWriter(Source source, Reb reb, Map<String, HeaderSpecification> headerSpecifications, FileNamer fileNamer, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException, FitsException {
         int ccdCount = source.getSourceType().getCCDCount();
@@ -104,7 +107,7 @@ public class FitsIntWriter implements WritableIntChannel {
         }
 
         // Open the FITS files (one per CCD) and write headers.
-        File[] files = new File[source.getSourceType() == Location.LocationType.WAVEFRONT ? 2 : ccdCount];
+        files = new File[source.getSourceType() == Location.LocationType.WAVEFRONT ? 2 : ccdCount];
         writers = new FitsFileWriter[files.length];
         ReadoutConfig readoutConfig = new ReadoutConfig(source.getSourceType());
         WritableIntChannel[] fileChannels = new WritableIntChannel[ccdCount * 16];
@@ -135,7 +138,7 @@ public class FitsIntWriter implements WritableIntChannel {
             DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
             XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, readoutConfig.getXor());
             decompress = new Decompress18BitChannel(xor);
-        } catch (Throwable t) {
+        } catch (IOException | FitsException t) {
             // Cleanup any files which were already opened
             for (FitsFileWriter writer : writers) {
                 if (writer != null) {
@@ -173,6 +176,14 @@ public class FitsIntWriter implements WritableIntChannel {
                 writer.close();
             }
         }
+    }
+
+    /**
+     * Access the list of files (to be) written by this instance.
+     * @return The list of files.
+     */
+    public List<File> getFiles() {
+        return Collections.unmodifiableList(Arrays.asList(files));
     }
 
     /**
