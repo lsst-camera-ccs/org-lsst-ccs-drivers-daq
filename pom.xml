@@ -14,12 +14,15 @@
         <version>5.3.10</version>
     </parent>
 
+    <properties>
+        <org.lsst.ccs.site.url>https://repo-nexus.lsst.org/nexus/content/sites/${org.lsst.ccs.site.name}/site-root/drivers/${project.artifactId}/${project.version}</org.lsst.ccs.site.url>
+    </properties>
 
     <repositories>
         <repository>
             <id>lsst-maven2-public</id>
             <name>LSST Maven 2 central repository</name>
-            <url>http://repo-nexus.lsst.org/nexus/content/groups/ccs-maven2-public/</url>
+            <url>https://repo-nexus.lsst.org/nexus/content/groups/ccs-maven2-public/</url>
         </repository>
     </repositories>
 
