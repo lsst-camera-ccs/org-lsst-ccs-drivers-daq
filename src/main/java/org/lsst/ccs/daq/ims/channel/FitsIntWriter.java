@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
 import org.lsst.ccs.daq.ims.DAQException;
@@ -24,6 +25,7 @@ import org.lsst.ccs.utilities.image.FitsFileWriter;
 import org.lsst.ccs.utilities.image.FitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.image.HeaderSpecification;
 import org.lsst.ccs.utilities.image.ImageSet;
+import org.lsst.ccs.utilities.image.MetaDataSet;
 import org.lsst.ccs.utilities.readout.GeometryFitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.readout.PropertiesFitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.readout.ReadOutImageSet;
@@ -92,7 +94,6 @@ public class FitsIntWriter implements WritableIntChannel {
         props.put("DAQPartition", source.getImage().getStore().getPartition());
         props.put("DAQFolder", source.getImage().getMetaData().getCreationFolderName());
         props.put("DAQAnnotation", source.getImage().getMetaData().getAnnotation());
-        PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(props);
 
         //Build the ReadoutParameters
         int[] registerValues = smd.getRegisterValues();
@@ -114,12 +115,15 @@ public class FitsIntWriter implements WritableIntChannel {
         try {
             for (int i = 0; i < files.length; i++) {
                 int sensorIndex = readoutConfig.getDataSensorMap()[i];
-                props.put("CCDSlot", source.getLocation().getSensorName(sensorIndex));
-                files[i] = fileNamer.computeFileName(props);
+                Map<String, Object> ccdProps = new HashMap<>();
+                ccdProps.putAll(props);
+                ccdProps.put("CCDSlot", source.getLocation().getSensorName(sensorIndex));
+                files[i] = fileNamer.computeFileName(ccdProps);
+                PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(ccdProps);
                 CCD ccd = reb.getCCDs().get(sensorIndex);
-                if (!ccd.getName().equals(props.get("CCDSlot"))) {
+                if (!ccd.getName().equals(ccdProps.get("CCDSlot"))) {
                     throw new IOException(String.format("Geometry (%s) inconsistent with DAQ location (%s)",
-                            ccd.getName(), props.get("CCDSlot")));
+                            ccd.getName(), ccdProps.get("CCDSlot")));
                 }
                 ImageSet imageSet = new ReadOutImageSet(Arrays.asList(readoutConfig.getDataSegmentNames()), readoutParameters);
                 List<FitsHeaderMetadataProvider> providers = new ArrayList<>();
