@@ -49,8 +49,8 @@ public class FitsIntWriter implements WritableIntChannel {
     private final File[] files;
 
     /**
-     * Create a FitsIntWriter. If an exception occurs while writing files they will
-     * be closed, but may be left in a partially written state.
+     * Create a FitsIntWriter. If an exception is thrown by the constructor any
+     * files already created will be deleted.
      *
      * @param source The source for which data is to be written
      * @param reb The corresponding REB
@@ -149,6 +149,12 @@ public class FitsIntWriter implements WritableIntChannel {
                     }
                 }
             }
+            for (File file : files) {
+                if (file != null) {
+                    // Note: If file cannot be deleted it is silently ignored
+                    file.delete();
+                }
+            }
             throw t;
         }
     }
@@ -180,6 +186,7 @@ public class FitsIntWriter implements WritableIntChannel {
 
     /**
      * Access the list of files (to be) written by this instance.
+     *
      * @return The list of files.
      */
     public List<File> getFiles() {
