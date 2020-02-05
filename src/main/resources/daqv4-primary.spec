@@ -8,7 +8,7 @@ DATE-TRG!    Date    ${DAQTriggerTime}           Date of the image trigger (read
 MJD-TRG!     MJD     ${DAQTriggerTime}           Modified Julian Date of image trigger
 IMAGETAG!    String  ${Tag}                      DAQ Image id (Hex)
 CCDSLOT!     String  ${CCDSlot}                  The CCD Slot
-RAFTBAY!     String  ${RAFTBay}                  The RAFT Bay
+RAFTBAY!     String  ${RaftBay}                  The RAFT Bay
 FIRMWARE!    String  ${Firmware}                 DAQ firmware version (Hex)
 PLATFORM!    String  ${Platform}                 DAQ platform version
 CONTNUM!     String  ${CCDControllerSerial}      REB serial # (Hex)
