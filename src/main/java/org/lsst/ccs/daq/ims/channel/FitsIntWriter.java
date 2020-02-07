@@ -11,7 +11,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
 import org.lsst.ccs.daq.ims.DAQException;
@@ -25,7 +24,6 @@ import org.lsst.ccs.utilities.image.FitsFileWriter;
 import org.lsst.ccs.utilities.image.FitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.image.HeaderSpecification;
 import org.lsst.ccs.utilities.image.ImageSet;
-import org.lsst.ccs.utilities.image.MetaDataSet;
 import org.lsst.ccs.utilities.readout.GeometryFitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.readout.PropertiesFitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.readout.ReadOutImageSet;
@@ -63,9 +61,8 @@ public class FitsIntWriter implements WritableIntChannel {
      * providers
      * @throws DAQException If unable to obtain information about the source.
      * @throws IOException If an error occurs while writing the file
-     * @throws FitsException If a FITS problem (such as illegal headers) occurs
      */
-    public FitsIntWriter(Source source, Reb reb, Map<String, HeaderSpecification> headerSpecifications, FileNamer fileNamer, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException, FitsException {
+    public FitsIntWriter(Source source, Reb reb, Map<String, HeaderSpecification> headerSpecifications, FileNamer fileNamer, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException {
         int ccdCount = source.getSourceType().getCCDCount();
         SourceMetaData smd = source.getMetaData();
         // Note, we are now using a single map for both the FileNameProperties and
@@ -118,6 +115,7 @@ public class FitsIntWriter implements WritableIntChannel {
                 Map<String, Object> ccdProps = new HashMap<>();
                 ccdProps.putAll(props);
                 ccdProps.put("CCDSlot", source.getLocation().getSensorName(sensorIndex));
+                // NOTE: This call may have the side effect of modifying the ccdProps
                 files[i] = fileNamer.computeFileName(ccdProps);
                 PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(ccdProps);
                 CCD ccd = reb.getCCDs().get(sensorIndex);
@@ -142,7 +140,7 @@ public class FitsIntWriter implements WritableIntChannel {
             DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
             XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, readoutConfig.getXor());
             decompress = new Decompress18BitChannel(xor);
-        } catch (IOException | FitsException t) {
+        } catch (IOException | FitsException | RuntimeException t) {
             // Cleanup any files which were already opened
             for (FitsFileWriter writer : writers) {
                 if (writer != null) {
@@ -159,7 +157,7 @@ public class FitsIntWriter implements WritableIntChannel {
                     file.delete();
                 }
             }
-            throw t;
+            throw t instanceof IOException ? (IOException) t : new IOException("Error writing FITS files for source "+source, t);
         }
     }
 
@@ -202,11 +200,15 @@ public class FitsIntWriter implements WritableIntChannel {
      */
     public static interface FileNamer {
 
+        /*
+         * Compute the name of the file, based on the passed in properties.
+         * Some implementations may modify the properties passed in.
+        */
         File computeFileName(Map<String, Object> props);
     }
 
     /**
-     * Interface for providing additional meta-data providers
+     * Interface for providing additional CCD specific meta-data providers
      */
     public static interface PerCCDMetaDataProvider {
 

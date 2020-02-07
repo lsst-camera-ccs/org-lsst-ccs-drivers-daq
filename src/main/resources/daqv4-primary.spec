@@ -18,7 +18,7 @@ DAQFOLD!     String  ${DAQFolder}                DAQ folder the image was initia
 DAQANNOT!    String  ${DAQAnnotation}            DAQ image annotation
 # Elements from the image name, see also TSEIA-79
 OBSID!       String  ${ImageName}                The image name or obs-id
-TELCODE!     String  ${ImageSource}              The "code" for AuxTel
+TELCODE!     String  ${ImageSource}              The "code" for AuxTel | ComCam | Main Camera
 CONTRLLR!    String  ${ImageController}          The controller (e.g. O for OCS, C for CCS)
 DAYOBS!      String  ${ImageDate}                The observation day as defined in the image name 
 SEQNUM!      Integer ${ImageNumber}              The sequence number from the image name
