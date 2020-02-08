@@ -65,6 +65,25 @@ public class TestStats {
         }
     }
 
+   /**
+    * Method to make printable table for one set of statistics
+    *
+    * @param  Name of statistics block
+    * @param  Map of statistics data
+    * @param  Location (raft/reb)
+    * @return Table
+    */
+
+    private String makeStatsTable(String sname, Map<String,Long> statMap,
+                                  String location) {
+        Set<String> keys = statMap.keySet();
+        String table = "DAQ " + sname + " Stats for " + location +"\n" + timestamp()+"\n";
+        for (String key : keys) {
+            table += String.format("\n  %-22s %d", key, statMap.get(key));
+        }
+        table += "\n";
+        return table;
+    }
 
    /**
     * Print all four sets of statisics for specified location
@@ -82,6 +101,21 @@ public class TestStats {
     }
 
    /**
+    * Print then clear all four sets of statisics for specified location
+    *
+    * @param   Location in raft/board format, "R<nn>Reb<m>"
+    * @return  String reporting all data read 
+    * @throws  DAQException
+    */
+    @Command(name="clearAllStats", description="Read and clear all sets of DAQ stats")
+    public String clearAllStats(@Argument(name="location", description = "clearout board in format R<nn>Reb<m>") String location) throws DAQException {
+        return ("\n" + clearAllRms(location) + 
+                "\n" + clearAllRds(location) + 
+                "\n" + clearAllDriver(location) + 
+	        "\n" + clearAllFirmware(location) + "\n");
+    }
+
+   /**
     * Print all DAQ Rms statistics data for specified Location
     * Reads all DAQRmsStatistics values and return them in table format.
     * 
@@ -91,15 +125,10 @@ public class TestStats {
     */
     @Command(name="readAllRms", description="Read all DAQ Rms stats")
     public String readAllRms(@Argument(name="location", description = "readout board in format R<nn>Reb<m>") String location) throws DAQException {
-	DAQRmsStats rmsStats = stats.getDAQRmsStats(Location.of(location));
+	DAQRmsStats rmsStats = stats.getDAQRmsStats(Location.of(location),
+                                                    Stats.Clear.NO);
         Map<String,Long> statMap = rmsStats.getRmsStatMap();
-        Set<String> keys = statMap.keySet();
-        String table = "DAQ Rms Stats for " + location +"\n" + timestamp()+"\n";
-        for (String key : keys) {
-            table += String.format("\n  %-22s %d", key, statMap.get(key));
-        }
-        table += "\n";
-        return table;
+        return makeStatsTable("Rms",statMap,location);
     }
 
    /**
@@ -112,15 +141,10 @@ public class TestStats {
     */
     @Command(name="readAllRds", description="Read all DAQ Rds stats")
     public String readAllRds(@Argument(name="location", description = "readout board in format R<nn>Reb<m>") String location) throws DAQException {
-	DAQRdsStats rdsStats = stats.getDAQRdsStats(Location.of(location));
+	DAQRdsStats rdsStats = stats.getDAQRdsStats(Location.of(location),
+                                                    Stats.Clear.NO);
         Map<String,Long> statMap = rdsStats.getRdsStatMap();
-        Set<String> keys = statMap.keySet();
-        String table = "DAQ Rds Stats for " + location +"\n" + timestamp()+"\n";
-        for (String key : keys) {
-            table += String.format("\n  %-22s %d", key, statMap.get(key));
-        }
-        table += "\n";
-        return table;
+        return makeStatsTable("Rds",statMap,location);
     }
 
    /**
@@ -133,15 +157,9 @@ public class TestStats {
     */
     @Command(name="readAllDriver", description="Read all DAQ Driver stats")
     public String readAllDriver(@Argument(name="location", description = "readout board in format R<nn>Reb<m>") String location) throws DAQException {
-	DAQDriverStats driverStats = stats.getDAQDriverStats(Location.of(location));
+        DAQDriverStats driverStats = stats.getDAQDriverStats(Location.of(location), Stats.Clear.NO);
         Map<String,Long> statMap = driverStats.getDriverStatMap();
-        Set<String> keys = statMap.keySet();
-        String table = "DAQ Driver Stats for " + location +"\n" + timestamp()+"\n";
-        for (String key : keys) {
-            table += String.format("\n  %-22s %d", key, statMap.get(key));
-        }
-        table += "\n";
-        return table;
+        return makeStatsTable("Driver",statMap,location);
     }
 
    /**
@@ -154,15 +172,71 @@ public class TestStats {
     */
     @Command(name="readAllFirmware", description="Read all DAQ Firmware stats")
     public String readAllFirmware(@Argument(name="location", description = "readout board in format R<nn>Reb<m>") String location) throws DAQException {
-	DAQFirmwareStats firmwareStats = stats.getDAQFirmwareStats(Location.of(location));
+	DAQFirmwareStats firmwareStats = stats.getDAQFirmwareStats(Location.of(location), Stats.Clear.NO);
         Map<String,Long> statMap = firmwareStats.getFirmwareStatMap();
-        Set<String> keys = statMap.keySet();
-        String table = "DAQ Firmware Stats for " + location +"\n" + timestamp()+"\n";
-        for (String key : keys) {
-            table += String.format("\n  %-22s %d", key, statMap.get(key));
-        }
-        table += "\n";
-        return table;
+        return makeStatsTable("Firmware",statMap,location);
+    }
+
+   /**
+    * Print and Clear all DAQ Rms statistics data for specified Location
+    * Like readAllRms, but clears data after reading
+    * 
+    * @param   Location in raft/board format, "R<nn>Reb<m>"
+    * @return  String reporting all data read 
+    * @throws  DAQException
+    */
+    @Command(name="clearAllRms", description="Read and clear DAQ Rms stats")
+    public String clearAllRms(@Argument(name="location", description = "readout board in format R<nn>Reb<m>") String location) throws DAQException {
+	DAQRmsStats rmsStats = stats.getDAQRmsStats(Location.of(location),
+                                                    Stats.Clear.YES);
+        Map<String,Long> statMap = rmsStats.getRmsStatMap();
+        return makeStatsTable("Rms",statMap,location)+"Cleared";
+    }
+
+   /**
+    * Print and Clear all DAQ Rds statistics data for specified Location
+    * Like readAllRds, but clears data after reading
+    * 
+    * @param   Location in raft/board format, "R<nn>Reb<m>"
+    * @return  String reporting all data read 
+    * @throws  DAQException
+    */
+    @Command(name="clearAllRds", description="Read and clear DAQ Rds stats")
+    public String clearAllRds(@Argument(name="location", description = "readout board in format R<nn>Reb<m>") String location) throws DAQException {
+	DAQRdsStats rdsStats = stats.getDAQRdsStats(Location.of(location),
+                                                    Stats.Clear.YES);
+        Map<String,Long> statMap = rdsStats.getRdsStatMap();
+        return makeStatsTable("Rds",statMap,location)+"Cleared";
+    }
+
+   /**
+    * Print and Clear all DAQ Driver statistics data for specified Location
+    * Like readAllDriver, but clears data after reading
+    * 
+    * @param   Location in raft/board format, "R<nn>Reb<m>"
+    * @return  String reporting all data read 
+    * @throws  DAQException
+    */
+    @Command(name="clearAllDriver", description="Read and clear DAQ Driver stats")
+    public String clearAllDriver(@Argument(name="location", description = "readout board in format R<nn>Reb<m>") String location) throws DAQException {
+        DAQDriverStats driverStats = stats.getDAQDriverStats(Location.of(location), Stats.Clear.YES);
+        Map<String,Long> statMap = driverStats.getDriverStatMap();
+        return makeStatsTable("Driver",statMap,location)+"Cleared";
+    }
+
+   /**
+    * Print and Clear all DAQ Firmware statistics data for specified Location
+    * Like readAllFirmware, but clears data after reading
+    * 
+    * @param   Location in raft/board format, "R<nn>Reb<m>"
+    * @return  String reporting all data read 
+    * @throws  DAQException
+    */
+    @Command(name="clearAllFirmware", description="Read and clear DAQ Firmware stats")
+    public String clearAllFirmware(@Argument(name="location", description = "readout board in format R<nn>Reb<m>") String location) throws DAQException {
+	DAQFirmwareStats firmwareStats = stats.getDAQFirmwareStats(Location.of(location), Stats.Clear.YES);
+        Map<String,Long> statMap = firmwareStats.getFirmwareStatMap();
+        return makeStatsTable("Firmware",statMap,location)+"Cleared";
     }
 
    /**
@@ -175,7 +249,7 @@ public class TestStats {
     */
     @Command(name="readRmsStat", description="read specified DAQ Rms statistic for specified locaation")
 	public String readRmsStat(@Argument(name="location", description = "readout board in format R<nn>Reb<m>") String location, @Argument(name="statistic name") String quantity) throws DAQException {
-	DAQRmsStats rmsStats = stats.getDAQRmsStats(Location.of(location));
+	DAQRmsStats rmsStats = stats.getDAQRmsStats(Location.of(location), Stats.Clear.NO);
         return rmsStats.getRmsStat(quantity).toString();
     }
 
@@ -189,7 +263,7 @@ public class TestStats {
     */
     @Command(name="readRdsStat", description="read specified DAQ Rds statistic for specified locaation")
 	public String readRdsStat(@Argument(name="location", description = "readout board in format R<nn>Reb<m>") String location, @Argument(name="statistic name") String quantity) throws DAQException {
-	DAQRdsStats rdsStats = stats.getDAQRdsStats(Location.of(location));
+	DAQRdsStats rdsStats = stats.getDAQRdsStats(Location.of(location), Stats.Clear.NO);
         return rdsStats.getRdsStat(quantity).toString();
     }
 
@@ -203,7 +277,7 @@ public class TestStats {
     */
     @Command(name="readDriverStat", description="read specified DAQ Driver statistic for specified locaation")
 	public String readDriverStat(@Argument(name="location", description = "readout board in format R<nn>Reb<m>") String location, @Argument(name="statistic name") String quantity) throws DAQException {
-	DAQDriverStats driverStats = stats.getDAQDriverStats(Location.of(location));
+	DAQDriverStats driverStats = stats.getDAQDriverStats(Location.of(location), Stats.Clear.NO);
         return driverStats.getDriverStat(quantity).toString();
     }
 
@@ -217,7 +291,7 @@ public class TestStats {
     */
     @Command(name="readFirmwareStat", description="read specified DAQ Firmware statistic for specified locaation")
 	public String readFirmwareStat(@Argument(name="location", description = "readout board in format R<nn>Reb<m>") String location, @Argument(name="statistic name") String quantity) throws DAQException {
-	DAQFirmwareStats firmwareStats = stats.getDAQFirmwareStats(Location.of(location));
+	DAQFirmwareStats firmwareStats = stats.getDAQFirmwareStats(Location.of(location), Stats.Clear.NO);
         return firmwareStats.getFirmwareStat(quantity).toString();
     }
 

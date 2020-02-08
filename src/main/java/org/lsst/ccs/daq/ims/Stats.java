@@ -28,7 +28,27 @@ public class Stats implements AutoCloseable {
     }
 
    /**
-    * Connects to DAQ Statistics clients
+    * Enumerate choices for clearing data after reading it or not
+    */
+
+    public enum Clear {
+
+        YES  (true),
+        NO   (false);
+
+        private boolean value;
+
+        Clear (boolean value) {
+            this.value = value;
+        }
+
+        public boolean getValue() {
+            return value;
+       }
+    }
+
+   /**
+    * Connect to DAQ Statistics clients
     *
     * @param partition The name of the partition
     * @throws DAQException If the partition does not exist, or something else
@@ -55,44 +75,52 @@ public class Stats implements AutoCloseable {
     * Get DAQ Rms Statistics for specified Location
     *
     * @param  Location requested (25 rafts times 3 REB)
+    * @param  Specify whether to clear data aftef reading it 
     * @return DAQRmsStats object
     * @throws DAQException
     */
-    public DAQRmsStats getDAQRmsStats(Location location) throws DAQException {
-        return getRmsStats(rmsClient, location.index());
+    public DAQRmsStats getDAQRmsStats(Location location, Clear clear) 
+    throws DAQException {
+        return getRmsStats(rmsClient, location.index(), clear.getValue());
     }
 
    /**
     * Get DAQ Rds Statistics for specified Location
     *
     * @param  Location requested (25 rafts times 3 REB)
+    * @param  Specify whether to clear data aftef reading it 
     * @return DAQRdsStats object
     * @throws DAQException
     */
-    public DAQRdsStats getDAQRdsStats(Location location) throws DAQException {
-        return getRdsStats(rdsClient, location.index());
+    public DAQRdsStats getDAQRdsStats(Location location, Clear clear) 
+    throws DAQException {
+        return getRdsStats(rdsClient, location.index(), clear.getValue());
     }
 
    /**
     * Get DAQ Driver Statistics for specified Location
     *
     * @param  Location requested (25 rafts times 3 REB)
+    * @param  Specify whether to clear data aftef reading it 
     * @return DAQDriverStats object
     * @throws DAQException
     */
-    public DAQDriverStats getDAQDriverStats(Location location) throws DAQException {
-        return getDriverStats(rmsClient, location.index());
+    public DAQDriverStats getDAQDriverStats(Location location, Clear clear) 
+    throws DAQException {
+        return getDriverStats(rmsClient, location.index(), clear.getValue());
     }
 
    /**
     * Get DAQ Firmware Statistics for specified Location
     *
     * @param  Location requested (25 rafts times 3 REB)
+    * @param  Specify whether to clear data aftef reading it 
     * @return DAQFirmwareStats object
     * @throws DAQException
     */
-    public DAQFirmwareStats getDAQFirmwareStats(Location location) throws DAQException {
-        return getFirmwareStats(rmsClient, location.index());
+    public DAQFirmwareStats getDAQFirmwareStats(Location location, Clear clear)
+    throws DAQException {
+        return getFirmwareStats(rmsClient, location.index(), clear.getValue());
     }
 
     /* Native methods  */
@@ -101,10 +129,10 @@ public class Stats implements AutoCloseable {
     private synchronized native long attachRdsClient(String partition) throws DAQException;
     private synchronized native void detachRmsClient(long rmsClient) throws DAQException;
     private synchronized native void detachRdsClient(long rdsClient) throws DAQException;
-    private synchronized native DAQRmsStats getRmsStats(long rmsClient, int index) throws DAQException;
-    private synchronized native DAQRdsStats getRdsStats(long rdsClient, int index) throws DAQException;
-    private synchronized native DAQDriverStats getDriverStats(long rmsClient, int index) throws DAQException;
-    private synchronized native DAQFirmwareStats getFirmwareStats(long rmsClient, int index) throws DAQException;
+    private synchronized native DAQRmsStats getRmsStats(long rmsClient, int index, boolean clearStats) throws DAQException;
+    private synchronized native DAQRdsStats getRdsStats(long rdsClient, int index, boolean clearStats) throws DAQException;
+    private synchronized native DAQDriverStats getDriverStats(long rmsClient, int index, boolean clearStats) throws DAQException;
+    private synchronized native DAQFirmwareStats getFirmwareStats(long rmsClient, int index, boolean clearStats) throws DAQException;
 
     static native String decodeException(int rc);
 }

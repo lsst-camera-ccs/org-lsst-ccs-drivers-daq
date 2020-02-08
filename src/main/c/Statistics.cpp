@@ -49,14 +49,15 @@ void throwDAQStatsException(JNIEnv* env, char* message, jint error) {
 
 /*  Methods to create the four Java classes which hold the statisics data 
  *  Three of the sets of data are accessed with RMS::Client, the other
- *  with RDS::Client.
+ *  with RDS::Client.  The argument "clear" determines whether the
+ *  statistics are cleared after reading.
  */
 
 jobject createDAQRmsStats(JNIEnv* env, const DAQ::Location& location, 
-                          RMS::Client* client) {
+                          RMS::Client* client, bool clear) {
     RMS::Stats rmsStats;
     int32_t error;
-    if (client->stats(location, false, rmsStats, error)) {
+    if (client->stats(location, clear, rmsStats, error)) {
 
         jbyte bay          = (jbyte) location.bay();
         jbyte board        = (jbyte) location.board();        
@@ -83,10 +84,10 @@ jobject createDAQRmsStats(JNIEnv* env, const DAQ::Location& location,
 }
 
 jobject createDAQRdsStats(JNIEnv* env, const DAQ::Location& location, 
-                          RDS::Client* client) {
+                          RDS::Client* client, bool clear) {
     RDS::Stats rdsStats;
     int32_t error;
-    if (client->stats(location, false, rdsStats, error)) {
+    if (client->stats(location, clear, rdsStats, error)) {
 
         jbyte bay            = (jbyte) location.bay();
         jbyte board          = (jbyte) location.board();        
@@ -111,10 +112,10 @@ jobject createDAQRdsStats(JNIEnv* env, const DAQ::Location& location,
 }
 
 jobject createDAQDriverStats(JNIEnv* env, const DAQ::Location& location, 
-                             RMS::Client* client) {
+                             RMS::Client* client, bool clear) {
     DAQ::InterfaceDriverStats driverStats;
     int32_t error;
-    if (client->stats(location, false, driverStats, error)) {
+    if (client->stats(location, clear, driverStats, error)) {
 
         jbyte bay        = (jbyte) location.bay();
         jbyte board      = (jbyte) location.board();        
@@ -135,10 +136,10 @@ jobject createDAQDriverStats(JNIEnv* env, const DAQ::Location& location,
 }
 
 jobject createDAQFirmwareStats(JNIEnv* env, const DAQ::Location& location, 
-                               RMS::Client* client) {
+                               RMS::Client* client, bool clear) {
     DAQ::InterfaceFirmwareStats firmwareStats;
     int32_t error;
-    if (client->stats(location, false, firmwareStats, error)) {
+    if (client->stats(location, clear, firmwareStats, error)) {
 
         jbyte bay        = (jbyte) location.bay();
         jbyte board      = (jbyte) location.board();        
@@ -175,7 +176,7 @@ jobject createDAQFirmwareStats(JNIEnv* env, const DAQ::Location& location,
     }
 }
 
-//static jint JNI_VERSION = JNI_VERSION_1_8;
+//static jint JNIVERSION = JNI_VERSION_1_8;
 
 /*  This function is meant to be called from a top-level (or global) 
  *  OnLoad function, which in turn checks and returns JNI_VERSION.
@@ -218,7 +219,7 @@ void JNI_Stats_OnLoad(JNIEnv* env) {
 
     jclass daqDriverStatsClass = env->FindClass("org/lsst/ccs/daq/ims/DAQDriverStats");
     if (env->ExceptionCheck()) {
-        return;
+         return;
     }
     JCdaqDriverStatsClass = (jclass) env->NewGlobalRef(daqDriverStatsClass);
 
@@ -233,31 +234,31 @@ void JNI_Stats_OnLoad(JNIEnv* env) {
 /*  JNI methods invoked in Java code to create Java statistics classes */
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Stats_getRmsStats
-(JNIEnv *env, jobject obj, jlong client, jint elementIndex) {
+(JNIEnv *env, jobject obj, jlong client, jint elementIndex, jboolean clear) {
     RMS::Client* client_ = (RMS::Client*)client;
     DAQ::Location element(elementIndex);
-    return createDAQRmsStats(env, element, client_);
+    return createDAQRmsStats(env, element, client_, (bool)(clear!=JNI_FALSE));
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Stats_getRdsStats
-(JNIEnv *env, jobject obj, jlong client, jint elementIndex) {
+(JNIEnv *env, jobject obj, jlong client, jint elementIndex, jboolean clear) {
     RDS::Client* client_ = (RDS::Client*)client;
     DAQ::Location element(elementIndex);
-    return createDAQRdsStats(env, element, client_);
+    return createDAQRdsStats(env, element, client_, (bool)(clear!=JNI_FALSE));
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Stats_getDriverStats
-(JNIEnv *env, jobject obj, jlong client, jint elementIndex) {
+(JNIEnv *env, jobject obj, jlong client, jint elementIndex, jboolean clear) {
     RMS::Client* client_ = (RMS::Client*)client;
     DAQ::Location element(elementIndex);
-    return createDAQDriverStats(env, element, client_);
+    return createDAQDriverStats(env, element, client_, (bool)(clear!=JNI_FALSE));
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Stats_getFirmwareStats
-(JNIEnv *env, jobject obj, jlong client, jint elementIndex) {
+(JNIEnv *env, jobject obj, jlong client, jint elementIndex, jboolean clear) {
     RMS::Client* client_ = (RMS::Client*)client;
     DAQ::Location element(elementIndex);
-    return createDAQFirmwareStats(env, element, client_);
+    return createDAQFirmwareStats(env, element, client_, (bool)(clear!=JNI_FALSE));
 }
 
 
