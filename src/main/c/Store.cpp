@@ -16,6 +16,7 @@
 #include "MyFolders.h"
 #include "MyProcessor.h"
 #include "MyBarrier.h"
+#include "Statistics.h"
 
 #define MESSAGE_LENGTH 256
 
@@ -252,6 +253,9 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     if (env->ExceptionCheck()) {
         return JNI_VERSION;
     }    
+
+    // Call corresponding function in Statistics.cpp
+    JNI_Stats_OnLoad(env);
     
     // Return the JNI Version as required by method
     return JNI_VERSION;
