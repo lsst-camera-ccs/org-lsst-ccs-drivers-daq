@@ -1,12 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import org.lsst.ccs.utilities.location.Location;
-
-public class DAQDriverStats {
-
-    private final Location location;
+public class DAQDriverStats extends DAQStats {
 
     /* The statistics quantities */
     private final long received;
@@ -16,12 +10,10 @@ public class DAQDriverStats {
     private final long rxVC2;   
     private final long rxVC3;   
 
-    // Map associates each statistic with its name, and allows loop over them
-    private Map<String,Long> statMap;
 
     DAQDriverStats(byte bay, byte board, long received, long errors, long rxVC0, long rxVC1, long rxVC2, long rxVC3) {
 
-        this.location     =  new Location(bay, board);
+        super(6, bay, board);
 
         this.received =  received;
         this.errors   =  errors;  
@@ -30,26 +22,35 @@ public class DAQDriverStats {
         this.rxVC2    =  rxVC2;   
         this.rxVC3    =  rxVC3;   
 
-        statMap = new LinkedHashMap<>(20);
         statMap.put("received", received);
         statMap.put("errors"  , errors  );
         statMap.put("rxVC0"   , rxVC0   );
         statMap.put("rxVC1"   , rxVC1   );
         statMap.put("rxVC2"   , rxVC2   );
         statMap.put("rxVC3"   , rxVC3   );
-
     }
 
-    /* Accessor is via String name, using Map */
-
-    public Long getDriverStat(String statName) {
-        return statMap.get(statName);
+    public long getReceived() {
+        return received;
     }
 
-    /* Accessor to entire Map  */
-
-    public Map<String,Long> getDriverStatMap() {
-        return statMap;
+    public long getErrors() {
+        return errors;
     }
 
+    public long getRxVC0() {
+        return rxVC0;
+    }
+
+    public long getRxVC1() {
+        return rxVC1;
+    }
+
+    public long getRxVC2() {
+        return rxVC2;
+    }
+
+    public long getRxVC3() {
+        return rxVC3;
+    }
 }

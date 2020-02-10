@@ -80,6 +80,7 @@ jobject createDAQRmsStats(JNIEnv* env, const DAQ::Location& location,
       char x[MESSAGE_LENGTH];
       snprintf(x, MESSAGE_LENGTH, "createDAQRmsStats failed");
       throwDAQStatsException(env, x, error);
+      return NULL;
     }
 }
 
@@ -108,6 +109,7 @@ jobject createDAQRdsStats(JNIEnv* env, const DAQ::Location& location,
       char x[MESSAGE_LENGTH];
       snprintf(x, MESSAGE_LENGTH, "createDAQRdsStats failed");
       throwDAQStatsException(env, x, error);
+      return NULL;
     }
 }
 
@@ -132,6 +134,7 @@ jobject createDAQDriverStats(JNIEnv* env, const DAQ::Location& location,
       char x[MESSAGE_LENGTH];
       snprintf(x, MESSAGE_LENGTH, "createDAQDriverStats failed");
       throwDAQStatsException(env, x, error);
+      return NULL;      
     }
 }
 
@@ -173,6 +176,7 @@ jobject createDAQFirmwareStats(JNIEnv* env, const DAQ::Location& location,
       char x[MESSAGE_LENGTH];
       snprintf(x, MESSAGE_LENGTH, "createDAQFirmwareStats failed");
       throwDAQStatsException(env, x, error);
+      return NULL;
     }
 }
 

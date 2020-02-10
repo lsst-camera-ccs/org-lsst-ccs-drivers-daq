@@ -1,12 +1,7 @@
 package org.lsst.ccs.daq.ims;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import org.lsst.ccs.utilities.location.Location;
+public class DAQRdsStats extends DAQStats {
 
-public class DAQRdsStats {
-
-    private final Location location;
 
     /* The statistics quantities */
     private final long wakes;	      
@@ -20,12 +15,10 @@ public class DAQRdsStats {
     private final long bdi_lasts;     
     private final long bdi_frees;     
 
-    // Map associates each statistic with its name, and allows loop over them
-    private Map<String,Long> statMap;
 
     DAQRdsStats(byte bay, byte board, long wakes, long discards, long bdi_waits, long bdi_nulls, long bdi_seq_errors, long bdi_overflows, long bdi_firsts, long bdi_lasts, long bdi_frees)  {
 
-        this.location     =  new Location(bay, board);
+        super(20, bay, board);
         
         this.wakes	    =  wakes;	       	
         this.discards       =  discards;      
@@ -38,7 +31,6 @@ public class DAQRdsStats {
         this.bdi_lasts      =  bdi_lasts;     
         this.bdi_frees      =  bdi_frees;     
 
-        statMap = new LinkedHashMap<>(20);
         statMap.put("wakes"	    , wakes	    );
         statMap.put("discards"      , discards      );
         statMap.put("bdi_waits"     , bdi_waits     );
@@ -51,17 +43,40 @@ public class DAQRdsStats {
         statMap.put("bdi_frees"     , bdi_frees     );
     }
 
-    /* Accessor is via String name, using Map */
-
-    public Long getRdsStat(String statName) {
-        return statMap.get(statName);
+    public long getWakes() {
+        return wakes;
     }
 
-    /* Accessor to entire Map  */
-
-    public Map<String,Long> getRdsStatMap() {
-        return statMap;
+    public long getDiscards() {
+        return discards;
     }
 
+    public long getBdi_waits() {
+        return bdi_waits;
+    }
+
+    public long getBdi_nulls() {
+        return bdi_nulls;
+    }
+
+    public long getBdi_seq_errors() {
+        return bdi_seq_errors;
+    }
+
+    public long getBdi_overflows() {
+        return bdi_overflows;
+    }
+
+    public long getBdi_firsts() {
+        return bdi_firsts;
+    }
+
+    public long getBdi_lasts() {
+        return bdi_lasts;
+    }
+
+    public long getBdi_frees() {
+        return bdi_frees;
+    }
 
 }
