@@ -1,13 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
 import org.lsst.ccs.utilities.location.Location;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.BitSet;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -36,21 +29,21 @@ public class Stats implements AutoCloseable {
         YES  (true),
         NO   (false);
 
-        private boolean value;
+        private final boolean value;
 
-        Clear (boolean value) {
+        Clear(boolean value) {
             this.value = value;
         }
 
         public boolean getValue() {
             return value;
-       }
+        }
     }
 
    /**
     * Connect to DAQ Statistics clients
     *
-    * @param partition The name of the partition
+    * @param  partition The name of the partition
     * @throws DAQException If the partition does not exist, or something else
     * goes wrong
     */
@@ -74,8 +67,8 @@ public class Stats implements AutoCloseable {
    /**
     * Get DAQ Rms Statistics for specified Location
     *
-    * @param  Location requested (25 rafts times 3 REB)
-    * @param  Specify whether to clear data aftef reading it 
+    * @param  location  The location requested (25 rafts times 3 REB)
+    * @param  clear     Specify whether to clear data aftef reading it 
     * @return DAQRmsStats object
     * @throws DAQException
     */
@@ -87,8 +80,8 @@ public class Stats implements AutoCloseable {
    /**
     * Get DAQ Rds Statistics for specified Location
     *
-    * @param  Location requested (25 rafts times 3 REB)
-    * @param  Specify whether to clear data aftef reading it 
+    * @param  location  The location requested (25 rafts times 3 REB)
+    * @param  clear     Specify whether to clear data aftef reading it 
     * @return DAQRdsStats object
     * @throws DAQException
     */
@@ -100,8 +93,8 @@ public class Stats implements AutoCloseable {
    /**
     * Get DAQ Driver Statistics for specified Location
     *
-    * @param  Location requested (25 rafts times 3 REB)
-    * @param  Specify whether to clear data aftef reading it 
+    * @param  location  The location requested (25 rafts times 3 REB)
+    * @param  clear     Specify whether to clear data aftef reading it 
     * @return DAQDriverStats object
     * @throws DAQException
     */
@@ -113,8 +106,8 @@ public class Stats implements AutoCloseable {
    /**
     * Get DAQ Firmware Statistics for specified Location
     *
-    * @param  Location requested (25 rafts times 3 REB)
-    * @param  Specify whether to clear data aftef reading it 
+    * @param  location  The location requested (25 rafts times 3 REB)
+    * @param  clear     Specify whether to clear data aftef reading it 
     * @return DAQFirmwareStats object
     * @throws DAQException
     */

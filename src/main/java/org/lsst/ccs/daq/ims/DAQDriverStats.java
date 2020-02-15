@@ -1,55 +1,56 @@
 package org.lsst.ccs.daq.ims;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import org.lsst.ccs.utilities.location.Location;
-
-public class DAQDriverStats {
-
-    private final Location location;
+public class DAQDriverStats extends DAQStats {
 
     /* The statistics quantities */
     private final long received;
     private final long errors;  
-    private final long rxVC0;   
-    private final long rxVC1;   
-    private final long rxVC2;   
-    private final long rxVC3;   
+    private final long rx0;   
+    private final long rx1;   
+    private final long rx2;   
+    private final long rx3;   
 
-    // Map associates each statistic with its name, and allows loop over them
-    private Map<String,Long> statMap;
 
-    DAQDriverStats(byte bay, byte board, long received, long errors, long rxVC0, long rxVC1, long rxVC2, long rxVC3) {
+    DAQDriverStats(byte bay, byte board, long received, long errors, long rx0, long rx1, long rx2, long rx3) {
 
-        this.location     =  new Location(bay, board);
+        super(6, bay, board);
 
         this.received =  received;
         this.errors   =  errors;  
-        this.rxVC0    =  rxVC0;   
-        this.rxVC1    =  rxVC1;   
-        this.rxVC2    =  rxVC2;   
-        this.rxVC3    =  rxVC3;   
+        this.rx0      =  rx0;   
+        this.rx1      =  rx1;   
+        this.rx2      =  rx2;   
+        this.rx3      =  rx3;   
 
-        statMap = new LinkedHashMap<>(20);
         statMap.put("received", received);
         statMap.put("errors"  , errors  );
-        statMap.put("rxVC0"   , rxVC0   );
-        statMap.put("rxVC1"   , rxVC1   );
-        statMap.put("rxVC2"   , rxVC2   );
-        statMap.put("rxVC3"   , rxVC3   );
-
+        statMap.put("rx0"     , rx0   );
+        statMap.put("rx1"     , rx1   );
+        statMap.put("rx2"     , rx2   );
+        statMap.put("rx3"     , rx3   );
     }
 
-    /* Accessor is via String name, using Map */
-
-    public Long getDriverStat(String statName) {
-        return statMap.get(statName);
+    public long getReceived() {
+        return received;
     }
 
-    /* Accessor to entire Map  */
-
-    public Map<String,Long> getDriverStatMap() {
-        return statMap;
+    public long getErrors() {
+        return errors;
     }
 
+    public long getRx0() {
+        return rx0;
+    }
+
+    public long getRx1() {
+        return rx1;
+    }
+
+    public long getRx2() {
+        return rx2;
+    }
+
+    public long getRx3() {
+        return rx3;
+    }
 }

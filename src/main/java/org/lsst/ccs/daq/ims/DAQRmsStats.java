@@ -1,12 +1,8 @@
 package org.lsst.ccs.daq.ims;
 
 import java.util.LinkedHashMap;
-import java.util.Map;
-import org.lsst.ccs.utilities.location.Location;
 
-public class DAQRmsStats {
-
-    private final Location location;
+public class DAQRmsStats extends DAQStats {
 
     /* The statistics quantities */
     private final long probes;	    
@@ -22,13 +18,9 @@ public class DAQRmsStats {
     private final long rundowns;    
     private final long tid_hwm;	    
 
-    // Map associates each statistic with its name, and allows loop over them
-    private Map<String,Long> statMap;
-
     DAQRmsStats(byte bay, byte board, long probes, long unopened, long in_reset, long link_down, long lists_posted, long ops_posted, long waits, long responses, long inv_tids, long orphans, long rundowns, long tid_hwm) {
 
-        this.location     =  new Location(bay, board);
-
+        super(20, bay, board);
         this.probes       =  probes;	    
         this.unopened     =  unopened;     
         this.in_reset     =  in_reset;     
@@ -42,7 +34,6 @@ public class DAQRmsStats {
         this.rundowns     =  rundowns;     
         this.tid_hwm      =  tid_hwm;     
 
-        statMap = new LinkedHashMap<>(20);
         statMap.put("probes"      , probes      );
         statMap.put("unopened"    , unopened    );
         statMap.put("in_reset"    , in_reset    );
@@ -57,16 +48,52 @@ public class DAQRmsStats {
         statMap.put("tid_hwm"     , tid_hwm     );
     }
 
-    /* Accessor is via String name, using Map */
-
-    public Long getRmsStat(String statName) {
-        return statMap.get(statName);
+    public long getProbes() {
+        return probes;
     }
 
-    /* Accessor to entire Map  */
+    public long getUnopened() {
+        return unopened;
+    }
 
-    public Map<String,Long> getRmsStatMap() {
-        return statMap;
+    public long getIn_reset() {
+        return in_reset;
+    }
+
+    public long getLink_down() {
+        return link_down;
+    }
+
+    public long getLists_posted() {
+        return lists_posted;
+    }
+
+    public long getOps_posted() {
+        return ops_posted;
+    }
+
+    public long getWaits() {
+        return waits;
+    }
+
+    public long getResponses() {
+        return responses;
+    }
+
+    public long getInv_tids() {
+        return inv_tids;
+    }
+
+    public long getOrphans() {
+        return orphans;
+    }
+
+    public long getRundowns() {
+        return rundowns;
+    }
+
+    public long getTid_hwm() {
+        return tid_hwm;
     }
 
 }

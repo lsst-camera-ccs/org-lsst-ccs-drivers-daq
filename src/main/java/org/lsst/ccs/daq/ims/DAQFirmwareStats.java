@@ -1,12 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import org.lsst.ccs.utilities.location.Location;
-
-public class DAQFirmwareStats {
-
-    private final Location location;
+public class DAQFirmwareStats extends DAQStats {
 
     /* The statistics quantities */
     private final long link_status;        // Link Status
@@ -33,12 +27,9 @@ public class DAQFirmwareStats {
     private final long tx_op;              // OpCode Transmit count
     private final long rx_op;              // OpCode Received count
 
-    // Map associates each statistic with its name, and allows loop over them
-    private Map<String,Long> statMap;
-
     DAQFirmwareStats(byte bay, byte board, long link_status, long rlink_data, long cell_errors, long link_down, long link_errors, long overflow_remote0, long overflow_remote1, long overflow_remote2, long overflow_remote3, long rx_errors, long rx_frames, long overflow_local0, long overflow_local1, long overflow_local2, long overflow_local3, long tx_errors, long tx_frames, long rx_clock, long tx_clock, long last_tx, long last_rx, long tx_op, long rx_op) {
 
-        this.location     =  new Location(bay, board);
+        super(40, bay, board);
 
         this.link_status      = link_status;     
         this.rlink_data       = rlink_data;      
@@ -64,7 +55,6 @@ public class DAQFirmwareStats {
         this.tx_op            = tx_op;            
         this.rx_op            = rx_op;            
 
-        statMap = new LinkedHashMap<>(40);
         statMap.put("link_status"     , link_status);     
         statMap.put("rlink_data"      , rlink_data);      
         statMap.put("cell_errors"     , cell_errors);     
@@ -90,16 +80,96 @@ public class DAQFirmwareStats {
         statMap.put("rx_op"           , rx_op);           
     }
 
-    /* Accessor is via String name, using Map */
-
-    public Long getFirmwareStat(String statName) {
-        return statMap.get(statName);
+    public long getLinkStatus() {
+        return link_status;
     }
 
-    /* Accessor to entire Map  */
+    public long getRlink_data() {
+        return rlink_data;
+    }
 
-    public Map<String,Long> getFirmwareStatMap() {
-        return statMap;
+    public long getCell_errors() {
+        return cell_errors;
+    }
+
+    public long getLink_down() {
+        return link_down;
+    }
+
+    public long getLink_errors() {
+        return link_errors;
+    }
+
+    public long getOverflow_remote0() {
+        return overflow_remote0;
+    }
+
+    public long getOverflow_remote1() {
+        return overflow_remote1;
+    }
+
+    public long getOverflow_remote2() {
+        return overflow_remote2;
+    }
+
+    public long getOverflow_remote3() {
+        return overflow_remote3;
+    }
+
+    public long getRx_errors() {
+        return rx_errors;
+    }
+
+    public long getRx_frames() {
+        return rx_frames;
+    }
+
+    public long getOverflow_local0() {
+        return overflow_local0;
+    }
+
+    public long getOverflow_local1() {
+        return overflow_local1;
+    }
+
+    public long getOverflow_local2() {
+        return overflow_local2;
+    }
+
+    public long getOverflow_local3() {
+        return overflow_local3;
+    }
+
+    public long getTx_errors() {
+        return tx_errors;
+    }
+
+    public long getTx_frames() {
+        return tx_frames;
+    }
+
+    public long getRx_clock() {
+        return rx_clock;
+    }
+
+    public long getTx_clock() {
+        return tx_clock;
+    }
+
+    public long getLast_tx() {
+        return last_tx;
+    }
+
+    public long getLast_rx() {
+        return last_rx;
+    }
+
+    public long getTx_op() {
+        return tx_op;
+    }
+
+    public long getRx_op() {
+        return rx_op;
     }
 
 }

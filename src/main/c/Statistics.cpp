@@ -80,6 +80,7 @@ jobject createDAQRmsStats(JNIEnv* env, const DAQ::Location& location,
       char x[MESSAGE_LENGTH];
       snprintf(x, MESSAGE_LENGTH, "createDAQRmsStats failed");
       throwDAQStatsException(env, x, error);
+      return NULL;
     }
 }
 
@@ -108,6 +109,7 @@ jobject createDAQRdsStats(JNIEnv* env, const DAQ::Location& location,
       char x[MESSAGE_LENGTH];
       snprintf(x, MESSAGE_LENGTH, "createDAQRdsStats failed");
       throwDAQStatsException(env, x, error);
+      return NULL;
     }
 }
 
@@ -121,17 +123,18 @@ jobject createDAQDriverStats(JNIEnv* env, const DAQ::Location& location,
         jbyte board      = (jbyte) location.board();        
         jlong received   = (jlong) driverStats.received()       ;
         jlong errors     = (jlong) driverStats.errors()     ;
-        jlong rxVC0      = (jlong) driverStats.rx(0);
-        jlong rxVC1      = (jlong) driverStats.rx(1);
-        jlong rxVC2      = (jlong) driverStats.rx(2);
-        jlong rxVC3      = (jlong) driverStats.rx(3);
+        jlong rx0        = (jlong) driverStats.rx(0);
+        jlong rx1        = (jlong) driverStats.rx(1);
+        jlong rx2        = (jlong) driverStats.rx(2);
+        jlong rx3        = (jlong) driverStats.rx(3);
         
-        return env->NewObject(JCdaqDriverStatsClass, JCdaqDriverStatsConstructor, bay, board, received, errors, rxVC0, rxVC1, rxVC2, rxVC3);
+        return env->NewObject(JCdaqDriverStatsClass, JCdaqDriverStatsConstructor, bay, board, received, errors, rx0, rx1, rx2, rx3);
 
     } else {
       char x[MESSAGE_LENGTH];
       snprintf(x, MESSAGE_LENGTH, "createDAQDriverStats failed");
       throwDAQStatsException(env, x, error);
+      return NULL;
     }
 }
 
@@ -173,6 +176,7 @@ jobject createDAQFirmwareStats(JNIEnv* env, const DAQ::Location& location,
       char x[MESSAGE_LENGTH];
       snprintf(x, MESSAGE_LENGTH, "createDAQFirmwareStats failed");
       throwDAQStatsException(env, x, error);
+      return NULL;
     }
 }
 
