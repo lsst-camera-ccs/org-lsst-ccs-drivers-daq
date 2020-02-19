@@ -1,0 +1,140 @@
+/*
+** ++
+**  Package:
+**
+** DSId	
+**
+**  Abstract:
+
+ Start a DSI Daemon (see DSId::Server), whose scope is determined by a backing file 
+ created using the dsid_configure utility. The started daemon will listen on a specified
+ network interface. From the command line this utility is invoked with two (2) arguments:
+ 
+  - The first argument is a string which specifies the network interface to which the 
+    started daemon will listen on for work requests.  
+  - The second argument is a string which specifies the backing file for the daemon. The  
+    string is interpreted as a path name corresponding to the backing file.  
+
+ Assuming both arguments are provided, on success the utility starts the daemon with a scope
+ provided by the backing file and on failure sends (to standard output) an appropriate error
+ message. 
+ 
+**  Author:
+**      Michael Huffer, SLAC <mehsys@slac.stanford.edu>
+**
+**  Creation Date:
+**	000 - , 2007
+**
+**  Revision History:
+**	None.
+**
+** --
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <csignal>
+
+#include "cms/Camera.hh"
+#include "cms/Exception.hh"
+#include "ims/Path.hh"
+#include "ims/Image.hh"
+#include "ims/Stream.hh"
+#include "ims/Barrier.hh"
+
+#define PROGRAM    argv[0]
+#define PARTITION  argv[1]
+#define IMAGE_BASE argv[2]
+#define START      argv[3]
+#define REPEATS    argv[4]
+
+#define INVALID        -1 // invalid opcode...
+
+static const char folder[]="";
+static bool doExit = false;
+
+void quitIt(int s)
+{
+  printf("\n");
+  if(doExit)
+  {
+    printf("\n");
+    exit(1);
+  }
+  doExit=true;
+}
+
+
+/*
+** ++
+**
+**
+** --
+*/
+static const char SUCCESS[]        = "Triggered using opcode %d the image named %s at %s\n";
+static const char FAILED[]         = "Failed to trigger using opcode %d the image to be named %s (%s)\n";
+static const char INVALID_OPCODE[] = "The second argument is not a valid opcode\n";
+static const char NOT_VALID[]      = "% is not a valid image specifier (first argument must be of the form: 'folder-name/image-name')\n";
+
+int main(int argc, char* argv[])
+{
+  
+  struct sigaction sigIntHandler;
+  sigIntHandler.sa_handler = quitIt;
+  sigemptyset(&sigIntHandler.sa_mask);
+  sigIntHandler.sa_flags = 0;
+  sigaction(SIGINT, &sigIntHandler, NULL);
+  
+  IMS::Store store(PARTITION);
+  CMS::Camera camera(store);
+  //DAQ::LocationSet sources("10");
+
+  IMS::Stream stream(store);
+  
+  unsigned repeats = atol(REPEATS);
+  unsigned image_number = atol(START);
+  char image_name[64];
+  char* image = &image_name[0];
+  unsigned iterations = 0;
+
+  while(!doExit)
+   {
+     sprintf(image_name, "%s%i", IMAGE_BASE, image_number);
+
+     IMS::Path path(image, folder);
+       
+     if(!path) {printf(NOT_VALID, image_name); return -1;}
+       
+     const char* annotation = (const char*)0;
+     int32_t     opcode     = 1;
+     
+     if(opcode == INVALID) {printf(INVALID_OPCODE); return -1;}
+
+     IMS::ImageMetadata metadata(path.image(), path.folder(), camera.sources(), opcode, annotation); 
+     //IMS::ImageMetadata metadata(path.image(), path.folder(), sources, opcode, annotation); 
+     
+     int32_t error = camera.trigger(metadata);
+
+     if(!error)
+     {
+       printf(SUCCESS, opcode,  image_name, metadata.timestamp().decode());
+       IMS::Image stream_image(store, stream, 3*1000*1000);
+       IMS::Barrier barrier(stream_image);
+       barrier.block();
+     }
+     else
+       printf(FAILED, opcode, image_name, CMS::Exception::decode(error));
+
+     ++image_number;
+     if(++iterations==repeats) break;
+
+     //printf("<ENTER> for another trigger:");
+     //getchar();
+     
+     //sleep(4);
+
+   }
+  
+  return(EXIT_SUCCESS);
+}

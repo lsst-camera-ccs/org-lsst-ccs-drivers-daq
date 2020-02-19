@@ -1,0 +1,66 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <csignal>
+
+#include "ims/Store.hh"
+#include "Inspect.hh"
+
+static const char USAGE[] = "usage: emu_generate partition <image_base> <number of images>\n";
+
+#define PROGRAM    argv[0]
+#define PARTITION  argv[1]
+#define IMAGE_BASE argv[2]
+#define REPEATS    argv[3]
+
+/*
+** ++
+**
+**
+** --
+*/
+static const char folder[]="";
+
+static bool doExit = false;
+
+void quitIt(int s)
+{
+  printf("\n");
+  if(doExit)
+  {
+    printf("\n");
+    exit(1);
+  }
+  doExit=true;
+}
+
+
+int main(int argc, char* argv[])
+{
+  
+  if(argc < 3) {printf(USAGE); return EXIT_SUCCESS;}
+
+  struct sigaction sigIntHandler;
+  sigIntHandler.sa_handler = quitIt;
+  sigemptyset(&sigIntHandler.sa_mask);
+  sigIntHandler.sa_flags = 0;
+  sigaction(SIGINT, &sigIntHandler, NULL);
+
+  unsigned repeats = atol(REPEATS);
+
+  IMS::Store store(PARTITION);
+
+  unsigned image_number = 0;
+  char image_name[64];
+  char* image = &image_name[0];
+
+  while(!doExit)
+  {
+    sprintf(image_name, "%s%i", IMAGE_BASE, image_number);
+    
+    IMS::Editor::Inspect inspect(store, folder);
+    inspect.process(1, (const char**)&image, 0);
+    if(++image_number==repeats) break;
+  }
+
+  return EXIT_SUCCESS;
+}
