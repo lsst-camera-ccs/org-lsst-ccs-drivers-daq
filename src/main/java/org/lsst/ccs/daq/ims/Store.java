@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
  * A connection to the store within a specified DAQ partition. A store is the
@@ -83,6 +84,16 @@ public class Store implements AutoCloseable {
      */
     public long getRemaining() throws DAQException {
         return remaining(store);
+    }
+
+    /**
+     * Get the set of configured locations in this partition
+     * @return The set of locations configured in this partition
+     * @throws DAQException
+     */
+    public LocationSet getConfiguredSources() throws DAQException {
+        BitSet locations = getConfiguredSources(store);
+        return new LocationSet(locations);
     }
 
     /**
@@ -318,4 +329,6 @@ public class Store implements AutoCloseable {
     private native int waitForImage(long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
 
     static native String decodeException(int rc);
+
+    private synchronized native BitSet getConfiguredSources(long store) throws DAQException;
 }

@@ -58,6 +58,7 @@ import org.lsst.ccs.utilities.ccd.FocalPlane;
 import org.lsst.ccs.utilities.ccd.Raft;
 import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
+import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
  *
@@ -166,6 +167,12 @@ public class CommandTool {
             throw new RuntimeException("No such folder: " + target);
         }
         image.moveTo(targetFolderName);
+    }
+    
+    @Command(name = "locations", description = "List configured locations")
+    public LocationSet locations() throws DAQException {
+        checkStore();
+        return store.getConfiguredSources();
     }
 
     @Command(name = "readRaw")
