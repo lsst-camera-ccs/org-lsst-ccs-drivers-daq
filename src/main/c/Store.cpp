@@ -12,6 +12,7 @@
 #include "daq/LocationSet.hh"
 #include "dsm/Exception.hh"
 #include "xds/Page.hh"
+#include "cms/Camera.hh"
 
 #include "MyFolders.h"
 #include "MyProcessor.h"
@@ -489,4 +490,12 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_waitForImage
 JNIEXPORT jstring JNICALL Java_org_lsst_ccs_daq_ims_Store_decodeException
   (JNIEnv *env , jclass, jint error) {
     return decode(env, error);
+}
+
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_getConfiguredSources
+  (JNIEnv *env, jobject obj, jlong store) {
+    Store* store_ = (Store*) store;
+    CMS::Camera camera(*store_);
+    const DAQ::LocationSet& locations = camera.sources();
+    return createBitSet(env, locations); 
 }
