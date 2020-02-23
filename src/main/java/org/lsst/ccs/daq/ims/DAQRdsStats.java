@@ -16,13 +16,13 @@ public class DAQRdsStats extends DAQStats {
     private final long bdi_frees;     
 
 
-    DAQRdsStats(byte bay, byte board, long wakes, long discards, long bdi_waits, long bdi_nulls, long bdi_seq_errors, long bdi_overflows, long bdi_firsts, long bdi_lasts, long bdi_frees)  {
+    DAQRdsStats(byte bay, byte board, long wakes, long discards, long no_event, long bdi_waits, long bdi_nulls, long bdi_seq_errors, long bdi_overflows, long bdi_firsts, long bdi_lasts, long bdi_frees)  {
 
         super(20, bay, board);
         
         this.wakes	    =  wakes;	       	
         this.discards       =  discards;      
-        this.no_event       =  mo_event;      
+        this.no_event       =  no_event;      
         this.bdi_waits      =  bdi_waits;     
         this.bdi_nulls      =  bdi_nulls;     
         this.bdi_seq_errors =  bdi_seq_errors;
