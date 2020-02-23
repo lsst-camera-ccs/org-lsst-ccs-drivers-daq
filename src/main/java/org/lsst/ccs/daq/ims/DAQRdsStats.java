@@ -6,11 +6,11 @@ public class DAQRdsStats extends DAQStats {
     /* The statistics quantities */
     private final long wakes;	      
     private final long discards;      
+    private final long no_event;      
     private final long bdi_waits;     
     private final long bdi_nulls;     
     private final long bdi_seq_errors;
     private final long bdi_overflows; 
-    // private final long no_event;      
     private final long bdi_firsts;    
     private final long bdi_lasts;     
     private final long bdi_frees;     
@@ -22,22 +22,22 @@ public class DAQRdsStats extends DAQStats {
         
         this.wakes	    =  wakes;	       	
         this.discards       =  discards;      
+        this.no_event       =  mo_event;      
         this.bdi_waits      =  bdi_waits;     
         this.bdi_nulls      =  bdi_nulls;     
         this.bdi_seq_errors =  bdi_seq_errors;
         this.bdi_overflows  =  bdi_overflows; 
-        // this.no_event       =  no_event;      
         this.bdi_firsts     =  bdi_firsts;    
         this.bdi_lasts      =  bdi_lasts;     
         this.bdi_frees      =  bdi_frees;     
 
         statMap.put("wakes"	    , wakes	    );
         statMap.put("discards"      , discards      );
+        statMap.put("no_event"      , no_event      );
         statMap.put("bdi_waits"     , bdi_waits     );
         statMap.put("bdi_nulls"     , bdi_nulls     );
         statMap.put("bdi_seq_errors", bdi_seq_errors);
         statMap.put("bdi_overflows" , bdi_overflows );
-        // statMap.put("no_event"      , no_event      );
         statMap.put("bdi_firsts"    , bdi_firsts    );
         statMap.put("bdi_lasts"     , bdi_lasts     );
         statMap.put("bdi_frees"     , bdi_frees     );
@@ -49,6 +49,10 @@ public class DAQRdsStats extends DAQStats {
 
     public long getDiscards() {
         return discards;
+    }
+
+    public long getNo_event() {
+        return no_event;
     }
 
     public long getBdi_waits() {

@@ -94,16 +94,16 @@ jobject createDAQRdsStats(JNIEnv* env, const DAQ::Location& location,
         jbyte board          = (jbyte) location.board();        
         jlong wakes	     = (jlong) rdsStats.wakes();	      
         jlong discards       = (jlong) rdsStats.discards();      
+        jlong no_event       = (jlong) rdsStats.no_event();      
         jlong bdi_waits      = (jlong) rdsStats.bdi_waits();     
         jlong bdi_nulls      = (jlong) rdsStats.bdi_nulls();     
         jlong bdi_seq_errors = (jlong) rdsStats.bdi_seq_errors();
         jlong bdi_overflows  = (jlong) rdsStats.bdi_overflows(); 
-        // jlong no_event       = (jlong) rdsStats.no_event();      
         jlong bdi_firsts     = (jlong) rdsStats.bdi_firsts();    
         jlong bdi_lasts      = (jlong) rdsStats.bdi_lasts();     
         jlong bdi_frees      = (jlong) rdsStats.bdi_frees();     
         
-        return env->NewObject(JCdaqRdsStatsClass, JCdaqRdsStatsConstructor, bay, board, wakes, discards, bdi_waits, bdi_nulls, bdi_seq_errors, bdi_overflows, bdi_firsts, bdi_lasts, bdi_frees);
+        return env->NewObject(JCdaqRdsStatsClass, JCdaqRdsStatsConstructor, bay, board, wakes, discards, no_event, bdi_waits, bdi_nulls, bdi_seq_errors, bdi_overflows, bdi_firsts, bdi_lasts, bdi_frees);
 
     } else {
       char x[MESSAGE_LENGTH];
@@ -205,7 +205,7 @@ void JNI_Stats_OnLoad(JNIEnv* env) {
     }
     JCdaqRdsStatsClass = (jclass) env->NewGlobalRef(daqRdsStatsClass);
 
-    JCdaqRdsStatsConstructor = env->GetMethodID(JCdaqRdsStatsClass, "<init>", "(BBJJJJJJJJJ)V");
+    JCdaqRdsStatsConstructor = env->GetMethodID(JCdaqRdsStatsClass, "<init>", "(BBJJJJJJJJJJ)V");
     if (env->ExceptionCheck()) {
         return;
     }
