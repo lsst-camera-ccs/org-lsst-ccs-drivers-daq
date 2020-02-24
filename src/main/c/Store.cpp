@@ -499,3 +499,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_getConfiguredSources
     const DAQ::LocationSet& locations = camera.sources();
     return createBitSet(env, locations); 
 }
+
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_getClientVersion
+  (JNIEnv *env, jclass cls) {
+    DVI::Version version;
+    return createVersion(env, version);
+}

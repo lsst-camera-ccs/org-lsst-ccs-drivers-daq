@@ -50,6 +50,7 @@ import org.lsst.ccs.daq.ims.Source.ChannelMode;
 import org.lsst.ccs.daq.ims.SourceMetaData;
 import org.lsst.ccs.daq.ims.Store;
 import org.lsst.ccs.daq.ims.Utils;
+import org.lsst.ccs.daq.ims.Version;
 import org.lsst.ccs.daq.ims.channel.FitsIntReader;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
@@ -175,6 +176,12 @@ public class CommandTool {
         return store.getConfiguredSources();
     }
 
+    @Command(name = "version", description = "Get version info")
+    public Version version() throws DAQException {
+        return Store.getClientVersion();
+    }
+
+    
     @Command(name = "readRaw")
     public void readRaw(String path,
             @Argument(defaultValue = ".", description = "Folder where .raw files will be written") File dir,
