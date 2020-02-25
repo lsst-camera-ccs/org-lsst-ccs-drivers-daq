@@ -1,7 +1,6 @@
 package org.lsst.ccs.daq.ims.example;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -28,9 +27,8 @@ import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -192,7 +190,7 @@ public class CommandTool {
         }
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        ExecutorService executor = new ThreadPoolExecutor(0, maxThreads, 60L, TimeUnit.SECONDS, new SynchronousQueue<>());
+        ExecutorService executor = new ThreadPoolExecutor(0, maxThreads, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
         List<Future<Long>> futures = new ArrayList<>();
         long start = System.nanoTime();
         for (Source source : sources) {
@@ -267,7 +265,7 @@ public class CommandTool {
         }
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        ExecutorService executor = new ThreadPoolExecutor(0, maxThreads, 60L, TimeUnit.SECONDS, new SynchronousQueue<>());
+        ExecutorService executor = new ThreadPoolExecutor(0, maxThreads, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
         List<Future<Long>> futures = new ArrayList<>();
         long start = System.nanoTime();
         for (Source source : sources) {
