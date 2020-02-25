@@ -181,7 +181,8 @@ public class CommandTool {
     @Command(name = "readRaw")
     public void readRaw(String path,
             @Argument(defaultValue = ".", description = "Folder where .raw files will be written") File dir,
-            @Argument(defaultValue = "1048576") int bufferSize) throws FileNotFoundException, DAQException, IOException, InterruptedException, ExecutionException {
+            @Argument(defaultValue = "1048576") int bufferSize,
+            @Argument(defaultValue = "999999999") int maxThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
         Image image = imageFromPath(path);
         List<Source> sources = image.listSources();
@@ -191,7 +192,7 @@ public class CommandTool {
         }
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        ExecutorService executor = Executors.newCachedThreadPool();
+        ExecutorService executor = new ThreadPoolExecutor(0, maxThreads, 60L, TimeUnit.SECONDS, new SynchronousQueue<>());
         List<Future<Long>> futures = new ArrayList<>();
         long start = System.nanoTime();
         for (Source source : sources) {
