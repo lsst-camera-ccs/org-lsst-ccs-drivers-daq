@@ -30,6 +30,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -252,7 +255,8 @@ public class CommandTool {
     @Command(name = "read", description = "Read and decode data in image")
     public void read(String path,
             @Argument(defaultValue = ".", description = "Folder where FITS files will be written") File dir,
-            @Argument(defaultValue = "1048576") int bufferSize) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
+            @Argument(defaultValue = "1048576") int bufferSize,
+            @Argument(defaultValue = "999999999") int maxThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
         Image image = imageFromPath(path);
         List<Source> sources = image.listSources();
@@ -262,7 +266,7 @@ public class CommandTool {
         }
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        ExecutorService executor = Executors.newCachedThreadPool();
+        ExecutorService executor = new ThreadPoolExecutor(0, maxThreads, 60L, TimeUnit.SECONDS, new SynchronousQueue<>());
         List<Future<Long>> futures = new ArrayList<>();
         long start = System.nanoTime();
         for (Source source : sources) {
