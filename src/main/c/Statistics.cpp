@@ -232,6 +232,17 @@ void JNI_Stats_OnLoad(JNIEnv* env) {
         return;
     }
 
+    jclass exClass = env->FindClass("org/lsst/ccs/daq/ims/DAQException");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+    JCexClass = (jclass) env->NewGlobalRef(exClass);
+
+    JCexConstructor = env->GetMethodID(JCexClass, "<init>", "(Ljava/lang/String;ILjava/lang/String;)V");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+
     return;
 }
 

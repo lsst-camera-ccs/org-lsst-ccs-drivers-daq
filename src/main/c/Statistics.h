@@ -8,9 +8,4 @@
 
 void JNI_Stats_OnLoad(JNIEnv*);
 
-/**************************************************************
- * Static Global Variables to cache Java Class and Method IDs
- **************************************************************/
-extern jobject createVersion(JNIEnv*, DVI::Version);
-
 #endif
