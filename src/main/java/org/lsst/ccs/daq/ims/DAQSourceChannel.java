@@ -50,19 +50,11 @@ class DAQSourceChannel implements ByteChannel {
 
     @Override
     public void close() throws IOException {
-        try {
-            if (channel_ != 0) {
-                synchronized (store) {
-                    close(channel_, mode == Source.ChannelMode.WRITE);
-                }
-                channel_ = 0;
+        if (channel_ != 0) {
+            synchronized (store) {
+                close(channel_, mode == Source.ChannelMode.WRITE);
             }
-        } finally {
-            try {
-                store.close();
-            } catch (DAQException ex) {
-                throw new IOException("Error closing DAQSourceChannel", ex);
-            }
+            channel_ = 0;
         }
     }
 

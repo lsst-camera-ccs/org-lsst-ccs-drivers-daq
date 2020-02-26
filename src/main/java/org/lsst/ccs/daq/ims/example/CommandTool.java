@@ -29,6 +29,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -188,10 +190,25 @@ public class CommandTool {
             this.setName("DAQ_read_thread_" + n++);
             this.setDaemon(true);
             buffer = ByteBuffer.allocateDirect(bufferSize);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
             try {
                 store = new Store(partition);
             } catch (DAQException x) {
                 throw new RuntimeException("Error creating store for read thread", x);
+            }
+        }
+
+        @Override
+        @SuppressWarnings("CallToThreadRun")
+        public void run() {
+            try {
+                super.run();
+            } finally {
+                try {
+                    store.close();
+                } catch (DAQException x) {
+                    throw new RuntimeException("Error closing store", x);
+                }
             }
         }
     }
@@ -212,42 +229,46 @@ public class CommandTool {
 
         ThreadFactory readThreadFactory = (Runnable r) -> new ReadThread(r, bufferSize, image.getStore().getPartition());
 
-        ExecutorService executor = new ThreadPoolExecutor(nThreads, nThreads, 60L,
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(nThreads, nThreads, 60L,
                 TimeUnit.SECONDS, new LinkedBlockingQueue<>(), readThreadFactory);
-        List<Future<Long>> futures = new ArrayList<>();
-        long start = System.nanoTime();
-        for (Source source : sources) {
-            Callable<Long> callable = () -> {
-                ReadThread thread = (ReadThread) Thread.currentThread();
-                File file = new File(dir, String.format("%s_%s.raw", source.getImage().getMetaData().getName(), source.getLocation().toString().replace("/", "_")));
-                ByteBuffer buffer = thread.buffer;
-                try (ByteChannel channel = source.openChannel(thread.store, Source.ChannelMode.READ);
-                        FileChannel out = new FileOutputStream(file).getChannel()) {
-                    long readSize = 0;
-                    for (;;) {
-                        int l = channel.read(buffer);
-                        if (l < 0) {
-                            break;
+        try {
+            executor.prestartAllCoreThreads();
+            List<Future<Long>> futures = new ArrayList<>();
+            long start = System.nanoTime();
+            for (Source source : sources) {
+                Callable<Long> callable = () -> {
+                    ReadThread thread = (ReadThread) Thread.currentThread();
+                    File file = new File(dir, String.format("%s_%s.raw", source.getImage().getMetaData().getName(), source.getLocation().toString().replace("/", "_")));
+                    ByteBuffer buffer = thread.buffer;
+                    try (ByteChannel channel = source.openChannel(thread.store, Source.ChannelMode.READ);
+                            FileChannel out = new FileOutputStream(file).getChannel()) {
+                        long readSize = 0;
+                        for (;;) {
+                            int l = channel.read(buffer);
+                            if (l < 0) {
+                                break;
+                            }
+                            readSize += l;
+                            buffer.flip();
+                            out.write(buffer);
+                            buffer.clear();
                         }
-                        readSize += l;
-                        buffer.flip();
-                        out.write(buffer);
-                        buffer.clear();
+                        return readSize;
                     }
-                    return readSize;
-                }
-            };
-            futures.add(executor.submit(callable));
-        }
-        long totalReadSize = 0;
-        for (Future<Long> future : futures) {
-            totalReadSize += future.get();
-        }
-        long stop = System.nanoTime();
+                };
+                futures.add(executor.submit(callable));
+            }
+            long totalReadSize = 0;
+            for (Future<Long> future : futures) {
+                totalReadSize += future.get();
+            }
+            long stop = System.nanoTime();
 
-        System.out.printf(
-                "Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
-        executor.shutdown();
+            System.out.printf(
+                    "Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
+        } finally {
+            executor.shutdown();
+        }
     }
 
     @Command(name = "listen", description = "Listen for images")
@@ -291,42 +312,50 @@ public class CommandTool {
 
         ThreadFactory readThreadFactory = (Runnable r) -> new ReadThread(r, bufferSize, image.getStore().getPartition());
 
-        ExecutorService executor = new ThreadPoolExecutor(nThreads, nThreads, 60L,
-                TimeUnit.SECONDS, new LinkedBlockingQueue<>(), readThreadFactory);
-        List<Future<Long>> futures = new ArrayList<>();
-        long start = System.nanoTime();
-        for (Source source : sources) {
-            Callable<Long> callable = () -> {
-                ReadThread thread = (ReadThread) Thread.currentThread();
-                Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
-                FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
-                try (ByteChannel channel = source.openChannel(thread.store, Source.ChannelMode.READ);
-                        FitsIntWriter decompress = new FitsIntWriter(source, reb, HEADER_SPEC_BUILDER.getHeaderSpecifications(), namer, null)) {
-                    long readSize = 0;
-                    ByteBuffer buffer = thread.buffer;
-                    buffer.order(ByteOrder.LITTLE_ENDIAN);
-                    for (;;) {
-                        int l = channel.read(buffer);
-                        if (l < 0) {
-                            break;
+        ExecutorService executor = new ThreadPoolExecutor(sources.size(), sources.size(), 60L,
+                TimeUnit.SECONDS, new SynchronousQueue(), readThreadFactory);
+        try {
+            List<Future<Long>> futures = new ArrayList<>();
+            long start = System.nanoTime();
+            Semaphore semaphore = new Semaphore(nThreads);
+            for (Source source : sources) {
+                Callable<Long> callable = () -> {
+                    ReadThread thread = (ReadThread) Thread.currentThread();
+                    Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
+                    FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
+                    try (ByteChannel channel = source.openChannel(thread.store, Source.ChannelMode.READ);
+                            FitsIntWriter decompress = new FitsIntWriter(source, reb, HEADER_SPEC_BUILDER.getHeaderSpecifications(), namer, null)) {
+                        long readSize = 0;
+                        ByteBuffer buffer = thread.buffer;
+                        for (;;) {
+                            semaphore.acquire();
+                            try {
+                                int l = channel.read(buffer);
+                                if (l < 0) {
+                                    break;
+                                }
+                                readSize += l;
+                            } finally {
+                                semaphore.release();
+                            }
+                            buffer.flip();
+                            decompress.write(buffer.asIntBuffer());
+                            buffer.clear();
                         }
-                        readSize += l;
-                        buffer.flip();
-                        decompress.write(buffer.asIntBuffer());
-                        buffer.clear();
+                        return readSize;
                     }
-                    return readSize;
-                }
-            };
-            futures.add(executor.submit(callable));
+                };
+                futures.add(executor.submit(callable));
+            }
+            long totalReadSize = 0;
+            for (Future<Long> future : futures) {
+                totalReadSize += future.get();
+            }
+            long stop = System.nanoTime();
+            System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
+        } finally {
+            executor.shutdown();
         }
-        long totalReadSize = 0;
-        for (Future<Long> future : futures) {
-            totalReadSize += future.get();
-        }
-        long stop = System.nanoTime();
-        System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
-        executor.shutdown();
     }
 
     @Command(name = "write", description = "Write a set of FITS files to the store")
