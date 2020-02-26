@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -169,18 +170,37 @@ public class CommandTool {
         }
         image.moveTo(targetFolderName);
     }
-    
+
     @Command(name = "locations", description = "List configured locations")
     public LocationSet locations() throws DAQException {
         checkStore();
         return store.getConfiguredSources();
     }
 
+    private static class ReadThread extends Thread {
+
+        private final ByteBuffer buffer;
+        private final Store store;
+        private static int n = 0;
+
+        ReadThread(Runnable r, int bufferSize, String partition) {
+            super(r);
+            this.setName("DAQ_read_thread_" + n++);
+            this.setDaemon(true);
+            buffer = ByteBuffer.allocateDirect(bufferSize);
+            try {
+                store = new Store(partition);
+            } catch (DAQException x) {
+                throw new RuntimeException("Error creating store for read thread", x);
+            }
+        }
+    }
+
     @Command(name = "readRaw")
     public void readRaw(String path,
             @Argument(defaultValue = ".", description = "Folder where .raw files will be written") File dir,
             @Argument(defaultValue = "1048576") int bufferSize,
-            @Argument(defaultValue = "999999999") int maxThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
+            @Argument(defaultValue = "4") int nThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
         Image image = imageFromPath(path);
         List<Source> sources = image.listSources();
@@ -190,14 +210,18 @@ public class CommandTool {
         }
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        ExecutorService executor = new ThreadPoolExecutor(0, maxThreads, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+        ThreadFactory readThreadFactory = (Runnable r) -> new ReadThread(r, bufferSize, image.getStore().getPartition());
+
+        ExecutorService executor = new ThreadPoolExecutor(nThreads, nThreads, 60L,
+                TimeUnit.SECONDS, new LinkedBlockingQueue<>(), readThreadFactory);
         List<Future<Long>> futures = new ArrayList<>();
         long start = System.nanoTime();
         for (Source source : sources) {
             Callable<Long> callable = () -> {
+                ReadThread thread = (ReadThread) Thread.currentThread();
                 File file = new File(dir, String.format("%s_%s.raw", source.getImage().getMetaData().getName(), source.getLocation().toString().replace("/", "_")));
-                ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
-                try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
+                ByteBuffer buffer = thread.buffer;
+                try (ByteChannel channel = source.openChannel(thread.store, Source.ChannelMode.READ);
                         FileChannel out = new FileOutputStream(file).getChannel()) {
                     long readSize = 0;
                     for (;;) {
@@ -242,7 +266,7 @@ public class CommandTool {
                     List<Source> sources = image.listSources();
                     for (Source source : sources) {
                         SourceMetaData smd = source.getMetaData();
-                        System.out.printf("Source location: %s length: %s\n",smd.getLocation(),Utils.humanReadableByteCount(smd.getLength()));
+                        System.out.printf("Source location: %s length: %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength()));
                     }
                 } catch (DAQException ex) {
                     LOG.log(Level.SEVERE, "Exception in imageComplete listener", ex);
@@ -255,7 +279,7 @@ public class CommandTool {
     public void read(String path,
             @Argument(defaultValue = ".", description = "Folder where FITS files will be written") File dir,
             @Argument(defaultValue = "1048576") int bufferSize,
-            @Argument(defaultValue = "999999999") int maxThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
+            @Argument(defaultValue = "4") int nThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
         Image image = imageFromPath(path);
         List<Source> sources = image.listSources();
@@ -265,17 +289,21 @@ public class CommandTool {
         }
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        ExecutorService executor = new ThreadPoolExecutor(0, maxThreads, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
+        ThreadFactory readThreadFactory = (Runnable r) -> new ReadThread(r, bufferSize, image.getStore().getPartition());
+
+        ExecutorService executor = new ThreadPoolExecutor(nThreads, nThreads, 60L,
+                TimeUnit.SECONDS, new LinkedBlockingQueue<>(), readThreadFactory);
         List<Future<Long>> futures = new ArrayList<>();
         long start = System.nanoTime();
         for (Source source : sources) {
             Callable<Long> callable = () -> {
+                ReadThread thread = (ReadThread) Thread.currentThread();
                 Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
                 FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
-                try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
+                try (ByteChannel channel = source.openChannel(thread.store, Source.ChannelMode.READ);
                         FitsIntWriter decompress = new FitsIntWriter(source, reb, HEADER_SPEC_BUILDER.getHeaderSpecifications(), namer, null)) {
                     long readSize = 0;
-                    ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
+                    ByteBuffer buffer = thread.buffer;
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
                     for (;;) {
                         int l = channel.read(buffer);

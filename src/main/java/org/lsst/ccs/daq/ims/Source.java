@@ -92,16 +92,28 @@ public class Source implements Comparable<Source> {
     public Image getImage() {
         return image;
     }
-    
+
     /**
      * Open a channel for reading or writing data to this source.
      * @param mode The mode to open the channel.
      * @return The created channel.
      * @throws DAQException If the mode is invalid for the current state of this source, 
      * or some other error occurs.
-     */
+     */    
     public ByteChannel openChannel(ChannelMode mode) throws DAQException {
-        return DAQSourceChannel.open(this, mode);
+        return DAQSourceChannel.open(this.image.getStore(), this, mode);
+    }    
+    
+    /**
+     * Open a channel for reading or writing data to this source.
+     * @param store The store to be used for read/write operations. For multi-threaded reading-writing there must be one store per channel
+     * @param mode The mode to open the channel.
+     * @return The created channel.
+     * @throws DAQException If the mode is invalid for the current state of this source, 
+     * or some other error occurs.
+     */
+    public ByteChannel openChannel(Store store, ChannelMode mode) throws DAQException {
+        return DAQSourceChannel.open(store, this, mode);
     }
 
     void addStreamListener(StreamListener listener) {

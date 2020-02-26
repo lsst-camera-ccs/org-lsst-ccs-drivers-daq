@@ -13,17 +13,17 @@ import java.time.Duration;
  */
 class DAQSourceChannel implements ByteChannel {
 
-    static ByteChannel open(Source source, Source.ChannelMode mode) throws DAQException {
+    static ByteChannel open(Store store, Source source, Source.ChannelMode mode) throws DAQException {
         switch (mode) {
             case READ:
                 if (source.getMetaData().getLength() == 0) {
                     throw new DAQException("Cannot read from source which is not fully written, did you mean to use ChennelMode.STREAM?");
                 }
-                return new ReadableDAQSourceChannel(source);
+                return new ReadableDAQSourceChannel(store, source);
             case STREAM:
-                return new StreamingDAQSourceChannel(source);
+                return new StreamingDAQSourceChannel(store, source);
             case WRITE:
-                return new WritableDAQSourceChannel(source);
+                return new WritableDAQSourceChannel(store, source);
             default:
                 throw new UnsupportedOperationException("Unsupported mode " + mode);
         }
@@ -33,10 +33,9 @@ class DAQSourceChannel implements ByteChannel {
     protected long channel_;
     private final Source.ChannelMode mode;
 
-    DAQSourceChannel(Source source, Source.ChannelMode mode) throws DAQException {
+    DAQSourceChannel(Store store, Source source, Source.ChannelMode mode) throws DAQException {
         final Image image = source.getImage();
-        // Per Gregg, each channel needs to have its own store to allow safe multi-threaded read access.
-        store = new Store(image.getStore().getPartition());
+        this.store = store;
         if (mode != Source.ChannelMode.STREAM) {
             // In the case of streaming we delay opening the channel until the first data is ready 
             channel_ = store.openSourceChannel(image.getMetaData().getId(), source.getLocation(), mode);
@@ -97,8 +96,8 @@ class DAQSourceChannel implements ByteChannel {
         private final long length;
         private long offset = 0;
 
-        ReadableDAQSourceChannel(Source source) throws DAQException {
-            super(source, Source.ChannelMode.READ);
+        ReadableDAQSourceChannel(Store store, Source source) throws DAQException {
+            super(store, source, Source.ChannelMode.READ);
             length = source.getMetaData().getLength();
         }
 
@@ -130,8 +129,8 @@ class DAQSourceChannel implements ByteChannel {
         private static final Duration READ_TIMEOUT = Duration.ofSeconds(10);
 
         @SuppressWarnings("LeakingThisInConstructor")
-        StreamingDAQSourceChannel(Source source) throws DAQException {
-            super(source, Source.ChannelMode.STREAM);
+        StreamingDAQSourceChannel(Store store, Source source) throws DAQException {
+            super(store, source, Source.ChannelMode.STREAM);
             this.source = source;
             source.addStreamListener(this);
         }
@@ -207,8 +206,8 @@ class DAQSourceChannel implements ByteChannel {
 
     private static class WritableDAQSourceChannel extends DAQSourceChannel {
 
-        public WritableDAQSourceChannel(Source source) throws DAQException {
-            super(source, Source.ChannelMode.WRITE);
+        public WritableDAQSourceChannel(Store store, Source source) throws DAQException {
+            super(store, source, Source.ChannelMode.WRITE);
         }
 
         @Override
