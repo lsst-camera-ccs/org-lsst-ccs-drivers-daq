@@ -312,9 +312,10 @@ public class CommandTool {
 
         ThreadFactory readThreadFactory = (Runnable r) -> new ReadThread(r, bufferSize, image.getStore().getPartition());
 
-        ExecutorService executor = new ThreadPoolExecutor(sources.size(), sources.size(), 60L,
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(sources.size(), sources.size(), 60L,
                 TimeUnit.SECONDS, new SynchronousQueue(), readThreadFactory);
         try {
+            executor.prestartAllCoreThreads();
             List<Future<Long>> futures = new ArrayList<>();
             long start = System.nanoTime();
             Semaphore semaphore = new Semaphore(nThreads);

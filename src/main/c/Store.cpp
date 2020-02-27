@@ -431,12 +431,12 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_findImage
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_openSourceChannel
 (JNIEnv *env, jobject obj, jlong store, jlong id, jint elementIndex, jboolean write) {
     Store* store_ = (Store*) store;
-    Image image = findImage(env, store_, id);
-    if (!image) {
+    Id id_((uint64_t) id);
+    if (!id_) {
         return JNI_ERR;
     }
     DAQ::Location element(elementIndex);
-    Source* source = new Source(image.id(), element, *store_);
+    Source* source = new Source(id_, element, *store_);
     if (!source) {
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Source not found (id=%ld elementIndex=%d)", id, elementIndex);
