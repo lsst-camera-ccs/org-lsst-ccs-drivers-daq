@@ -1,8 +1,8 @@
 package org.lsst.ccs.daq.ims;
 
-import java.util.LinkedHashMap;
+import java.io.Serializable;
 
-public class DAQRmsStats extends DAQStats {
+public class DAQRmsStats extends DAQStats implements Serializable {
 
     /* The statistics quantities */
     private final long probes;	    

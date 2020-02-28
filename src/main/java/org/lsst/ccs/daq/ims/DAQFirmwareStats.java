@@ -1,6 +1,8 @@
 package org.lsst.ccs.daq.ims;
 
-public class DAQFirmwareStats extends DAQStats {
+import java.io.Serializable;
+
+public class DAQFirmwareStats extends DAQStats implements Serializable {
 
     /* The statistics quantities */
     private final long link_status;        // Link Status

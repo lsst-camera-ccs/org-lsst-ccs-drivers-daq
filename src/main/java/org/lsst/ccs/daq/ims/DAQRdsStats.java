@@ -1,7 +1,8 @@
 package org.lsst.ccs.daq.ims;
 
-public class DAQRdsStats extends DAQStats {
+import java.io.Serializable;
 
+public class DAQRdsStats extends DAQStats implements Serializable {
 
     /* The statistics quantities */
     private final long wakes;	      

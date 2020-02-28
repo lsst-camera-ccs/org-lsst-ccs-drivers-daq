@@ -1,6 +1,8 @@
 package org.lsst.ccs.daq.ims;
 
-public class DAQDriverStats extends DAQStats {
+import java.io.Serializable;
+
+public class DAQDriverStats extends DAQStats implements Serializable {
 
     /* The statistics quantities */
     private final long received;
