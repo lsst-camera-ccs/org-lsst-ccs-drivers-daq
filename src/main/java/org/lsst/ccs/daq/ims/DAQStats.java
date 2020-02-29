@@ -3,6 +3,7 @@ package org.lsst.ccs.daq.ims;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.lsst.ccs.bus.annotations.SkipEncoding;
 import org.lsst.ccs.utilities.location.Location;
 
 /**
@@ -14,7 +15,9 @@ import org.lsst.ccs.utilities.location.Location;
 public class DAQStats {
     
     // Map associates each statistic with its name, and allows loop over them
+    @SkipEncoding
     final Map<String, Long> statMap;
+    @SkipEncoding
     private final Location location;
 
     DAQStats(int statMapInitialSize, byte bay, byte board) {
