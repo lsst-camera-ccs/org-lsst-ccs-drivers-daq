@@ -122,7 +122,7 @@ public class CommandTool {
             });
             long capacity = store.getCapacity();
             long remaining = store.getRemaining();
-            System.out.printf("%s/%s (%3.3g%%) bytes used\n", Utils.humanReadableByteCount(capacity - remaining), Utils.humanReadableByteCount(capacity, false), 100.0 * (capacity - remaining) / capacity);
+            System.out.printf("%s/%s (%3.3g%%) bytes used\n", Utils.humanReadableByteCount(capacity - remaining), Utils.humanReadableByteCount(capacity), 100.0 * (capacity - remaining) / capacity);
         } else if (matcher.matches() && matcher.group(2).isEmpty()) {
             Folder folder = store.getCatalog().find(matcher.group(1));
             if (folder == null) {
@@ -283,7 +283,7 @@ public class CommandTool {
     @Command(name = "writeRaw", description = "Write a set of .raw images into the 2 day store")
     public void writeRaw(File dir,
             @Argument(defaultValue = "emu") String targetFolderName,
-            @Argument(defaultValue = "([A-Z|0_9|_]+)_(R\\d\\d)_(Reb[0-2|W|).raw") String pattern) throws DAQException, IOException {
+            @Argument(defaultValue = "(\\w+)_(R\\d\\d)_(Reb[0-2|W|G]).raw") String pattern) throws DAQException, IOException {
         checkStore();
         Folder target = store.getCatalog().find(targetFolderName);
         if (target == null) {
@@ -305,7 +305,6 @@ public class CommandTool {
                         obsIds.put(matcher.group(1), id);
                     }
                     Location location = Location.of(matcher.group(2) + "/" + matcher.group(3));
-                    //id.add(location);
                     // Look for corresponding .mera file
                     Path meta = file.resolveSibling(file.getFileName().toString().replace(".raw", ".meta"));
                     if (Files.exists(meta)) {

@@ -460,10 +460,10 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_addSourceToImage
     jint size = env->GetArrayLength(registerValues);
     jint* values = env->GetIntArrayElements(registerValues, 0);
     for (uint32_t i = 0; i < size; i++) {
-        il.insert(RMS::Instruction::Opcode::GET, values[i]);
+        il.insert(RMS::Instruction::Opcode::GET, 0x360000+i, values[i]);
     }
     for (uint32_t i = size; i < il.size(); i++) {
-        il.insert(RMS::Instruction::Opcode::GET, 0);
+        il.insert(RMS::Instruction::Opcode::GET, 0x360000+i, 0);
     }
     smd = il;
     env->ReleaseIntArrayElements(registerValues, values, JNI_ABORT);
