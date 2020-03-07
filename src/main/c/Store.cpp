@@ -13,6 +13,8 @@
 #include "dsm/Exception.hh"
 #include "xds/Page.hh"
 #include "cms/Camera.hh"
+#include "emu/Client.hh"
+#include "emu/PlayList.hh"
 
 #include "MyFolders.h"
 #include "MyProcessor.h"
@@ -498,4 +500,15 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_getConfiguredSources
     CMS::Camera camera(*store_);
     const DAQ::LocationSet& locations = camera.sources();
     return createBitSet(env, locations); 
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_play
+  (JNIEnv *env, jobject obj, jstring partition, jlong id) {
+    const char *partition_name = env->GetStringUTFChars(partition, 0);
+    EMU::Client client(partition_name);
+    env->ReleaseStringUTFChars(partition, partition_name);
+    EMU::PlayList playlist;
+    Id id_((uint64_t) id);
+    playlist.insert(id_);
+    bool ok = client.play(playlist);
 }

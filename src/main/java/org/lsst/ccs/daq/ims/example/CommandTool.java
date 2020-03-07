@@ -175,6 +175,13 @@ public class CommandTool {
         }
         image.moveTo(targetFolderName);
     }
+    
+    @Command(name = "play", description = "Emulate playback of a single image")
+    public void play(String path) throws DAQException {
+        checkStore();
+        Image image = imageFromPath(path);
+        store.play(image);
+    }    
 
     @Command(name = "locations", description = "List configured locations")
     public LocationSet locations() throws DAQException {

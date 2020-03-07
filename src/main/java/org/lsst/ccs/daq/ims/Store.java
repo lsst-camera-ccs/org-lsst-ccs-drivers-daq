@@ -140,6 +140,16 @@ public class Store implements AutoCloseable {
         imageListeners.remove(l);
     }
 
+    /** 
+     * Simple playlist interface
+     * 
+     * @param image The image id to emulate 
+     * @throws org.lsst.ccs.daq.ims.DAQException 
+     */    
+    public void play(Image image) throws DAQException {
+       play(this.getPartition(), image.getMetaData().getId()); 
+    }
+
     /**
      * Called from C++ code to notify of image creation
      *
@@ -331,4 +341,6 @@ public class Store implements AutoCloseable {
     static native String decodeException(int rc);
 
     private synchronized native BitSet getConfiguredSources(long store) throws DAQException;
+
+    private synchronized native void play(String partition, long id) throws DAQException; 
 }
