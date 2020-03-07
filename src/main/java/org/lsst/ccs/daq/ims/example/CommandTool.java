@@ -1,8 +1,10 @@
 package org.lsst.ccs.daq.ims.example;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -26,7 +28,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
@@ -57,11 +58,13 @@ import org.lsst.ccs.daq.ims.Utils;
 import org.lsst.ccs.daq.ims.channel.FitsIntReader;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
+import org.lsst.ccs.daq.ims.example.FitsFile.RawSource;
 import org.lsst.ccs.utilities.ccd.CCDType;
 import org.lsst.ccs.utilities.ccd.FocalPlane;
 import org.lsst.ccs.utilities.ccd.Raft;
 import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
+import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
@@ -215,7 +218,7 @@ public class CommandTool {
 
     @Command(name = "readRaw")
     public void readRaw(String path,
-            @Argument(defaultValue = ".", description = "Folder where .raw files will be written") File dir,
+            @Argument(defaultValue = ".", description = "Folder where .raw (and .meta) files will be written") File dir,
             @Argument(defaultValue = "1048576") int bufferSize,
             @Argument(defaultValue = "4") int nThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
@@ -237,11 +240,17 @@ public class CommandTool {
             long start = System.nanoTime();
             for (Source source : sources) {
                 Callable<Long> callable = () -> {
-                    ReadThread thread = (ReadThread) Thread.currentThread();
+                    // Now write .meta file
+                    File metaFile = new File(dir, String.format("%s_%s.meta", source.getImage().getMetaData().getName(), source.getLocation().toString().replace("/", "_")));
+                    try (PrintWriter metaWriter = new PrintWriter(metaFile)) {
+                        metaWriter.println(Arrays.toString(source.getMetaData().getRegisterValues()));
+                    }
+
                     File file = new File(dir, String.format("%s_%s.raw", source.getImage().getMetaData().getName(), source.getLocation().toString().replace("/", "_")));
+                    ReadThread thread = (ReadThread) Thread.currentThread();
                     ByteBuffer buffer = thread.buffer;
                     try (ByteChannel channel = source.openChannel(thread.store, Source.ChannelMode.READ);
-                            FileChannel out = new FileOutputStream(file).getChannel()) {
+                           FileChannel out = new FileOutputStream(file).getChannel()) {
                         long readSize = 0;
                         for (;;) {
                             int l = channel.read(buffer);
@@ -268,6 +277,70 @@ public class CommandTool {
                     "Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
         } finally {
             executor.shutdown();
+        }
+    }
+
+    @Command(name = "writeRaw", description = "Write a set of .raw images into the 2 day store")
+    public void writeRaw(File dir,
+            @Argument(defaultValue = "emu") String targetFolderName,
+            @Argument(defaultValue = "([A-Z|0_9|_]+)_(R\\d\\d)_(Reb[0-2|W|).raw") String pattern) throws DAQException, IOException {
+        checkStore();
+        Folder target = store.getCatalog().find(targetFolderName);
+        if (target == null) {
+            throw new RuntimeException("No such folder: " + targetFolderName);
+        }
+        Path dirPath = dir.toPath();
+        Pattern compiled = Pattern.compile(pattern);
+        SortedMap<String, ObsId> obsIds = new TreeMap<>();
+        Files.walkFileTree(dirPath, new SimpleFileVisitor<Path>() {
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Matcher matcher = compiled.matcher(dirPath.relativize(file).getFileName().toString());
+                if (matcher.matches()) {
+                    // We will need to guess the obsid from the file name,
+                    ObsId id = obsIds.get(matcher.group(1));
+                    if (id == null) {
+                        id = new ObsId(matcher.group(1));
+                        obsIds.put(matcher.group(1), id);
+                    }
+                    Location location = Location.of(matcher.group(2) + "/" + matcher.group(3));
+                    //id.add(location);
+                    // Look for corresponding .mera file
+                    Path meta = file.resolveSibling(file.getFileName().toString().replace(".raw", ".meta"));
+                    if (Files.exists(meta)) {
+                        id.add(location, file, meta);
+                    } else {
+                        id.add(location, file, null);
+                    }
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        for (ObsId id : obsIds.values()) {
+            System.out.println(id.getObsId());
+            ImageMetaData meta = new ImageMetaData(id.getObsId(), "Image Annotation", 0, id.getLocations());
+            Image image = target.insert(meta);
+            for (FitsFile.Source rsource : id.getSources().values()) {
+                RawSource rawSource = (RawSource) rsource;
+                System.out.println("\t" + rawSource.getLocation());
+                int[] registerValues = rawSource.getMetaData();
+                Source source = image.addSource(rawSource.getLocation(), registerValues);
+                Path file = rawSource.getRaw();
+                try (FileChannel in = new FileInputStream(file.toFile()).getChannel();
+                        ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
+                    ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
+                    for (;;) {
+                        buffer.clear();
+                        int len = in.read(buffer);
+                        if (len < 0) {
+                            break;
+                        }
+                        buffer.flip();
+                        channel.write(buffer);
+                    }
+                }
+            }
         }
     }
 
@@ -359,13 +432,14 @@ public class CommandTool {
         }
     }
 
+    // Note: This method has not been actively maintained, it may be out of date with respect to read method.
     @Command(name = "write", description = "Write a set of FITS files to the store")
     public void write(String targetFolderName, File dir,
             @Argument(defaultValue = "*.fits") String pattern) throws IOException, TruncatedFileException, DAQException {
         checkStore();
         Folder target = store.getCatalog().find(targetFolderName);
         if (target == null) {
-            throw new RuntimeException("No such folder: " + target);
+            throw new RuntimeException("No such folder: " + targetFolderName);
         }
         Path dirPath = dir.toPath();
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
@@ -398,7 +472,8 @@ public class CommandTool {
             System.out.println(id.getObsId());
             ImageMetaData meta = new ImageMetaData(id.getObsId(), "Image Annotation", 0, id.getLocations());
             Image image = target.insert(meta);
-            for (FitsFile.Source ffSource : id.getSources().values()) {
+            for (FitsFile.Source fSource : id.getSources().values()) {
+                FitsFile.FitsSource ffSource = (FitsFile.FitsSource) fSource;
                 System.out.println("\t" + ffSource.getLocation());
                 int[] registerValues = ffSource.getFiles().first().getReadOutParameters();
                 Source source = image.addSource(ffSource.getLocation(), registerValues);
