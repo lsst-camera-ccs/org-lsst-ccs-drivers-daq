@@ -72,7 +72,7 @@ public class DAQFirmwareStats extends DAQStats implements Serializable {
         statMap.put("overflow_local1" , overflow_local1); 
         statMap.put("overflow_local2" , overflow_local2); 
         statMap.put("overflow_local3" , overflow_local3); 
-        statMap.put("tx_errors      " , tx_errors);             
+        statMap.put("tx_errors"       , tx_errors);             
         statMap.put("tx_frames"       , tx_frames);       
         statMap.put("rx_clock"        , rx_clock);         
         statMap.put("tx_clock"        , tx_clock);        
