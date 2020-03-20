@@ -1,6 +1,7 @@
 package org.lsst.ccs.daq.ims.channel;
 
 import java.io.IOException;
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.lsst.ccs.utilities.image.FitsFileWriter;
@@ -17,19 +18,26 @@ public class FitsWriteChannel implements WritableIntChannel {
     final FitsFileWriter writer;
     boolean isOpen = true;
     
-    public FitsWriteChannel(FitsFileWriter writer, String segment) {
+    @SuppressWarnings("OverridableMethodCallInConstructor")
+    public FitsWriteChannel(FitsFileWriter writer, String segment) throws IOException {
         this.writer = writer;
         this.segment = segment;
+        initBuffers();
+    }
+
+    void initBuffers() throws IOException {
         currentBuffer = ByteBuffer.allocateDirect(1_000_000);
         currentBuffer.order(ByteOrder.BIG_ENDIAN);
     }
 
     @Override
     public void write(int i) throws IOException {
-        if (currentBuffer.remaining()<4) {
+        try {
+            currentBuffer.putInt(i);
+        } catch (BufferOverflowException x) {
             flush();
+            currentBuffer.putInt(i);
         }
-        currentBuffer.putInt(i);
     }
 
     @Override
@@ -38,12 +46,12 @@ public class FitsWriteChannel implements WritableIntChannel {
             IntBuffer asIntBuffer = currentBuffer.asIntBuffer();
             if (buffer.remaining()<asIntBuffer.remaining()) {
                 asIntBuffer.put(buffer);
-                currentBuffer.position(currentBuffer.position() + asIntBuffer.position());
+                currentBuffer.position(currentBuffer.position() + 4 * asIntBuffer.position());
             } else {
                 int oldLimit = buffer.limit();
                 buffer.limit(buffer.position() + asIntBuffer.remaining());
                 asIntBuffer.put(buffer);
-                currentBuffer.position(currentBuffer.position() + asIntBuffer.position());
+                currentBuffer.position(currentBuffer.position() + 4 * asIntBuffer.position());
                 buffer.limit(oldLimit);
             }
             if (currentBuffer.remaining()==0) {

@@ -17,11 +17,17 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class FitsAsyncWriteChannel extends FitsWriteChannel {
 
     private static final int NBUFFERS = 2;
-    private final BlockingQueue<ByteBuffer> availableBuffers = new ArrayBlockingQueue<>(NBUFFERS);
-    private final BlockingQueue<Throwable> exceptions = new LinkedBlockingQueue<>();
+    private BlockingQueue<ByteBuffer> availableBuffers;
+    private BlockingQueue<Throwable> exceptions;
 
     public FitsAsyncWriteChannel(FitsFileWriter writer, String segment) throws IOException {
         super(writer, segment);
+    }
+
+    @Override
+    void initBuffers() throws IOException {
+        availableBuffers = new ArrayBlockingQueue<>(NBUFFERS);
+        exceptions = new LinkedBlockingQueue<>();
         for (int n = 0; n < NBUFFERS; n++) {
             ByteBuffer bb = ByteBuffer.allocateDirect(500_000);
             bb.order(ByteOrder.BIG_ENDIAN);

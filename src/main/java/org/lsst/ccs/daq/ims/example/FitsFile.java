@@ -2,6 +2,9 @@ package org.lsst.ccs.daq.ims.example;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -14,7 +17,8 @@ import nom.tam.fits.Header;
 import org.lsst.ccs.utilities.location.Location;
 
 /**
- * Utilities for reading FITS files
+ * Utilities for reading FITS and raw files
+ *
  * @author tonyj
  */
 class FitsFile implements Comparable<FitsFile> {
@@ -125,12 +129,16 @@ class FitsFile implements Comparable<FitsFile> {
         void add(FitsFile fitsFile) {
             String ccdSlot = fitsFile.getCcdSlot();
             Location location = Location.of(fitsFile.getRaftBay() + "/Reb" + ccdSlot.substring(1, 2));
-            Source source = sources.get(location);
+            FitsSource source = (FitsSource) sources.get(location);
             if (source == null) {
-                source = new Source(location);
+                source = new FitsSource(location);
                 sources.put(location, source);
             }
             source.add(fitsFile);
+        }
+
+        void add(Location location, Path raw, Path meta) throws IOException {
+            sources.put(location, new RawSource(location, raw, meta));
         }
 
         public String getObsId() {
@@ -153,20 +161,61 @@ class FitsFile implements Comparable<FitsFile> {
 
     static class Source {
 
-        private final Location location;
-        private final SortedSet<FitsFile> files;
+        protected final Location location;
 
         Source(Location location) {
-            this.location = location;
+           this.location = location;
+        }
+
+        public Location getLocation() {
+            return location;
+        }
+
+    }
+
+    static class RawSource extends Source {
+        private final Path raw;
+        private final int[] meta;
+        private final static int[] NOMETA = new int[0];
+        
+        RawSource(Location location, Path raw, Path meta) throws IOException {
+            super(location);
+            this.raw = raw;
+            if (meta == null) {
+                this.meta = NOMETA;
+            } else {
+                String line = Files.newBufferedReader(meta).readLine();
+                this.meta = Arrays.stream(line.substring(1,line.length()-1).split(",")).map(String::trim).mapToInt(Integer::parseInt).toArray();
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "RawSource{location=" + location + ", raw=" + raw + ", meta=" + Arrays.toString(meta) + '}';
+        }
+
+        int[] getMetaData() {
+            return meta;
+        }
+
+        Path getRaw() {
+            return raw;
+        }
+        
+        
+    }
+    
+    static class FitsSource extends Source {
+
+        private final SortedSet<FitsFile> files;
+
+        FitsSource(Location location) {
+            super(location);
             files = new TreeSet<>();
         }
 
         private void add(FitsFile fitsFile) {
             files.add(fitsFile);
-        }
-
-        public Location getLocation() {
-            return location;
         }
 
         public SortedSet<FitsFile> getFiles() {
@@ -175,7 +224,7 @@ class FitsFile implements Comparable<FitsFile> {
 
         @Override
         public String toString() {
-            return "Source{" + "location=" + location + ", files=" + files + '}';
+            return "FitsSource{location=" + location + ", files=" + files + '}';
         }
     }
 }

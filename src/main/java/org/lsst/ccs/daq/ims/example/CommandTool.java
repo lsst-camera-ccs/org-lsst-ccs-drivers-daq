@@ -1,8 +1,10 @@
 package org.lsst.ccs.daq.ims.example;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
@@ -26,9 +28,11 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -55,11 +59,13 @@ import org.lsst.ccs.daq.ims.Version;
 import org.lsst.ccs.daq.ims.channel.FitsIntReader;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
+import org.lsst.ccs.daq.ims.example.FitsFile.RawSource;
 import org.lsst.ccs.utilities.ccd.CCDType;
 import org.lsst.ccs.utilities.ccd.FocalPlane;
 import org.lsst.ccs.utilities.ccd.Raft;
 import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
+import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
@@ -117,7 +123,7 @@ public class CommandTool {
             });
             long capacity = store.getCapacity();
             long remaining = store.getRemaining();
-            System.out.printf("%s/%s (%3.3g%%) bytes used\n", Utils.humanReadableByteCount(capacity - remaining), Utils.humanReadableByteCount(capacity, false), 100.0 * (capacity - remaining) / capacity);
+            System.out.printf("%s/%s (%3.3g%%) bytes used\n", Utils.humanReadableByteCount(capacity - remaining), Utils.humanReadableByteCount(capacity), 100.0 * (capacity - remaining) / capacity);
         } else if (matcher.matches() && matcher.group(2).isEmpty()) {
             Folder folder = store.getCatalog().find(matcher.group(1));
             if (folder == null) {
@@ -170,11 +176,45 @@ public class CommandTool {
         }
         image.moveTo(targetFolderName);
     }
-    
+
     @Command(name = "locations", description = "List configured locations")
     public LocationSet locations() throws DAQException {
         checkStore();
         return store.getConfiguredSources();
+    }
+
+    private static class ReadThread extends Thread {
+
+        private final ByteBuffer buffer;
+        private final Store store;
+        private static int n = 0;
+
+        ReadThread(Runnable r, int bufferSize, String partition) {
+            super(r);
+            this.setName("DAQ_read_thread_" + n++);
+            this.setDaemon(true);
+            buffer = ByteBuffer.allocateDirect(bufferSize);
+            buffer.order(ByteOrder.LITTLE_ENDIAN);
+            try {
+                store = new Store(partition);
+            } catch (DAQException x) {
+                throw new RuntimeException("Error creating store for read thread", x);
+            }
+        }
+
+        @Override
+        @SuppressWarnings("CallToThreadRun")
+        public void run() {
+            try {
+                super.run();
+            } finally {
+                try {
+                    store.close();
+                } catch (DAQException x) {
+                    throw new RuntimeException("Error closing store", x);
+                }
+            }
+        }
     }
 
     @Command(name = "version", description = "Get version info")
@@ -185,9 +225,9 @@ public class CommandTool {
     
     @Command(name = "readRaw")
     public void readRaw(String path,
-            @Argument(defaultValue = ".", description = "Folder where .raw files will be written") File dir,
+            @Argument(defaultValue = ".", description = "Folder where .raw (and .meta) files will be written") File dir,
             @Argument(defaultValue = "1048576") int bufferSize,
-            @Argument(defaultValue = "999999999") int maxThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
+            @Argument(defaultValue = "4") int nThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
         Image image = imageFromPath(path);
         List<Source> sources = image.listSources();
@@ -197,40 +237,117 @@ public class CommandTool {
         }
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        ExecutorService executor = new ThreadPoolExecutor(0, maxThreads, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-        List<Future<Long>> futures = new ArrayList<>();
-        long start = System.nanoTime();
-        for (Source source : sources) {
-            Callable<Long> callable = () -> {
-                File file = new File(dir, String.format("%s_%s.raw", source.getImage().getMetaData().getName(), source.getLocation().toString().replace("/", "_")));
-                ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
-                try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
-                        FileChannel out = new FileOutputStream(file).getChannel()) {
-                    long readSize = 0;
+        ThreadFactory readThreadFactory = (Runnable r) -> new ReadThread(r, bufferSize, image.getStore().getPartition());
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(nThreads, nThreads, 60L,
+                TimeUnit.SECONDS, new LinkedBlockingQueue<>(), readThreadFactory);
+        try {
+            executor.prestartAllCoreThreads();
+            List<Future<Long>> futures = new ArrayList<>();
+            long start = System.nanoTime();
+            for (Source source : sources) {
+                Callable<Long> callable = () -> {
+                    // Now write .meta file
+                    File metaFile = new File(dir, String.format("%s_%s.meta", source.getImage().getMetaData().getName(), source.getLocation().toString().replace("/", "_")));
+                    try (PrintWriter metaWriter = new PrintWriter(metaFile)) {
+                        metaWriter.println(Arrays.toString(source.getMetaData().getRegisterValues()));
+                    }
+
+                    File file = new File(dir, String.format("%s_%s.raw", source.getImage().getMetaData().getName(), source.getLocation().toString().replace("/", "_")));
+                    ReadThread thread = (ReadThread) Thread.currentThread();
+                    ByteBuffer buffer = thread.buffer;
+                    try (ByteChannel channel = source.openChannel(thread.store, Source.ChannelMode.READ);
+                           FileChannel out = new FileOutputStream(file).getChannel()) {
+                        long readSize = 0;
+                        for (;;) {
+                            int l = channel.read(buffer);
+                            if (l < 0) {
+                                break;
+                            }
+                            readSize += l;
+                            buffer.flip();
+                            out.write(buffer);
+                            buffer.clear();
+                        }
+                        return readSize;
+                    }
+                };
+                futures.add(executor.submit(callable));
+            }
+            long totalReadSize = 0;
+            for (Future<Long> future : futures) {
+                totalReadSize += future.get();
+            }
+            long stop = System.nanoTime();
+
+            System.out.printf(
+                    "Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
+        } finally {
+            executor.shutdown();
+        }
+    }
+
+    @Command(name = "writeRaw", description = "Write a set of .raw images into the 2 day store")
+    public void writeRaw(File dir,
+            @Argument(defaultValue = "emu") String targetFolderName,
+            @Argument(defaultValue = "(\\w+)_(R\\d\\d)_(Reb[0-2|W|G]).raw") String pattern) throws DAQException, IOException {
+        checkStore();
+        Folder target = store.getCatalog().find(targetFolderName);
+        if (target == null) {
+            throw new RuntimeException("No such folder: " + targetFolderName);
+        }
+        Path dirPath = dir.toPath();
+        Pattern compiled = Pattern.compile(pattern);
+        SortedMap<String, ObsId> obsIds = new TreeMap<>();
+        Files.walkFileTree(dirPath, new SimpleFileVisitor<Path>() {
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Matcher matcher = compiled.matcher(dirPath.relativize(file).getFileName().toString());
+                if (matcher.matches()) {
+                    // We will need to guess the obsid from the file name,
+                    ObsId id = obsIds.get(matcher.group(1));
+                    if (id == null) {
+                        id = new ObsId(matcher.group(1));
+                        obsIds.put(matcher.group(1), id);
+                    }
+                    Location location = Location.of(matcher.group(2) + "/" + matcher.group(3));
+                    // Look for corresponding .mera file
+                    Path meta = file.resolveSibling(file.getFileName().toString().replace(".raw", ".meta"));
+                    if (Files.exists(meta)) {
+                        id.add(location, file, meta);
+                    } else {
+                        id.add(location, file, null);
+                    }
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        for (ObsId id : obsIds.values()) {
+            System.out.println(id.getObsId());
+            ImageMetaData meta = new ImageMetaData(id.getObsId(), "Image Annotation", 0, id.getLocations());
+            Image image = target.insert(meta);
+            for (FitsFile.Source rsource : id.getSources().values()) {
+                RawSource rawSource = (RawSource) rsource;
+                System.out.println("\t" + rawSource.getLocation());
+                int[] registerValues = rawSource.getMetaData();
+                Source source = image.addSource(rawSource.getLocation(), registerValues);
+                Path file = rawSource.getRaw();
+                try (FileChannel in = new FileInputStream(file.toFile()).getChannel();
+                        ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
+                    ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
                     for (;;) {
-                        int l = channel.read(buffer);
-                        if (l < 0) {
+                        buffer.clear();
+                        int len = in.read(buffer);
+                        if (len < 0) {
                             break;
                         }
-                        readSize += l;
                         buffer.flip();
-                        out.write(buffer);
-                        buffer.clear();
+                        channel.write(buffer);
                     }
-                    return readSize;
                 }
-            };
-            futures.add(executor.submit(callable));
+            }
         }
-        long totalReadSize = 0;
-        for (Future<Long> future : futures) {
-            totalReadSize += future.get();
-        }
-        long stop = System.nanoTime();
-
-        System.out.printf(
-                "Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
-        executor.shutdown();
     }
 
     @Command(name = "listen", description = "Listen for images")
@@ -249,7 +366,7 @@ public class CommandTool {
                     List<Source> sources = image.listSources();
                     for (Source source : sources) {
                         SourceMetaData smd = source.getMetaData();
-                        System.out.printf("Source location: %s length: %s\n",smd.getLocation(),Utils.humanReadableByteCount(smd.getLength()));
+                        System.out.printf("Source location: %s length: %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength()));
                     }
                 } catch (DAQException ex) {
                     LOG.log(Level.SEVERE, "Exception in imageComplete listener", ex);
@@ -262,7 +379,7 @@ public class CommandTool {
     public void read(String path,
             @Argument(defaultValue = ".", description = "Folder where FITS files will be written") File dir,
             @Argument(defaultValue = "1048576") int bufferSize,
-            @Argument(defaultValue = "999999999") int maxThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
+            @Argument(defaultValue = "4") int nThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
         Image image = imageFromPath(path);
         List<Source> sources = image.listSources();
@@ -272,49 +389,63 @@ public class CommandTool {
         }
         System.out.printf("Expected size %,d bytes\n", totalSize);
 
-        ExecutorService executor = new ThreadPoolExecutor(0, maxThreads, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-        List<Future<Long>> futures = new ArrayList<>();
-        long start = System.nanoTime();
-        for (Source source : sources) {
-            Callable<Long> callable = () -> {
-                Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
-                FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
-                try (ByteChannel channel = source.openChannel(Source.ChannelMode.READ);
-                        FitsIntWriter decompress = new FitsIntWriter(source, reb, HEADER_SPEC_BUILDER.getHeaderSpecifications(), namer, null)) {
-                    long readSize = 0;
-                    ByteBuffer buffer = ByteBuffer.allocateDirect(bufferSize);
-                    buffer.order(ByteOrder.LITTLE_ENDIAN);
-                    for (;;) {
-                        int l = channel.read(buffer);
-                        if (l < 0) {
-                            break;
+        ThreadFactory readThreadFactory = (Runnable r) -> new ReadThread(r, bufferSize, image.getStore().getPartition());
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(sources.size(), sources.size(), 60L,
+                TimeUnit.SECONDS, new SynchronousQueue(), readThreadFactory);
+        try {
+            executor.prestartAllCoreThreads();
+            List<Future<Long>> futures = new ArrayList<>();
+            long start = System.nanoTime();
+            Semaphore semaphore = new Semaphore(nThreads);
+            for (Source source : sources) {
+                Callable<Long> callable = () -> {
+                    ReadThread thread = (ReadThread) Thread.currentThread();
+                    Reb reb = focalPlane.getReb(source.getLocation().getRaftName() + "/" + source.getLocation().getBoardName());
+                    FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(dir, String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
+                    try (ByteChannel channel = source.openChannel(thread.store, Source.ChannelMode.READ);
+                            FitsIntWriter decompress = new FitsIntWriter(source, reb, HEADER_SPEC_BUILDER.getHeaderSpecifications(), namer, null)) {
+                        long readSize = 0;
+                        ByteBuffer buffer = thread.buffer;
+                        for (;;) {
+                            semaphore.acquire();
+                            try {
+                                int l = channel.read(buffer);
+                                if (l < 0) {
+                                    break;
+                                }
+                                readSize += l;
+                            } finally {
+                                semaphore.release();
+                            }
+                            buffer.flip();
+                            decompress.write(buffer.asIntBuffer());
+                            buffer.clear();
                         }
-                        readSize += l;
-                        buffer.flip();
-                        decompress.write(buffer.asIntBuffer());
-                        buffer.clear();
+                        return readSize;
                     }
-                    return readSize;
-                }
-            };
-            futures.add(executor.submit(callable));
+                };
+                futures.add(executor.submit(callable));
+            }
+            long totalReadSize = 0;
+            for (Future<Long> future : futures) {
+                totalReadSize += future.get();
+            }
+            long stop = System.nanoTime();
+            System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
+        } finally {
+            executor.shutdown();
         }
-        long totalReadSize = 0;
-        for (Future<Long> future : futures) {
-            totalReadSize += future.get();
-        }
-        long stop = System.nanoTime();
-        System.out.printf("Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
-        executor.shutdown();
     }
 
+    // Note: This method has not been actively maintained, it may be out of date with respect to read method.
     @Command(name = "write", description = "Write a set of FITS files to the store")
     public void write(String targetFolderName, File dir,
             @Argument(defaultValue = "*.fits") String pattern) throws IOException, TruncatedFileException, DAQException {
         checkStore();
         Folder target = store.getCatalog().find(targetFolderName);
         if (target == null) {
-            throw new RuntimeException("No such folder: " + target);
+            throw new RuntimeException("No such folder: " + targetFolderName);
         }
         Path dirPath = dir.toPath();
         PathMatcher matcher = FileSystems.getDefault().getPathMatcher("glob:" + pattern);
@@ -347,7 +478,8 @@ public class CommandTool {
             System.out.println(id.getObsId());
             ImageMetaData meta = new ImageMetaData(id.getObsId(), "Image Annotation", 0, id.getLocations());
             Image image = target.insert(meta);
-            for (FitsFile.Source ffSource : id.getSources().values()) {
+            for (FitsFile.Source fSource : id.getSources().values()) {
+                FitsFile.FitsSource ffSource = (FitsFile.FitsSource) fSource;
                 System.out.println("\t" + ffSource.getLocation());
                 int[] registerValues = ffSource.getFiles().first().getReadOutParameters();
                 Source source = image.addSource(ffSource.getLocation(), registerValues);

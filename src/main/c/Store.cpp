@@ -431,12 +431,12 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_findImage
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_openSourceChannel
 (JNIEnv *env, jobject obj, jlong store, jlong id, jint elementIndex, jboolean write) {
     Store* store_ = (Store*) store;
-    Image image = findImage(env, store_, id);
-    if (!image) {
+    Id id_((uint64_t) id);
+    if (!id_) {
         return JNI_ERR;
     }
     DAQ::Location element(elementIndex);
-    Source* source = new Source(image.id(), element, *store_);
+    Source* source = new Source(id_, element, *store_);
     if (!source) {
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Source not found (id=%ld elementIndex=%d)", id, elementIndex);
@@ -460,10 +460,10 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_addSourceToImage
     jint size = env->GetArrayLength(registerValues);
     jint* values = env->GetIntArrayElements(registerValues, 0);
     for (uint32_t i = 0; i < size; i++) {
-        il.insert(RMS::Instruction::Opcode::GET, values[i]);
+        il.insert(RMS::Instruction::Opcode::GET, 0x360000+i, values[i]);
     }
     for (uint32_t i = size; i < il.size(); i++) {
-        il.insert(RMS::Instruction::Opcode::GET, 0);
+        il.insert(RMS::Instruction::Opcode::GET, 0x360000+i, 0);
     }
     smd = il;
     env->ReleaseIntArrayElements(registerValues, values, JNI_ABORT);
