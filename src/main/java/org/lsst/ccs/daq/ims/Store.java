@@ -95,7 +95,7 @@ public class Store implements AutoCloseable {
         BitSet locations = getConfiguredSources(store);
         return new LocationSet(locations);
     }
-
+    
     /**
      * Add an image listener to this store. The image listener will be notified
      * of all new images created, in all folders.
@@ -329,6 +329,8 @@ public class Store implements AutoCloseable {
     private native int waitForImage(long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
 
     static native String decodeException(int rc);
-
+    
     private synchronized native BitSet getConfiguredSources(long store) throws DAQException;
+
+    public static native Version getClientVersion() throws DAQException;
 }
