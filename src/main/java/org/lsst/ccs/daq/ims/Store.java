@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.lsst.ccs.utilities.location.Location.LocationType;
 import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
@@ -19,6 +20,7 @@ import org.lsst.ccs.utilities.location.LocationSet;
  */
 public class Store implements AutoCloseable {
 
+    private final Camera camera;
     private final Catalog catalog;
     private final String partition;
     private final long store;
@@ -44,6 +46,7 @@ public class Store implements AutoCloseable {
     public Store(String partition) throws DAQException {
         this.partition = partition;
         catalog = new Catalog(this);
+        camera = new Camera(this);
         store = attachStore(partition);
     }
 
@@ -55,6 +58,16 @@ public class Store implements AutoCloseable {
      */
     public Catalog getCatalog() {
         return catalog;
+    }
+
+    /**
+     * Gets the camera associated with this store. The camera can be used to
+     * trigger images.
+     *
+     * @return The camera associated with this store.
+     */
+    public Camera getCamera() {
+        return camera;
     }
 
     /**
@@ -88,6 +101,7 @@ public class Store implements AutoCloseable {
 
     /**
      * Get the set of configured locations in this partition
+     *
      * @return The set of locations configured in this partition
      * @throws DAQException
      */
@@ -95,7 +109,7 @@ public class Store implements AutoCloseable {
         BitSet locations = getConfiguredSources(store);
         return new LocationSet(locations);
     }
-    
+
     /**
      * Add an image listener to this store. The image listener will be notified
      * of all new images created, in all folders.
@@ -293,6 +307,19 @@ public class Store implements AutoCloseable {
         return addSourceToImage(store, id, location.index(), (byte) location.type().getCCDCount(), "test-platform", registerValues);
     }
 
+    // methods based on those originally in GlobalProc
+    void setRegisterList(LocationType rebType, int[] registersAdddresses) throws DAQException {
+        setRegisterList(store, rebType == LocationType.SCIENCE, rebType == LocationType.GUIDER, registersAdddresses);
+    }
+
+    ImageMetaData triggerImage(ImageMetaData meta) throws DAQException {
+        return triggerImage(store, meta.getCreationFolderName(), meta.getName(), meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
+    }
+
+    long startSequencer(int opcode) throws DAQException {
+        return startSequencer(store, opcode);
+    }
+
     // Native methods    
     private synchronized native long attachStore(String partition) throws DAQException;
 
@@ -329,8 +356,14 @@ public class Store implements AutoCloseable {
     private native int waitForImage(long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
 
     static native String decodeException(int rc);
-    
+
     private synchronized native BitSet getConfiguredSources(long store) throws DAQException;
 
     public static native Version getClientVersion() throws DAQException;
+
+    private synchronized native void setRegisterList(long store, boolean science, boolean guider, int[] registersAdddresses) throws DAQException;
+
+    private synchronized native ImageMetaData triggerImage(long store, String metaData, String name, String annotation, int opcode, BitSet locationBitSet) throws DAQException;
+
+    private synchronized native long startSequencer(long store, int opcode) throws DAQException;
 }
