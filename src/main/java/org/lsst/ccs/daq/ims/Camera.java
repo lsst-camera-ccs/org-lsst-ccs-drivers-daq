@@ -9,6 +9,7 @@ import org.lsst.ccs.utilities.location.Location;
  */
 public class Camera {
     private final Store store;
+    public final static int OPCODE_STOP = 31;
     
     Camera(Store store) {
         this.store = store;

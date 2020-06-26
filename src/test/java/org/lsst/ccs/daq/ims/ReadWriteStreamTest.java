@@ -81,7 +81,7 @@ public class ReadWriteStreamTest {
         
         Location location = Location.of("R22/Reb1");
         int[] registerValues = {1, 2, 3, 4, 5, 6, 7};
-        ImageMetaData imd = new ImageMetaData(TEST_IMAGE_NAME, "testAnnotion", 0, Collections.singleton(location));
+        ImageMetaData imd = new ImageMetaData(TEST_IMAGE_NAME, "raw", "testAnnotion", 0, Collections.singleton(location));
         Image image = testFolder.insert(imd);
         Source source = image.addSource(location, registerValues);
         long writeLength = 0;

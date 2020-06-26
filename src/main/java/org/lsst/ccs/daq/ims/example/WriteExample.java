@@ -37,7 +37,7 @@ public class WriteExample {
             
         }
         final Location location = new Location((byte) 22, (byte)1);
-        ImageMetaData meta = new ImageMetaData("imageName","Image Annotation", 2, Collections.singleton(location));
+        ImageMetaData meta = new ImageMetaData("imageName","raw", "Image Annotation", 2, Collections.singleton(location));
         Image image = testFolder.insert(meta);
         System.out.println(image.getMetaData());
         int[] registerValues = { 1, 2, 3, 4, 5, 6 };

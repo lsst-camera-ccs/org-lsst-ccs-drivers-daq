@@ -325,7 +325,7 @@ public class CommandTool {
         });
         for (ObsId id : obsIds.values()) {
             System.out.println(id.getObsId());
-            ImageMetaData meta = new ImageMetaData(id.getObsId(), "Image Annotation", 0, id.getLocations());
+            ImageMetaData meta = new ImageMetaData(id.getObsId(), "raw", "Image Annotation", 0, id.getLocations());
             Image image = target.insert(meta);
             for (FitsFile.Source rsource : id.getSources().values()) {
                 RawSource rawSource = (RawSource) rsource;
@@ -476,7 +476,7 @@ public class CommandTool {
         });
         for (ObsId id : obsIds.values()) {
             System.out.println(id.getObsId());
-            ImageMetaData meta = new ImageMetaData(id.getObsId(), "Image Annotation", 0, id.getLocations());
+            ImageMetaData meta = new ImageMetaData(id.getObsId(), "raw", "Image Annotation", 0, id.getLocations());
             Image image = target.insert(meta);
             for (FitsFile.Source fSource : id.getSources().values()) {
                 FitsFile.FitsSource ffSource = (FitsFile.FitsSource) fSource;

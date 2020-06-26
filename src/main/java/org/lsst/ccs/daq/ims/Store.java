@@ -308,8 +308,8 @@ public class Store implements AutoCloseable {
     }
 
     // methods based on those originally in GlobalProc
-    void setRegisterList(LocationType rebType, int[] registersAdddresses) throws DAQException {
-        setRegisterList(store, rebType == LocationType.SCIENCE, rebType == LocationType.GUIDER, registersAdddresses);
+    void setRegisterList(LocationType rebType, int[] registerAddresses) throws DAQException {
+        setRegisterList(store, rebType == LocationType.SCIENCE, rebType == LocationType.GUIDER, registerAddresses);
     }
 
     ImageMetaData triggerImage(ImageMetaData meta) throws DAQException {
@@ -361,7 +361,7 @@ public class Store implements AutoCloseable {
 
     public static native Version getClientVersion() throws DAQException;
 
-    private synchronized native void setRegisterList(long store, boolean science, boolean guider, int[] registersAdddresses) throws DAQException;
+    private synchronized native void setRegisterList(long store, boolean science, boolean guider, int[] registerAddresses) throws DAQException;
 
     private synchronized native ImageMetaData triggerImage(long store, String metaData, String name, String annotation, int opcode, BitSet locationBitSet) throws DAQException;
 
