@@ -2,6 +2,8 @@ package org.lsst.ccs.daq.ims;
 
 import java.util.BitSet;
 import java.util.List;
+import org.lsst.ccs.utilities.location.Location;
+import org.lsst.ccs.utilities.location.Location.LocationType;
 
 /**
  * The native implementation of the store. This implementation required the DAQ
@@ -76,10 +78,18 @@ class StoreNativeImplementation implements StoreImplementation {
     public native Version getClientVersion() throws DAQException;
 
     @Override
-    public synchronized native void setRegisterList(long store, boolean science, boolean guider, int[] registerAddresses) throws DAQException;
+    public void setRegisterList(long store, LocationType rebType, int[] registerAddresses) throws DAQException {
+        setRegisterList(store, rebType == Location.LocationType.SCIENCE, rebType == Location.LocationType.GUIDER, registerAddresses);
+    }
+
+    private synchronized native void setRegisterList(long store, boolean science, boolean guider, int[] registerAddresses) throws DAQException;
 
     @Override
-    public synchronized native ImageMetaData triggerImage(long store, String metaData, String name, String annotation, int opcode, BitSet locationBitSet) throws DAQException;
+    public ImageMetaData triggerImage(long store, ImageMetaData meta) throws DAQException {
+        return triggerImage(store, meta.getCreationFolderName(), meta.getName(), meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
+    }
+
+    private synchronized native ImageMetaData triggerImage(long store, String metaData, String name, String annotation, int opcode, BitSet locationBitSet) throws DAQException;
 
     @Override
     public synchronized native long startSequencer(long store, int opcode) throws DAQException;

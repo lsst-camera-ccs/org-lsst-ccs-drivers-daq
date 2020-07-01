@@ -1,13 +1,26 @@
 package org.lsst.ccs.daq.ims;
 
+import java.time.Instant;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import org.lsst.ccs.utilities.location.Location.LocationType;
+import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
+ * A simulated implementation of the Store API. Used for testing and running
+ * subsystem without a real DAQ.
  *
  * @author tonyj
  */
-public class StoreSimulatedImplementation implements StoreImplementation {
+class StoreSimulatedImplementation implements StoreImplementation {
+
+    private final Map<LocationType, int[]> registerLists = new ConcurrentHashMap<>();
+    StoreSimulation storeSimulation = StoreSimulation.instance();
+    private final Random random = new Random();
+    private final Version release = new Version("daq-simulation", toNanos(Instant.now()), false, 12345);
 
     @Override
     public long attachStore(String partition) throws DAQException {
@@ -16,7 +29,7 @@ public class StoreSimulatedImplementation implements StoreImplementation {
 
     @Override
     public void detachStore(long store) throws DAQException {
-        
+
     }
 
     @Override
@@ -101,27 +114,36 @@ public class StoreSimulatedImplementation implements StoreImplementation {
 
     @Override
     public BitSet getConfiguredSources(long store) throws DAQException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return LocationSet.all().getBitSet();
     }
 
     @Override
     public Version getClientVersion() throws DAQException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return release;
     }
 
     @Override
-    public void setRegisterList(long store, boolean science, boolean guider, int[] registerAddresses) throws DAQException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void setRegisterList(long store, LocationType rebType, int[] registerAddresses) throws DAQException {
+        registerLists.put(rebType, registerAddresses);
     }
 
     @Override
-    public ImageMetaData triggerImage(long store, String metaData, String name, String annotation, int opcode, BitSet locationBitSet) throws DAQException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public ImageMetaData triggerImage(long store, ImageMetaData meta) throws DAQException {
+        Instant now = Instant.now();
+        long id = random.nextLong();
+        storeSimulation.fireTrigger(meta.getOpcode(), meta, registerLists);
+        return new ImageMetaData(id, release, now, meta);
     }
 
     @Override
     public long startSequencer(long store, int opcode) throws DAQException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Instant now = Instant.now();
+        storeSimulation.fireTrigger(opcode, null, registerLists);
+        return toNanos(now);
     }
-    
+
+    private long toNanos(Instant instant) {
+        return instant.getEpochSecond() * 1_000_000_000 + instant.getNano();
+    }
+
 }

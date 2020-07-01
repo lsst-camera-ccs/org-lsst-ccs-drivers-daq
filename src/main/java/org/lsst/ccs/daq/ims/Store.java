@@ -309,11 +309,11 @@ public class Store implements AutoCloseable {
 
     // methods based on those originally in GlobalProc
     void setRegisterList(LocationType rebType, int[] registerAddresses) throws DAQException {
-        impl.setRegisterList(store, rebType == LocationType.SCIENCE, rebType == LocationType.GUIDER, registerAddresses);
+        impl.setRegisterList(store, rebType, registerAddresses);
     }
 
     ImageMetaData triggerImage(ImageMetaData meta) throws DAQException {
-        return impl.triggerImage(store, meta.getCreationFolderName(), meta.getName(), meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
+        return impl.triggerImage(store, meta);
     }
 
     long startSequencer(int opcode) throws DAQException {

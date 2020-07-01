@@ -36,6 +36,17 @@ public class ImageMetaData implements Serializable {
         this.elements = new LocationSet(elements);
         this.creationFolder = folderName;
     }
+    
+    ImageMetaData(long id, Version release, Instant timestamp, ImageMetaData meta) {
+        this.id = id;
+        this.timestamp = timestamp;
+        this.release = release;
+        this.annotation = meta.annotation;
+        this.creationFolder = meta.creationFolder;
+        this.elements = meta.elements;
+        this.opcode = meta.opcode;
+        this.name = meta.name;
+    }
 
     /**
      * A constructor to be used when creating new images to be written into the
