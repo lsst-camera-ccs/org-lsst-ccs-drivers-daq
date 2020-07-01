@@ -31,10 +31,10 @@ public class Store implements AutoCloseable {
 
     private static final int IMAGE_TIMEOUT_MICROS = 0;
     private static final int SOURCE_TIMEOUT_MICROS = 10_000_000;
+    private final static StoreImplementation impl = 
+            "simulation".equals(System.getProperty("org.lsst.ccs.run.mode")) ?
+            new StoreSimulatedImplementation() : new StoreNativeImplementation();
 
-    static {
-        System.loadLibrary("ccs_daq_ims");
-    }
 
     /**
      * Connects to a DAQ store.
@@ -47,7 +47,7 @@ public class Store implements AutoCloseable {
         this.partition = partition;
         catalog = new Catalog(this);
         camera = new Camera(this);
-        store = attachStore(partition);
+        store = impl.attachStore(partition);
     }
 
     /**
@@ -86,7 +86,7 @@ public class Store implements AutoCloseable {
      * @throws DAQException If unable to access to DAQ store
      */
     public long getCapacity() throws DAQException {
-        return capacity(store);
+        return impl.capacity(store);
     }
 
     /**
@@ -96,7 +96,7 @@ public class Store implements AutoCloseable {
      * @throws DAQException If unable to access the DAQ store
      */
     public long getRemaining() throws DAQException {
-        return remaining(store);
+        return impl.remaining(store);
     }
 
     /**
@@ -106,7 +106,7 @@ public class Store implements AutoCloseable {
      * @throws DAQException
      */
     public LocationSet getConfiguredSources() throws DAQException {
-        BitSet locations = getConfiguredSources(store);
+        BitSet locations = impl.getConfiguredSources(store);
         return new LocationSet(locations);
     }
 
@@ -128,7 +128,7 @@ public class Store implements AutoCloseable {
                     public void run() {
                         try {
                             for (;;) {
-                                int rc = waitForImage(store, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
+                                int rc = impl.waitForImage(store, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
                                 if (rc != 0 && rc != 68) { // 68 appears to mean timeout
                                     LOG.log(Level.SEVERE, "Unexpected rc from waitForImage: {0}", rc);
                                 }
@@ -254,116 +254,77 @@ public class Store implements AutoCloseable {
 
     @Override
     public void close() throws DAQException {
-        detachStore(store);
+        impl.detachStore(store);
     }
 
     List<String> listFolders() throws DAQException {
         List<String> result = new ArrayList<>();
-        listFolders(store, result);
+        impl.listFolders(store, result);
         return result;
     }
 
     int insertFolder(String folderName) throws DAQException {
-        return insertFolder(store, folderName);
+        return impl.insertFolder(store, folderName);
     }
 
     int removeFolder(String folderName) throws DAQException {
-        return removeFolder(store, folderName);
+        return impl.removeFolder(store, folderName);
     }
 
     boolean findFolder(String folderName) throws DAQException {
-        return findFolder(store, folderName);
+        return impl.findFolder(store, folderName);
     }
 
     void listImages(String folderName, List<ImageMetaData> result) throws DAQException {
-        listImages(store, folderName, result);
+        impl.listImages(store, folderName, result);
     }
 
     int moveImageToFolder(long id, String folderName) throws DAQException {
-        return moveImageToFolder(store, id, folderName);
+        return impl.moveImageToFolder(store, id, folderName);
     }
 
     int deleteImage(long id) throws DAQException {
-        return deleteImage(store, id);
+        return impl.deleteImage(store, id);
     }
 
     SourceMetaData findSource(long id, int location) throws DAQException {
-        return findSource(store, id, location);
+        return impl.findSource(store, id, location);
     }
 
     ImageMetaData addImageToFolder(String imageName, String folderName, ImageMetaData meta) throws DAQException {
-        return addImageToFolder(store, imageName, folderName, meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
+        return impl.addImageToFolder(store, imageName, folderName, meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
     }
 
     ImageMetaData findImage(String imageName, String folderName) throws DAQException {
-        return findImage(store, imageName, folderName);
+        return impl.findImage(store, imageName, folderName);
     }
 
     long openSourceChannel(long id, Location location, Source.ChannelMode mode) throws DAQException {
-        return openSourceChannel(store, id, location.index(), mode == Source.ChannelMode.WRITE);
+        return impl.openSourceChannel(store, id, location.index(), mode == Source.ChannelMode.WRITE);
     }
 
     SourceMetaData addSourceToImage(long id, Location location, int[] registerValues) throws DAQException {
-        return addSourceToImage(store, id, location.index(), (byte) location.type().getCCDCount(), "test-platform", registerValues);
+        return impl.addSourceToImage(store, id, location.index(), (byte) location.type().getCCDCount(), "test-platform", registerValues);
     }
 
     // methods based on those originally in GlobalProc
     void setRegisterList(LocationType rebType, int[] registerAddresses) throws DAQException {
-        setRegisterList(store, rebType == LocationType.SCIENCE, rebType == LocationType.GUIDER, registerAddresses);
+        impl.setRegisterList(store, rebType == LocationType.SCIENCE, rebType == LocationType.GUIDER, registerAddresses);
     }
 
     ImageMetaData triggerImage(ImageMetaData meta) throws DAQException {
-        return triggerImage(store, meta.getCreationFolderName(), meta.getName(), meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
+        return impl.triggerImage(store, meta.getCreationFolderName(), meta.getName(), meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
     }
 
     long startSequencer(int opcode) throws DAQException {
-        return startSequencer(store, opcode);
+        return impl.startSequencer(store, opcode);
     }
 
-    // Native methods    
-    private synchronized native long attachStore(String partition) throws DAQException;
-
-    private synchronized native void detachStore(long store) throws DAQException;
-
-    private synchronized native long capacity(long store) throws DAQException;
-
-    private synchronized native long remaining(long store) throws DAQException;
-
-    private synchronized native void listFolders(long store, List<String> result) throws DAQException;
-
-    private synchronized native int insertFolder(long store, String folderName) throws DAQException;
-
-    private synchronized native int removeFolder(long store, String folderName) throws DAQException;
-
-    private synchronized native boolean findFolder(long store, String folderName) throws DAQException;
-
-    private synchronized native void listImages(long store, String folderName, List<ImageMetaData> result) throws DAQException;
-
-    private synchronized native int moveImageToFolder(long store, long id, String folderName) throws DAQException;
-
-    private synchronized native int deleteImage(long store, long id) throws DAQException;
-
-    private synchronized native SourceMetaData findSource(long store, long id, int location) throws DAQException;
-
-    private synchronized native ImageMetaData addImageToFolder(long store, String imageName, String folderName, String annotation, int opcode, BitSet elements) throws DAQException;
-
-    private synchronized native ImageMetaData findImage(long store, String imageName, String folderName) throws DAQException;
-
-    private synchronized native long openSourceChannel(long store, long id, int index, boolean write) throws DAQException;
-
-    private synchronized native SourceMetaData addSourceToImage(long store, long id, int index, byte type, String platform, int[] registerValues) throws DAQException;
-
-    private native int waitForImage(long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
-
-    static native String decodeException(int rc);
-
-    private synchronized native BitSet getConfiguredSources(long store) throws DAQException;
-
-    public static native Version getClientVersion() throws DAQException;
-
-    private synchronized native void setRegisterList(long store, boolean science, boolean guider, int[] registerAddresses) throws DAQException;
-
-    private synchronized native ImageMetaData triggerImage(long store, String metaData, String name, String annotation, int opcode, BitSet locationBitSet) throws DAQException;
-
-    private synchronized native long startSequencer(long store, int opcode) throws DAQException;
+    public static Version getClientVersion() throws DAQException {
+        return impl.getClientVersion();
+    }
+    
+    static String decodeException(int rc) {
+        return impl.decodeException(rc);
+    }
 }

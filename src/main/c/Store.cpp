@@ -1,6 +1,6 @@
 #include "Store.h"
 
-#include "org_lsst_ccs_daq_ims_Store.h"
+#include "org_lsst_ccs_daq_ims_StoreNativeImplementation.h"
 #include "ims/Store.hh"
 #include "ims/Catalog.hh"
 #include "ims/Folder.hh"
