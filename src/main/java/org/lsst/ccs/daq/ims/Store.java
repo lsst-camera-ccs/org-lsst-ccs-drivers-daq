@@ -31,10 +31,13 @@ public class Store implements AutoCloseable {
 
     private static final int IMAGE_TIMEOUT_MICROS = 0;
     private static final int SOURCE_TIMEOUT_MICROS = 10_000_000;
-    private final static StoreImplementation impl = 
+    private final static StoreImplementation impl;
+    static {
+        System.out.println("runMode="+System.getProperty("org.lsst.ccs.run.mode"));
+        impl = 
             "simulation".equals(System.getProperty("org.lsst.ccs.run.mode")) ?
             new StoreSimulatedImplementation() : new StoreNativeImplementation();
-
+    }
 
     /**
      * Connects to a DAQ store.

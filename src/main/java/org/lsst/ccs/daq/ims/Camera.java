@@ -4,7 +4,8 @@ import java.time.Instant;
 import org.lsst.ccs.utilities.location.Location;
 
 /**
- * Class used for triggering camera
+ * Class used for triggering camera. This implementation uses the DAQ driver
+ * to actually trigger the DAQ.
  * @author tonyj
  */
 public class Camera {
