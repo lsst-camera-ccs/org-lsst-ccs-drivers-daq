@@ -269,7 +269,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
         return JNI_VERSION;
     }    
 
-    JCexConstructor2 = env->GetMethodID(JCexClass, "<init>", "(Ljava/lang/String)V");
+    JCexConstructor2 = env->GetMethodID(JCexClass, "<init>", "(Ljava/lang/String;)V");
     if (env->ExceptionCheck()) {
         return JNI_VERSION;
     } 
@@ -281,7 +281,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     return JNI_VERSION;
 }
 
-JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_attachStore
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachStore
 (JNIEnv* env, jobject obj, jstring partition) {
 
     const char *partition_name = env->GetStringUTFChars(partition, 0);
@@ -294,26 +294,26 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_attachStore
     }
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_detachStore
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detachStore
 (JNIEnv* env, jobject obj, jlong store) {
     delete ((Store*) store);
 }
 
-JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_capacity
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_capacity
 (JNIEnv * env, jobject obj, jlong store) {
 
     DSI::LocationSet missing;
     return ((Store *) store)->capacity(missing) << XDS::Page::SIZE2;
 }
 
-JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_remaining
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_remaining
 (JNIEnv * env, jobject obj, jlong store) {
 
     DSI::LocationSet missing;
     return ((Store *) store)->remaining(missing) << XDS::Page::SIZE2;
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_listFolders
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_listFolders
 (JNIEnv *env, jobject obj, jlong store, jobject result) {
 
     Catalog& catalog = ((Store *) store)->catalog;
@@ -324,7 +324,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_listFolders
     folders.traverse();
 }
 
-JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_insertFolder
+JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_insertFolder
 (JNIEnv *env, jobject obj, jlong store, jstring name) {
     Catalog& catalog = ((Store *) store)->catalog;
     const char *folder_name = env->GetStringUTFChars(name, 0);
@@ -333,7 +333,7 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_insertFolder
     return rc;
 }
 
-JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_removeFolder
+JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_removeFolder
 (JNIEnv *env, jobject obj, jlong store, jstring name) {
     Catalog& catalog = ((Store *) store)->catalog;
     const char *folder_name = env->GetStringUTFChars(name, 0);
@@ -342,7 +342,7 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_removeFolder
     return rc;
 }
 
-JNIEXPORT jboolean JNICALL Java_org_lsst_ccs_daq_ims_Store_findFolder
+JNIEXPORT jboolean JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_findFolder
 (JNIEnv *env, jobject obj, jlong store, jstring name) {
     Catalog& catalog = ((Store *) store)->catalog;
     const char *folder_name = env->GetStringUTFChars(name, 0);
@@ -356,7 +356,7 @@ JNIEXPORT jboolean JNICALL Java_org_lsst_ccs_daq_ims_Store_findFolder
     return 1;
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_listImages
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_listImages
 (JNIEnv *env, jobject obj, jlong store, jstring folderName, jobject result) {
     Store* store_ = (Store*) store;
     const char *folder_name = env->GetStringUTFChars(folderName, 0);
@@ -375,7 +375,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_listImages
     env->ReleaseStringUTFChars(folderName, folder_name);
 }
 
-JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_moveImageToFolder
+JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_moveImageToFolder
 (JNIEnv *env, jobject obj, jlong store, jlong id, jstring folderName) {
     Store* store_ = (Store*) store;
     Image image_ = findImage(env, store_, id);
@@ -388,7 +388,7 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_moveImageToFolder
     return rc;
 }
 
-JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_deleteImage
+JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_deleteImage
 (JNIEnv *env, jobject obj, jlong store, jlong id) {
     Store* store_ = (Store*) store;
     Image image_ = findImage(env, store_, id);
@@ -398,7 +398,7 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_deleteImage
     return image_.remove();
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_findSource
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_findSource
   (JNIEnv *env, jobject obj, jlong store, jlong id, jint location) {
     Store* store_ = (Store*) store;
     Image image_ = findImage(env, store_, id);
@@ -417,7 +417,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_findSource
     return createSourceMetaData(env, source);    
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_addImageToFolder
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_addImageToFolder
 (JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName, jstring annotation, jint opcode, jobject locations) {
     Store* store_ = (Store*) store;
     const char *image_name = env->GetStringUTFChars(imageName, 0);
@@ -441,7 +441,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_addImageToFolder
     return result;
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_findImage
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_findImage
 (JNIEnv *env, jobject obj, jlong store, jstring imageName, jstring folderName) {
 
     Store* store_ = (Store*) store;
@@ -450,7 +450,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_findImage
     return createImageMetaData(env, image);
 }
 
-JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_openSourceChannel
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_openSourceChannel
 (JNIEnv *env, jobject obj, jlong store, jlong id, jint elementIndex, jboolean write) {
     Store* store_ = (Store*) store;
     Id id_((uint64_t) id);
@@ -468,7 +468,7 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_openSourceChannel
     return (jlong) source;
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_addSourceToImage
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_addSourceToImage
 (JNIEnv *env, jobject obj, jlong store, jlong id, jint elementIndex, jbyte type, jstring platform, jintArray registerValues) {
     Store* store_ = (Store*) store;
     Image image = findImage(env, store_, id);
@@ -494,7 +494,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_addSourceToImage
     return createSourceMetaData(env, source);
 }
 
-JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_waitForImage
+JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitForImage
 (JNIEnv *env, jobject obj, jlong store, jint imageTimeoutMicros, jint sourceTimeoutMicros) {
     Store* store_ = (Store*) store;
     Stream stream(*store_, sourceTimeoutMicros);
@@ -509,12 +509,12 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_Store_waitForImage
     return 0;
 }
 
-JNIEXPORT jstring JNICALL Java_org_lsst_ccs_daq_ims_Store_decodeException
+JNIEXPORT jstring JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_decodeException
   (JNIEnv *env , jclass, jint error) {
     return decode(env, error);
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_getConfiguredSources
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_getConfiguredSources
   (JNIEnv *env, jobject obj, jlong store) {
     Store* store_ = (Store*) store;
     CMS::Camera camera(*store_);
@@ -522,13 +522,13 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_getConfiguredSources
     return createBitSet(env, locations); 
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_getClientVersion
-  (JNIEnv *env, jclass cls) {
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_getClientVersion
+  (JNIEnv *env, jobject obj) {
     DVI::Version version;
     return createVersion(env, version);
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_setRegisterList
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_setRegisterList
   (JNIEnv *env, jobject obs, jlong store, jboolean science, jboolean guider, jintArray regs) {
 
     int numRegs = env->GetArrayLength(regs);
@@ -552,7 +552,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Store_setRegisterList
     env->ReleaseIntArrayElements(regs, regArray, JNI_ABORT);
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_triggerImage
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_triggerImage
   (JNIEnv *env, jobject obj, jlong store, jstring folder, jstring imageName, jstring annotation, jint opcode, jobject bitset) {
 
     Store* store_ = (Store*) store;
@@ -585,7 +585,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Store_triggerImage
     return result;
 }
 
-JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Store_startSequencer
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startSequencer
   (JNIEnv *env, jobject obj, jlong store, jint opcode) {
 
     Store* store_ = (Store*) store;
