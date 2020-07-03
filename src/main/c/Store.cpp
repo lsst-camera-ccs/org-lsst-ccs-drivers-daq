@@ -539,6 +539,8 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_setRe
         return;
     }
 
+    printf("setRegisterList %s %s %d\n", science, guider, numRegs);
+
     Store* store_ = (Store*) store;
     CMS::Camera camera(*store_);
 
@@ -573,7 +575,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_tr
         Image image(meta, *store_);
         if (!image) {
             char x[MESSAGE_LENGTH];
-            snprintf(x, MESSAGE_LENGTH, "Triggering image %s in folder %s failed", image_name, folder_name);
+            snprintf(x, MESSAGE_LENGTH, "Accessing image %s in folder %s failed", image_name, folder_name);
             throwDAQException(env, x, image.error());
         } else {
             result = createImageMetaData(env, image);
