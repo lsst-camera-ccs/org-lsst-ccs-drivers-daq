@@ -42,17 +42,18 @@ public class SimulationTest {
         sim.addTriggerListener((int opcode, ImageMetaData meta, Map<Location.LocationType, int[]> registerLists) -> {
             lastOpcode.set(opcode);
             lastMeta.add(meta);
-            lastRegisterLists.putAll(registerLists);
+            if (registerLists != null) lastRegisterLists.putAll(registerLists);
         });
         Store store = new Store("test");
-        store.setRegisterList(Location.LocationType.SCIENCE, new int[]{1, 2, 3});
-        store.setRegisterList(Location.LocationType.GUIDER, new int[]{4, 5, 6});
-        store.setRegisterList(Location.LocationType.WAVEFRONT, new int[]{7, 8, 9});
+        Camera camera = store.getCamera();
+        camera.setRegisterList(Location.LocationType.SCIENCE, new int[]{1, 2, 3});
+        camera.setRegisterList(Location.LocationType.GUIDER, new int[]{4, 5, 6});
+        camera.setRegisterList(Location.LocationType.WAVEFRONT, new int[]{7, 8, 9});
         ImageMetaData meta = new ImageMetaData("name", "folder", "annotation", 7, LocationSet.all());
-        ImageMetaData triggerImage = store.triggerImage(meta);
+        Image triggerImage = camera.triggerImage(meta);
         assertEquals(7, lastOpcode.get());
         assertEquals("name", lastMeta.get(0).getName());
-        assertEquals("name", triggerImage.getName());
+        assertEquals("name", triggerImage.getMetaData().getName());
         assertArrayEquals(lastRegisterLists.get(Location.LocationType.SCIENCE), new int[]{1, 2, 3});
 
         lastMeta.clear();
@@ -61,6 +62,6 @@ public class SimulationTest {
         long startSequencer = store.startSequencer(4);
         assertEquals(4, lastOpcode.get());
         assertNull(lastMeta.get(0));
-        assertArrayEquals(lastRegisterLists.get(Location.LocationType.SCIENCE), new int[]{1, 2, 3});
+        assertNull(lastRegisterLists.get(Location.LocationType.SCIENCE));
     }
 }

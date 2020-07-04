@@ -528,8 +528,8 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_ge
     return createVersion(env, version);
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_setRegisterList
-  (JNIEnv *env, jobject obs, jlong store, jboolean science, jboolean guider, jintArray regs) {
+void setRegisterList
+  (JNIEnv *env,  RMS::InstructionList& instList,  jintArray regs) {
 
     int numRegs = env->GetArrayLength(regs);
     if (numRegs >= RMS::InstructionList::MAXIMUM) {
@@ -539,13 +539,6 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_setRe
         return;
     }
 
-    printf("setRegisterList %s %s %d\n", science, guider, numRegs);
-
-    Store* store_ = (Store*) store;
-    CMS::Camera camera(*store_);
-
-    RMS::InstructionList& instList = science ? camera.science :
-                                     guider ? camera.guiding : camera.wavefront;
     instList.clear();
     int* regArray = env->GetIntArrayElements(regs, NULL);
     for (int j = 0; j < numRegs; j++) {
@@ -555,10 +548,14 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_setRe
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_triggerImage
-  (JNIEnv *env, jobject obj, jlong store, jstring folder, jstring imageName, jstring annotation, jint opcode, jobject bitset) {
+  (JNIEnv *env, jobject obj, jlong store, jstring folder, jstring imageName, jstring annotation, jint opcode, jobject bitset,
+       jintArray scienceRegs, jintArray guiderRegs, jintArray wavefrontRegs) {
 
     Store* store_ = (Store*) store;
     CMS::Camera camera(*store_);
+    setRegisterList(env, camera.science, scienceRegs);
+    setRegisterList(env, camera.guiding, guiderRegs);
+    setRegisterList(env, camera.wavefront, wavefrontRegs);
     jobject result = NULL;
 
     const char *image_name = env->GetStringUTFChars(imageName, 0);

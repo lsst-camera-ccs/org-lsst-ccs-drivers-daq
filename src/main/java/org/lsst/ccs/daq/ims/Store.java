@@ -310,13 +310,8 @@ public class Store implements AutoCloseable {
         return impl.addSourceToImage(store, id, location.index(), (byte) location.type().getCCDCount(), "test-platform", registerValues);
     }
 
-    // methods based on those originally in GlobalProc
-    void setRegisterList(LocationType rebType, int[] registerAddresses) throws DAQException {
-        impl.setRegisterList(store, rebType, registerAddresses);
-    }
-
-    ImageMetaData triggerImage(ImageMetaData meta) throws DAQException {
-        return impl.triggerImage(store, meta);
+    ImageMetaData triggerImage(ImageMetaData meta, Map<LocationType, int[]> registerLists) throws DAQException {
+        return impl.triggerImage(store, meta, registerLists);
     }
 
     long startSequencer(int opcode) throws DAQException {

@@ -1,6 +1,8 @@
 package org.lsst.ccs.daq.ims;
 
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import org.lsst.ccs.utilities.location.Location;
 
 /**
@@ -11,6 +13,7 @@ import org.lsst.ccs.utilities.location.Location;
 public class Camera {
     private final Store store;
     public final static int OPCODE_STOP = 31;
+    private final Map<Location.LocationType, int[]> registerLists = new HashMap<>();
     
     Camera(Store store) {
         this.store = store;
@@ -23,7 +26,7 @@ public class Camera {
      * @throws DAQException 
      */
     public void setRegisterList(Location.LocationType rebType, int[] registerAddresses) throws DAQException {
-        store.setRegisterList(rebType, registerAddresses);
+        registerLists.put(rebType, registerAddresses);
     }
    
     /**
@@ -33,7 +36,7 @@ public class Camera {
      * @throws DAQException 
      */
     public Image triggerImage(ImageMetaData meta) throws DAQException {
-        return new Image(store, store.triggerImage(meta));
+        return new Image(store, store.triggerImage(meta, registerLists));
     }
    
     /**

@@ -5,7 +5,6 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
 import org.lsst.ccs.utilities.location.Location.LocationType;
 import org.lsst.ccs.utilities.location.LocationSet;
 
@@ -17,7 +16,6 @@ import org.lsst.ccs.utilities.location.LocationSet;
  */
 class StoreSimulatedImplementation implements StoreImplementation {
 
-    private final Map<LocationType, int[]> registerLists = new ConcurrentHashMap<>();
     StoreSimulation storeSimulation = StoreSimulation.instance();
     private final Random random = new Random();
     private final Version release = new Version("daq-simulation", toNanos(Instant.now()), false, 12345);
@@ -123,12 +121,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public void setRegisterList(long store, LocationType rebType, int[] registerAddresses) throws DAQException {
-        registerLists.put(rebType, registerAddresses);
-    }
-
-    @Override
-    public ImageMetaData triggerImage(long store, ImageMetaData meta) throws DAQException {
+    public ImageMetaData triggerImage(long store, ImageMetaData meta,  Map<LocationType, int[]> registerLists) throws DAQException {
         Instant now = Instant.now();
         long id = random.nextLong();
         storeSimulation.fireTrigger(meta.getOpcode(), meta, registerLists);
@@ -138,7 +131,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     @Override
     public long startSequencer(long store, int opcode) throws DAQException {
         Instant now = Instant.now();
-        storeSimulation.fireTrigger(opcode, null, registerLists);
+        storeSimulation.fireTrigger(opcode, null, null);
         return toNanos(now);
     }
 

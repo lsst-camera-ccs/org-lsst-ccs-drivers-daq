@@ -2,8 +2,8 @@ package org.lsst.ccs.daq.ims;
 
 import java.util.BitSet;
 import java.util.List;
+import java.util.Map;
 import org.lsst.ccs.utilities.location.Location;
-import org.lsst.ccs.utilities.location.Location.LocationType;
 
 /**
  * An interface implemented by both the native and simulated 
@@ -50,9 +50,8 @@ interface StoreImplementation {
 
    Version getClientVersion() throws DAQException;
 
-   void setRegisterList(long store, LocationType rebType, int[] registerAddresses) throws DAQException;
-
-   ImageMetaData triggerImage(long store, ImageMetaData meta) throws DAQException;
+   ImageMetaData triggerImage(long store, ImageMetaData meta, Map<Location.LocationType, int[]> registerLists) throws DAQException;
 
    long startSequencer(long store, int opcode) throws DAQException;
+
 }

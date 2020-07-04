@@ -2,6 +2,7 @@ package org.lsst.ccs.daq.ims;
 
 import java.util.BitSet;
 import java.util.List;
+import java.util.Map;
 import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.Location.LocationType;
 
@@ -77,19 +78,16 @@ class StoreNativeImplementation implements StoreImplementation {
     @Override
     public native Version getClientVersion() throws DAQException;
 
-    @Override
-    public void setRegisterList(long store, LocationType rebType, int[] registerAddresses) throws DAQException {
-        setRegisterList(store, rebType == Location.LocationType.SCIENCE, rebType == Location.LocationType.GUIDER, registerAddresses);
-    }
-
     private synchronized native void setRegisterList(long store, boolean science, boolean guider, int[] registerAddresses) throws DAQException;
 
     @Override
-    public ImageMetaData triggerImage(long store, ImageMetaData meta) throws DAQException {
-        return triggerImage(store, meta.getCreationFolderName(), meta.getName(), meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
+    public ImageMetaData triggerImage(long store, ImageMetaData meta,  Map<LocationType, int[]> registerLists) throws DAQException {
+        return triggerImage(store, meta.getCreationFolderName(), meta.getName(), meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet(),
+                registerLists.get(LocationType.SCIENCE), registerLists.get(LocationType.GUIDER), registerLists.get(LocationType.WAVEFRONT));
     }
 
-    private synchronized native ImageMetaData triggerImage(long store, String metaData, String name, String annotation, int opcode, BitSet locationBitSet) throws DAQException;
+    private synchronized native ImageMetaData triggerImage(long store, String metaData, String name, String annotation, int opcode, BitSet locationBitSet,
+            int[] scienceRegisterList, int[] guiderRegisterList, int[] wavefrontRegisterList) throws DAQException;
 
     @Override
     public synchronized native long startSequencer(long store, int opcode) throws DAQException;
