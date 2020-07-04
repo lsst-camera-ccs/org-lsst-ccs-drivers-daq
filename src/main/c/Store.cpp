@@ -531,6 +531,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_ge
 void setRegisterList
   (JNIEnv *env,  RMS::InstructionList& instList,  jintArray regs) {
 
+    if (regs == NULL) return;
     int numRegs = env->GetArrayLength(regs);
     if (numRegs >= RMS::InstructionList::MAXIMUM) {
         char text[MESSAGE_LENGTH];
@@ -569,7 +570,8 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_tr
        snprintf(x, MESSAGE_LENGTH, "Triggering image %s in folder %s failed", image_name, folder_name);
        throwDAQException(env, x, rc, CMS::Exception::decode(rc));
     } else {
-        Image image(meta, *store_);
+        Id id = store_->catalog.lookup(image_name, folder_name);
+        Image image(id, *store_);
         if (!image) {
             char x[MESSAGE_LENGTH];
             snprintf(x, MESSAGE_LENGTH, "Accessing image %s in folder %s failed", image_name, folder_name);
