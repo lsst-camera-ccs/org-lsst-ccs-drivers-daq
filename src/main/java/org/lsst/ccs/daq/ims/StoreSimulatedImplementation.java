@@ -5,6 +5,8 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 import org.lsst.ccs.utilities.location.Location.LocationType;
 import org.lsst.ccs.utilities.location.LocationSet;
 
@@ -19,6 +21,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     StoreSimulation storeSimulation = StoreSimulation.instance();
     private final Random random = new Random();
     private final Version release = new Version("daq-simulation", toNanos(Instant.now()), false, 12345);
+    private final SynchronousQueue<ImageMetaData> queue = new SynchronousQueue<>();
 
     @Override
     public long attachStore(String partition) throws DAQException {
@@ -101,8 +104,20 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public int waitForImage(long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public int waitForImage(Store callback, long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException {
+        try {
+            ImageMetaData meta = imageTimeoutMicros==0 ? queue.take() : queue.poll(imageTimeoutMicros, TimeUnit.MICROSECONDS);
+            if (meta == null) {
+                return 68; // Timeout
+            } else {
+                callback.imageCreatedCallback(meta);
+                TimeUnit.MICROSECONDS.sleep(sourceTimeoutMicros/2);
+                callback.imageCompleteCallback(meta);
+                return 0;
+            }
+        } catch (InterruptedException ex) {
+            throw new DAQException("Interrupt while waiting for image");
+        }
     }
 
     @Override
@@ -125,7 +140,9 @@ class StoreSimulatedImplementation implements StoreImplementation {
         Instant now = Instant.now();
         long id = random.nextLong();
         storeSimulation.fireTrigger(meta.getOpcode(), meta, registerLists);
-        return new ImageMetaData(id, release, now, meta);
+        final ImageMetaData result = new ImageMetaData(id, release, now, meta);
+        queue.offer(result);
+        return result;
     }
 
     @Override

@@ -131,7 +131,7 @@ public class Store implements AutoCloseable {
                     public void run() {
                         try {
                             for (;;) {
-                                int rc = impl.waitForImage(store, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
+                                int rc = impl.waitForImage(Store.this, store, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
                                 if (rc != 0 && rc != 68) { // 68 appears to mean timeout
                                     LOG.log(Level.SEVERE, "Unexpected rc from waitForImage: {0}", rc);
                                 }

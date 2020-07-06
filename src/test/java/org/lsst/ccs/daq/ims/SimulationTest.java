@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Phaser;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -63,5 +66,26 @@ public class SimulationTest {
         assertEquals(4, lastOpcode.get());
         assertNull(lastMeta.get(0));
         assertNull(lastRegisterLists.get(Location.LocationType.SCIENCE));
+    }
+    
+    @Test
+    public void imageListenerTest() throws DAQException, InterruptedException, TimeoutException {
+        Phaser phaser = new Phaser(2);
+        Store store = new Store("test");
+        store.addImageListener(new ImageListener(){
+            @Override
+            public void imageCreated(Image image) {
+                phaser.arrive();
+            }
+
+            @Override
+            public void imageComplete(Image image) {
+                phaser.arrive();
+            }
+        });
+        Camera camera = store.getCamera();
+        ImageMetaData meta = new ImageMetaData("name", "folder", "annotation", 7, LocationSet.all());
+        Image triggerImage = camera.triggerImage(meta);
+        phaser.awaitAdvanceInterruptibly(0, 10, TimeUnit.SECONDS);
     }
 }

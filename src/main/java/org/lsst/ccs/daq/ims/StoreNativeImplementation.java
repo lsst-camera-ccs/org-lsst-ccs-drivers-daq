@@ -3,7 +3,6 @@ package org.lsst.ccs.daq.ims;
 import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
-import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.Location.LocationType;
 
 /**
@@ -67,7 +66,7 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native SourceMetaData addSourceToImage(long store, long id, int index, byte type, String platform, int[] registerValues) throws DAQException;
 
     @Override
-    public native int waitForImage(long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
+    public native int waitForImage(Store callback, long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
 
     @Override
     public native String decodeException(int rc);
