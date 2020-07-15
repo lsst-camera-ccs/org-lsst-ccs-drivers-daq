@@ -7,6 +7,9 @@ import java.util.BitSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lsst.ccs.utilities.location.Location.LocationType;
@@ -26,28 +29,43 @@ public class Store implements AutoCloseable {
     private final long store;
     private final List<ImageListener> imageListeners = new CopyOnWriteArrayList<>();
     private final Map<Long, Map<Integer, List<StreamListener>>> imageStreamMap = new ConcurrentHashMap<>();
-    private Thread imageThread;
     private static final Logger LOG = Logger.getLogger(Store.class.getName());
 
     private static final int IMAGE_TIMEOUT_MICROS = 0;
     private static final int SOURCE_TIMEOUT_MICROS = 10_000_000;
     private final static StoreImplementation impl;
+    private final ExecutorService executor;
+
     static {
-        System.out.println("runMode="+System.getProperty("org.lsst.ccs.run.mode"));
-        impl = 
-            "simulation".equals(System.getProperty("org.lsst.ccs.run.mode")) ?
-            new StoreSimulatedImplementation() : new StoreNativeImplementation();
+        System.out.println("runMode=" + System.getProperty("org.lsst.ccs.run.mode"));
+        impl
+                = "simulation".equals(System.getProperty("org.lsst.ccs.run.mode"))
+                ? new StoreSimulatedImplementation() : new StoreNativeImplementation();
     }
+    private Future<?> waitForImageTask;
 
     /**
-     * Connects to a DAQ store.
+     * Connects to a DAQ store. Uses the default executor for polling thread.
      *
      * @param partition The name of the partition
      * @throws DAQException If the partition does not exist, or something else
      * goes wrong
      */
     public Store(String partition) throws DAQException {
+        this(partition, ForkJoinPool.commonPool());
+    }
+
+    /**
+     * Connects to a DAQ store using the specified executor for polling.
+     *
+     * @param partition The name of the partition
+     * @param executor The executor service to use for polling thread
+     * @throws DAQException If the partition does not exist, or something else
+     * goes wrong
+     */
+    public Store(String partition, ExecutorService executor) throws DAQException {
         this.partition = partition;
+        this.executor = executor;
         catalog = new Catalog(this);
         camera = new Camera(this);
         store = impl.attachStore(partition);
@@ -119,30 +137,25 @@ public class Store implements AutoCloseable {
      *
      * @param l The image listener to add.
      */
+    @SuppressWarnings("UseSpecificCatch")
     public void addImageListener(ImageListener l) {
         imageListeners.add(l);
         synchronized (this) {
-            if (imageThread == null) {
-                // TODO: We should stop this thread when no one is left listening
-                imageThread = new Thread("ImageStreamThread_" + partition) {
-
-                    @Override
-                    @SuppressWarnings("UseSpecificCatch")
-                    public void run() {
-                        try {
-                            for (;;) {
-                                int rc = impl.waitForImage(Store.this, store, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
-                                if (rc != 0 && rc != 68) { // 68 appears to mean timeout
-                                    LOG.log(Level.SEVERE, "Unexpected rc from waitForImage: {0}", rc);
-                                }
+            if (waitForImageTask == null || waitForImageTask.isCancelled() || waitForImageTask.isDone()) {
+                waitForImageTask = executor.submit(() -> {
+                    try {
+                        Thread.currentThread().setName("ImageStreamThread_" + partition);
+                        for (; !Thread.currentThread().isInterrupted();) {
+                            int rc = impl.waitForImage(Store.this, store, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
+                            if (rc != 0 && rc != 68) { // 68 appears to mean timeout
+                                LOG.log(Level.SEVERE, "Unexpected rc from waitForImage: {0}", rc);
                             }
-                        } catch (Throwable x) {
-                            LOG.log(Level.SEVERE, "ImageStreamThread exiting", x);
                         }
+                    } catch (Throwable x) {
+                        LOG.log(Level.SEVERE, x, () -> String.format("Thread %s exiting", Thread.currentThread().getName()));
                     }
-                };
-                imageThread.setDaemon(false);
-                imageThread.start();
+                });
+
             }
         }
     }
@@ -154,7 +167,11 @@ public class Store implements AutoCloseable {
      * @param l The image listener to remove.
      */
     public void removeImageListener(ImageListener l) {
-        imageListeners.remove(l);
+        synchronized (this) {
+            if (imageListeners.remove(l) && imageListeners.isEmpty()) {
+                waitForImageTask.cancel(true);
+            }
+        }
     }
 
     /**
@@ -257,6 +274,9 @@ public class Store implements AutoCloseable {
 
     @Override
     public void close() throws DAQException {
+        if (waitForImageTask != null && !waitForImageTask.isDone()) {
+            waitForImageTask.cancel(true);
+        }
         impl.detachStore(store);
     }
 
@@ -321,7 +341,7 @@ public class Store implements AutoCloseable {
     public static Version getClientVersion() throws DAQException {
         return impl.getClientVersion();
     }
-    
+
     static String decodeException(int rc) {
         return impl.decodeException(rc);
     }

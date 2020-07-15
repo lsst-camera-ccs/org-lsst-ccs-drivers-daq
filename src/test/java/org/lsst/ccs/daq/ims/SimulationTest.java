@@ -83,6 +83,7 @@ public class SimulationTest {
                 phaser.arrive();
             }
         });
+        Thread.sleep(100);
         Camera camera = store.getCamera();
         ImageMetaData meta = new ImageMetaData("name", "folder", "annotation", 7, LocationSet.all());
         Image triggerImage = camera.triggerImage(meta);
