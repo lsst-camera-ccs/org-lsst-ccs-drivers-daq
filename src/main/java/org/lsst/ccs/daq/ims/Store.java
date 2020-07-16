@@ -7,8 +7,12 @@ import java.util.BitSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.lsst.ccs.utilities.location.Location.LocationType;
 import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
@@ -19,32 +23,53 @@ import org.lsst.ccs.utilities.location.LocationSet;
  */
 public class Store implements AutoCloseable {
 
+    private final Camera camera;
     private final Catalog catalog;
     private final String partition;
     private final long store;
     private final List<ImageListener> imageListeners = new CopyOnWriteArrayList<>();
     private final Map<Long, Map<Integer, List<StreamListener>>> imageStreamMap = new ConcurrentHashMap<>();
-    private Thread imageThread;
     private static final Logger LOG = Logger.getLogger(Store.class.getName());
 
     private static final int IMAGE_TIMEOUT_MICROS = 0;
     private static final int SOURCE_TIMEOUT_MICROS = 10_000_000;
+    private final static StoreImplementation impl;
+    private final ExecutorService executor;
 
     static {
-        System.loadLibrary("ccs_daq_ims");
+        // FIXME: This requires a System (not bootstrap) property be set.
+        LOG.log(Level.INFO, "runMode={0}", System.getProperty("org.lsst.ccs.run.mode"));
+        impl
+                = "simulation".equals(System.getProperty("org.lsst.ccs.run.mode"))
+                ? new StoreSimulatedImplementation() : new StoreNativeImplementation();
     }
+    private Future<?> waitForImageTask;
 
     /**
-     * Connects to a DAQ store.
+     * Connects to a DAQ store. Uses the default executor for polling thread.
      *
      * @param partition The name of the partition
      * @throws DAQException If the partition does not exist, or something else
      * goes wrong
      */
     public Store(String partition) throws DAQException {
+        this(partition, ForkJoinPool.commonPool());
+    }
+
+    /**
+     * Connects to a DAQ store using the specified executor for polling.
+     *
+     * @param partition The name of the partition
+     * @param executor The executor service to use for polling thread
+     * @throws DAQException If the partition does not exist, or something else
+     * goes wrong
+     */
+    public Store(String partition, ExecutorService executor) throws DAQException {
         this.partition = partition;
+        this.executor = executor;
         catalog = new Catalog(this);
-        store = attachStore(partition);
+        camera = new Camera(this);
+        store = impl.attachStore(partition);
     }
 
     /**
@@ -55,6 +80,16 @@ public class Store implements AutoCloseable {
      */
     public Catalog getCatalog() {
         return catalog;
+    }
+
+    /**
+     * Gets the camera associated with this store. The camera can be used to
+     * trigger images.
+     *
+     * @return The camera associated with this store.
+     */
+    public Camera getCamera() {
+        return camera;
     }
 
     /**
@@ -73,7 +108,7 @@ public class Store implements AutoCloseable {
      * @throws DAQException If unable to access to DAQ store
      */
     public long getCapacity() throws DAQException {
-        return capacity(store);
+        return impl.capacity(store);
     }
 
     /**
@@ -83,49 +118,45 @@ public class Store implements AutoCloseable {
      * @throws DAQException If unable to access the DAQ store
      */
     public long getRemaining() throws DAQException {
-        return remaining(store);
+        return impl.remaining(store);
     }
 
     /**
      * Get the set of configured locations in this partition
+     *
      * @return The set of locations configured in this partition
      * @throws DAQException
      */
     public LocationSet getConfiguredSources() throws DAQException {
-        BitSet locations = getConfiguredSources(store);
+        BitSet locations = impl.getConfiguredSources(store);
         return new LocationSet(locations);
     }
-    
+
     /**
      * Add an image listener to this store. The image listener will be notified
      * of all new images created, in all folders.
      *
      * @param l The image listener to add.
      */
+    @SuppressWarnings("UseSpecificCatch")
     public void addImageListener(ImageListener l) {
         imageListeners.add(l);
         synchronized (this) {
-            if (imageThread == null) {
-                // TODO: We should stop this thread when no one is left listening
-                imageThread = new Thread("ImageStreamThread_" + partition) {
-
-                    @Override
-                    @SuppressWarnings("UseSpecificCatch")
-                    public void run() {
-                        try {
-                            for (;;) {
-                                int rc = waitForImage(store, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
-                                if (rc != 0 && rc != 68) { // 68 appears to mean timeout
-                                    LOG.log(Level.SEVERE, "Unexpected rc from waitForImage: {0}", rc);
-                                }
+            if (waitForImageTask == null || waitForImageTask.isCancelled() || waitForImageTask.isDone()) {
+                waitForImageTask = executor.submit(() -> {
+                    try {
+                        Thread.currentThread().setName("ImageStreamThread_" + partition);
+                        for (; !Thread.currentThread().isInterrupted();) {
+                            int rc = impl.waitForImage(Store.this, store, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
+                            if (rc != 0 && rc != 68) { // 68 appears to mean timeout
+                                LOG.log(Level.SEVERE, "Unexpected rc from waitForImage: {0}", rc);
                             }
-                        } catch (Throwable x) {
-                            LOG.log(Level.SEVERE, "ImageStreamThread exiting", x);
                         }
+                    } catch (Throwable x) {
+                        LOG.log(Level.SEVERE, x, () -> String.format("Thread %s exiting", Thread.currentThread().getName()));
                     }
-                };
-                imageThread.setDaemon(false);
-                imageThread.start();
+                });
+
             }
         }
     }
@@ -137,7 +168,11 @@ public class Store implements AutoCloseable {
      * @param l The image listener to remove.
      */
     public void removeImageListener(ImageListener l) {
-        imageListeners.remove(l);
+        synchronized (this) {
+            if (imageListeners.remove(l) && imageListeners.isEmpty()) {
+                waitForImageTask.cancel(true);
+            }
+        }
     }
 
     /**
@@ -240,97 +275,75 @@ public class Store implements AutoCloseable {
 
     @Override
     public void close() throws DAQException {
-        detachStore(store);
+        if (waitForImageTask != null && !waitForImageTask.isDone()) {
+            waitForImageTask.cancel(true);
+        }
+        impl.detachStore(store);
     }
 
     List<String> listFolders() throws DAQException {
         List<String> result = new ArrayList<>();
-        listFolders(store, result);
+        impl.listFolders(store, result);
         return result;
     }
 
     int insertFolder(String folderName) throws DAQException {
-        return insertFolder(store, folderName);
+        return impl.insertFolder(store, folderName);
     }
 
     int removeFolder(String folderName) throws DAQException {
-        return removeFolder(store, folderName);
+        return impl.removeFolder(store, folderName);
     }
 
     boolean findFolder(String folderName) throws DAQException {
-        return findFolder(store, folderName);
+        return impl.findFolder(store, folderName);
     }
 
     void listImages(String folderName, List<ImageMetaData> result) throws DAQException {
-        listImages(store, folderName, result);
+        impl.listImages(store, folderName, result);
     }
 
     int moveImageToFolder(long id, String folderName) throws DAQException {
-        return moveImageToFolder(store, id, folderName);
+        return impl.moveImageToFolder(store, id, folderName);
     }
 
     int deleteImage(long id) throws DAQException {
-        return deleteImage(store, id);
+        return impl.deleteImage(store, id);
     }
 
     SourceMetaData findSource(long id, int location) throws DAQException {
-        return findSource(store, id, location);
+        return impl.findSource(store, id, location);
     }
 
     ImageMetaData addImageToFolder(String imageName, String folderName, ImageMetaData meta) throws DAQException {
-        return addImageToFolder(store, imageName, folderName, meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
+        return impl.addImageToFolder(store, imageName, folderName, meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
     }
 
     ImageMetaData findImage(String imageName, String folderName) throws DAQException {
-        return findImage(store, imageName, folderName);
+        return impl.findImage(store, imageName, folderName);
     }
 
     long openSourceChannel(long id, Location location, Source.ChannelMode mode) throws DAQException {
-        return openSourceChannel(store, id, location.index(), mode == Source.ChannelMode.WRITE);
+        return impl.openSourceChannel(store, id, location.index(), mode == Source.ChannelMode.WRITE);
     }
 
     SourceMetaData addSourceToImage(long id, Location location, int[] registerValues) throws DAQException {
-        return addSourceToImage(store, id, location.index(), (byte) location.type().getCCDCount(), "test-platform", registerValues);
+        return impl.addSourceToImage(store, id, location.index(), (byte) location.type().getCCDCount(), "test-platform", registerValues);
     }
 
-    // Native methods    
-    private synchronized native long attachStore(String partition) throws DAQException;
+    ImageMetaData triggerImage(ImageMetaData meta, Map<LocationType, int[]> registerLists) throws DAQException {
+        return impl.triggerImage(store, meta, registerLists);
+    }
 
-    private synchronized native void detachStore(long store) throws DAQException;
+    long startSequencer(int opcode) throws DAQException {
+        return impl.startSequencer(store, opcode);
+    }
 
-    private synchronized native long capacity(long store) throws DAQException;
+    public static Version getClientVersion() throws DAQException {
+        return impl.getClientVersion();
+    }
 
-    private synchronized native long remaining(long store) throws DAQException;
-
-    private synchronized native void listFolders(long store, List<String> result) throws DAQException;
-
-    private synchronized native int insertFolder(long store, String folderName) throws DAQException;
-
-    private synchronized native int removeFolder(long store, String folderName) throws DAQException;
-
-    private synchronized native boolean findFolder(long store, String folderName) throws DAQException;
-
-    private synchronized native void listImages(long store, String folderName, List<ImageMetaData> result) throws DAQException;
-
-    private synchronized native int moveImageToFolder(long store, long id, String folderName) throws DAQException;
-
-    private synchronized native int deleteImage(long store, long id) throws DAQException;
-
-    private synchronized native SourceMetaData findSource(long store, long id, int location) throws DAQException;
-
-    private synchronized native ImageMetaData addImageToFolder(long store, String imageName, String folderName, String annotation, int opcode, BitSet elements) throws DAQException;
-
-    private synchronized native ImageMetaData findImage(long store, String imageName, String folderName) throws DAQException;
-
-    private synchronized native long openSourceChannel(long store, long id, int index, boolean write) throws DAQException;
-
-    private synchronized native SourceMetaData addSourceToImage(long store, long id, int index, byte type, String platform, int[] registerValues) throws DAQException;
-
-    private native int waitForImage(long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
-
-    static native String decodeException(int rc);
-    
-    private synchronized native BitSet getConfiguredSources(long store) throws DAQException;
-
-    public static native Version getClientVersion() throws DAQException;
+    static String decodeException(int rc) {
+        return impl.decodeException(rc);
+    }
 }

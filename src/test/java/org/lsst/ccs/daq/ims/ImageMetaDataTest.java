@@ -19,7 +19,7 @@ public class ImageMetaDataTest {
 
     @Test
     public void imageMetaDataSerializableTest() throws IOException, ClassNotFoundException {
-        ImageMetaData imd = new ImageMetaData("test", "testAnnnotation", 5, LocationSet.of("R22/Reb1"));
+        ImageMetaData imd = new ImageMetaData("test", "raw", "testAnnnotation", 5, LocationSet.of("R22/Reb1"));
         Object result = serializeDeserialize(imd);
         assertTrue(result instanceof ImageMetaData);
         ImageMetaData imd2 = (ImageMetaData) result;

@@ -24,7 +24,7 @@ public class ImageMetaData implements Serializable {
     private final Instant timestamp;
     private final LocationSet elements;
     private final long id;
-    private String creationFolder;
+    private final String creationFolder;
 
     ImageMetaData(long id, String name, String folderName, String annotation, Version release, int opcode, long timestampNanos, BitSet elements) {
         this.id = id;
@@ -36,12 +36,24 @@ public class ImageMetaData implements Serializable {
         this.elements = new LocationSet(elements);
         this.creationFolder = folderName;
     }
+    
+    ImageMetaData(long id, Version release, Instant timestamp, ImageMetaData meta) {
+        this.id = id;
+        this.timestamp = timestamp;
+        this.release = release;
+        this.annotation = meta.annotation;
+        this.creationFolder = meta.creationFolder;
+        this.elements = meta.elements;
+        this.opcode = meta.opcode;
+        this.name = meta.name;
+    }
 
     /**
      * A constructor to be used when creating new images to be written into the
-     * Store.
+     * Store or when triggering the camera
      *
      * @param imageName The name of the newly created image.
+     * @param creationFolder The folder in which the image was originally created.
      * @param annotation An annotation string to be associated with the image.
      * @param opcode The "opcode" associated with the image. This normally
      * corresponds to the index of the main routine in the sequencer which
@@ -52,8 +64,9 @@ public class ImageMetaData implements Serializable {
      * @see Folder#insert(ImageMetaData)
      * @see Image#addSource(Location, int[])
      */
-    public ImageMetaData(String imageName, String annotation, int opcode, Set<Location> locationSet) {
+    public ImageMetaData(String imageName, String creationFolder, String annotation, int opcode, Set<Location> locationSet) {
         this.name = imageName;
+        this.creationFolder = creationFolder;
         this.annotation = annotation;
         this.release = null;
         this.opcode = opcode;
@@ -141,8 +154,7 @@ public class ImageMetaData implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("ImageMetaData{" + "name=%s, annotation=%s, release=%s, opcode=%d, timestamp=%s, elements=%s, id=%x",
-                name, annotation, release, opcode, timestamp, elements, id);
+        return "ImageMetaData{" + "name=" + name + ", annotation=" + annotation + ", release=" + release + ", opcode=" + opcode + ", timestamp=" + timestamp + ", elements=" + elements + ", id=" + id + ", creationFolder=" + creationFolder + '}';
     }
 
 }

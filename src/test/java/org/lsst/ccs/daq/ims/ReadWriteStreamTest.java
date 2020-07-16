@@ -44,7 +44,7 @@ public class ReadWriteStreamTest {
         System.out.println("LD_LIBRARY_PATH="+System.getenv("LD_LIBRARY_PATH"));
         String testPartition = System.getProperty("DAQ_TEST_PARTITION");
         System.out.println("DAQ_TEST_PARTITION="+testPartition);
-        // This does not appear to work, not sure why
+        // This causes the test to be skipped if asumption is not met
         assumeNotNull(testPartition);
         store = new Store(testPartition);
         testFolder = store.getCatalog().find(TEST_FOLDER);
@@ -81,7 +81,7 @@ public class ReadWriteStreamTest {
         
         Location location = Location.of("R22/Reb1");
         int[] registerValues = {1, 2, 3, 4, 5, 6, 7};
-        ImageMetaData imd = new ImageMetaData(TEST_IMAGE_NAME, "testAnnotion", 0, Collections.singleton(location));
+        ImageMetaData imd = new ImageMetaData(TEST_IMAGE_NAME, "raw", "testAnnotion", 0, Collections.singleton(location));
         Image image = testFolder.insert(imd);
         Source source = image.addSource(location, registerValues);
         long writeLength = 0;
