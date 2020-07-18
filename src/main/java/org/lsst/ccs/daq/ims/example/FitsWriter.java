@@ -30,7 +30,7 @@ public class FitsWriter {
         Folder testFolder = catalog.find("tonyj-test");
         Image old = testFolder.find("Flat_screen_0000_20190322172301");
         old.delete();
-        ImageMetaData meta = new ImageMetaData("Flat_screen_0000_20190322172301","Image Annotation", 0, LocationSet.of("R22/Reb0"));        
+        ImageMetaData meta = new ImageMetaData("Flat_screen_0000_20190322172301","raw", "Image Annotation", 0, LocationSet.of("R22/Reb0"));        
         Image image = testFolder.insert(meta);
 
         File dir = new File("/home/tonyj/Data/pretty/");
