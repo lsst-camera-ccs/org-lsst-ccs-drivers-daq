@@ -146,15 +146,20 @@ public class Store implements AutoCloseable {
                 waitForImageTask = executor.submit(() -> {
                     try {
                         Thread.currentThread().setName("ImageStreamThread_" + partition);
-                        for (; !Thread.currentThread().isInterrupted();) {
-                            int rc = impl.waitForImage(Store.this, store, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
-                            if (rc != 0 && rc != 68) { // 68 appears to mean timeout
-                                LOG.log(Level.SEVERE, "Unexpected rc from waitForImage: {0}", rc);
+                        long waitForImageStore = impl.attachStore(partition);
+                        try { 
+                            while (!Thread.currentThread().isInterrupted()) {
+                                int rc = impl.waitForImage(Store.this, waitForImageStore, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
+                                if (rc != 0 && rc != 68) { // 68 appears to mean timeout
+                                    LOG.log(Level.SEVERE, "Unexpected rc from waitForImage: {0}", rc);
+                                }
                             }
+                        } finally {
+                            impl.detachStore(store);
                         }
                     } catch (Throwable x) {
                         LOG.log(Level.SEVERE, x, () -> String.format("Thread %s exiting", Thread.currentThread().getName()));
-                    }
+                    } 
                 });
 
             }
