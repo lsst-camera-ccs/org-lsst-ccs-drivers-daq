@@ -17,7 +17,7 @@ class DAQSourceChannel implements ByteChannel {
         switch (mode) {
             case READ:
                 if (source.getMetaData().getLength() == 0) {
-                    throw new DAQException("Cannot read from source which is not fully written, did you mean to use ChennelMode.STREAM?");
+                    throw new DAQException("Cannot read from source which is not fully written, did you mean to use ChannelMode.STREAM?");
                 }
                 return new ReadableDAQSourceChannel(store, source);
             case STREAM:
