@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.lsst</groupId>
     <artifactId>org-lsst-ccs-drivers-daq</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1-SNAPSHOT</version>
     <packaging>jar</packaging>
     <url>${org.lsst.ccs.site.url}</url>
     <name>LSST CCS - DAQ Driver</name>
@@ -38,7 +38,7 @@
         <url>https://github.com/lsst-camera-ccs/org-lsst-ccs-drivers-daq</url>
         <connection>scm:git:git://github.com/lsst-camera-ccs/org-lsst-ccs-drivers-daq.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/lsst-camera-ccs/org-lsst-ccs-drivers-daq.git</developerConnection>
-      <tag>org-lsst-ccs-drivers-daq-1.1.0</tag>
+      <tag>HEAD</tag>
   </scm>
 
     <build>
