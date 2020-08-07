@@ -1,7 +1,9 @@
 package org.lsst.ccs.daq.ims;
 
 import java.io.Serializable;
+import org.lsst.ccs.bus.annotations.DataAttributes;
 
+@DataAttributes(units="unitless")
 public class DAQFirmwareStats extends DAQStats implements Serializable {
 
     /* The statistics quantities */
@@ -22,7 +24,9 @@ public class DAQFirmwareStats extends DAQStats implements Serializable {
     private final long overflow_local3;    
     private final long tx_errors;          // Transmit Frame Error Count
     private final long tx_frames;          // Transmit Frame Count
+    @DataAttributes(units="Hz")
     private final long rx_clock;           // Receive Clock Frequency
+    @DataAttributes(units="Hz")
     private final long tx_clock;           // Transmit Clock Frequency
     private final long last_tx;            // Last OpCode Transmitted
     private final long last_rx;            // Last OpCode Received

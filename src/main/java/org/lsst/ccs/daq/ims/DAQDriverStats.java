@@ -1,7 +1,9 @@
 package org.lsst.ccs.daq.ims;
 
 import java.io.Serializable;
+import org.lsst.ccs.bus.annotations.DataAttributes;
 
+@DataAttributes(units="unitless")
 public class DAQDriverStats extends DAQStats implements Serializable {
 
     /* The statistics quantities */
