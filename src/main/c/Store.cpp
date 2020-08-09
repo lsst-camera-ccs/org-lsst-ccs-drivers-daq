@@ -407,8 +407,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_fi
     }
     DAQ::Location element(location);
     Source source(image_.id(), element, *store_);
-    // When accessing a source for which no data yet exists, it is reported as in error state 33, and source.bool() returns false
-    if (source.error() != 0 && source.error() != 33) {
+    if (!source) {
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Source not found (id=%ld elementIndex=%d)", id, location);
         throwDAQException(env, x, source.error());
