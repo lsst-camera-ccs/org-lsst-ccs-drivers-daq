@@ -38,9 +38,10 @@ public class Store implements AutoCloseable {
 
     static {
         // FIXME: This requires a System (not bootstrap) property be set.
-        LOG.log(Level.INFO, "runMode={0}", System.getProperty("org.lsst.ccs.run.mode"));
+        String runMode = System.getProperty("org.lsst.ccs.run.mode");
+        if (runMode != null) LOG.log(Level.INFO, "runMode={0}", runMode);
         impl
-                = "simulation".equals(System.getProperty("org.lsst.ccs.run.mode"))
+                = "simulation".equals(runMode)
                 ? new StoreSimulatedImplementation() : new StoreNativeImplementation();
     }
     private Future<?> waitForImageTask;
