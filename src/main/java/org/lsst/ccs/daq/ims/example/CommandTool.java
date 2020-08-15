@@ -140,9 +140,13 @@ public class CommandTool {
             List<Source> sources = image.listSources();
             Collections.sort(sources);
             for (Source source : sources) {
-                SourceMetaData smd = source.getMetaData();
-                System.out.printf("   %s %s %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength()),
-                        Arrays.toString(smd.getRegisterValues()));
+                try {
+                    SourceMetaData smd = source.getMetaData();
+                    System.out.printf("   %s %s %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength()),
+                            Arrays.toString(smd.getRegisterValues()));
+                } catch (DAQException x) {
+                    System.out.printf("   Bad source %s", x.getMessage());
+                }
             }
         }
     }
@@ -552,9 +556,16 @@ public class CommandTool {
     private String imageSize(Image image) throws DAQException {
         List<Source> sources = image.listSources();
         long totalSize = 0;
+        int nBad = 0;
         for (Source source : sources) {
-            totalSize += source.getMetaData().getLength();
+            try {
+                totalSize += source.getMetaData().getLength();
+            } catch (DAQException x) {
+                nBad++;
+            }
         }
-        return String.format("%s(%d)", Utils.humanReadableByteCount(totalSize), sources.size());
+        return nBad == 0 
+                ? String.format("%s(%d)", Utils.humanReadableByteCount(totalSize), sources.size())
+                : String.format("%s(%d (%d bad))", Utils.humanReadableByteCount(totalSize), sources.size(), nBad);
     }
 }
