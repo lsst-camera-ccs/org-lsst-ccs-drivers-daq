@@ -145,7 +145,7 @@ public class CommandTool {
                     System.out.printf("   %s %s %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength()),
                             Arrays.toString(smd.getRegisterValues()));
                 } catch (DAQException x) {
-                    System.out.printf("   Bad source %s", x.getMessage());
+                    System.out.printf("   Bad source %s\n", x.getMessage());
                 }
             }
         }
