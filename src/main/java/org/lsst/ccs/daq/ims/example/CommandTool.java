@@ -21,7 +21,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -83,8 +82,6 @@ public class CommandTool {
     }
     private static final Logger LOG = Logger.getLogger(CommandTool.class.getName());
 
-    private static final Pattern PATH_PATTERN = Pattern.compile("([0-9a-zA-Z\\-\\_]*)/?([0-9a-zA-Z\\-\\_]*)");
-
     private Store store;
     private final FocalPlane focalPlane = FocalPlane.createFocalPlane();
 
@@ -109,46 +106,10 @@ public class CommandTool {
         }
     }
 
-    @Command(name = "ls", description = "List folders/files")
+    @Command(name = "list", alias="ls", description = "List folders/files")
     public void list(@Argument(name = "folder", description = "Path", defaultValue = "") String path) throws DAQException {
         checkStore();
-        Matcher matcher = PATH_PATTERN.matcher(path);
-        if (!matcher.matches()) {
-            throw new RuntimeException("Illegal path: " + path);
-        } else if (path.trim().isEmpty()) {
-            List<Folder> list = store.getCatalog().list();
-            Collections.sort(list);
-            list.forEach((folder) -> {
-                System.out.println(folder.getName());
-            });
-            long capacity = store.getCapacity();
-            long remaining = store.getRemaining();
-            System.out.printf("%s/%s (%3.3g%%) bytes used\n", Utils.humanReadableByteCount(capacity - remaining), Utils.humanReadableByteCount(capacity), 100.0 * (capacity - remaining) / capacity);
-        } else if (matcher.matches() && matcher.group(2).isEmpty()) {
-            Folder folder = store.getCatalog().find(matcher.group(1));
-            if (folder == null) {
-                throw new RuntimeException("No such folder: " + matcher.group(1));
-            }
-            List<Image> images = folder.listImages();
-            Collections.sort(images);
-            for (Image image : images) {
-                System.out.printf("%s %s %s %s\n", image.getMetaData().getName(), imageSize(image), image.getMetaData().getTimestamp(), image.getMetaData().getAnnotation());
-            }
-        } else {
-            Image image = imageFromPath(matcher);
-            System.out.printf("%s %s %s %s\n", image.getMetaData().getName(), imageSize(image), image.getMetaData().getTimestamp(), image.getMetaData().getAnnotation());
-            List<Source> sources = image.listSources();
-            Collections.sort(sources);
-            for (Source source : sources) {
-                try {
-                    SourceMetaData smd = source.getMetaData();
-                    System.out.printf("   %s %s %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength()),
-                            Arrays.toString(smd.getRegisterValues()));
-                } catch (DAQException x) {
-                    System.out.printf("   Bad source %s\n", x.getMessage());
-                }
-            }
-        }
+        Utils.list(store, path).forEach(System.out::println);
     }
 
     @Command(name = "mkdir", description = "Create new folder")
@@ -166,14 +127,14 @@ public class CommandTool {
     @Command(name = "rm", description = "Delete image")
     public void rm(String path) throws DAQException {
         checkStore();
-        Image image = imageFromPath(path);
+        Image image = Utils.imageFromPath(store, path);
         image.delete();
     }
 
     @Command(name = "mv", description = "Move image")
     public void mv(String path, String targetFolderName) throws DAQException {
         checkStore();
-        Image image = imageFromPath(path);
+        Image image = Utils.imageFromPath(store, path);
         Folder target = store.getCatalog().find(targetFolderName);
         if (target == null) {
             throw new RuntimeException("No such folder: " + target);
@@ -233,7 +194,7 @@ public class CommandTool {
             @Argument(defaultValue = "1048576") int bufferSize,
             @Argument(defaultValue = "4") int nThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
-        Image image = imageFromPath(path);
+        Image image = Utils.imageFromPath(store, path);
         List<Source> sources = image.listSources();
         long totalSize = 0;
         for (Source source : sources) {
@@ -385,7 +346,7 @@ public class CommandTool {
             @Argument(defaultValue = "1048576") int bufferSize,
             @Argument(defaultValue = "4") int nThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
-        Image image = imageFromPath(path);
+        Image image = Utils.imageFromPath(store, path);
         List<Source> sources = image.listSources();
         long totalSize = 0;
         for (Source source : sources) {
@@ -527,45 +488,9 @@ public class CommandTool {
         }
     }
 
-    private Image imageFromPath(String path) throws DAQException, RuntimeException {
-        final Matcher matcher = PATH_PATTERN.matcher(path);
-        if (!matcher.matches()) {
-            throw new RuntimeException("Illegal path: " + path);
-        }
-        return imageFromPath(matcher);
-    }
-
-    private Image imageFromPath(Matcher matcher) throws DAQException {
-        Folder folder = store.getCatalog().find(matcher.group(1));
-        if (folder == null) {
-            throw new RuntimeException("No such folder: " + matcher.group(1));
-        }
-        Image image = folder.find(matcher.group(2));
-        if (image == null) {
-            throw new RuntimeException("No such image: " + matcher.group(2));
-        }
-        return image;
-    }
-
     private void checkStore() {
         if (store == null) {
             throw new RuntimeException("Please connect to store first");
         }
-    }
-
-    private String imageSize(Image image) throws DAQException {
-        List<Source> sources = image.listSources();
-        long totalSize = 0;
-        int nBad = 0;
-        for (Source source : sources) {
-            try {
-                totalSize += source.getMetaData().getLength();
-            } catch (DAQException x) {
-                nBad++;
-            }
-        }
-        return nBad == 0 
-                ? String.format("%s(%d)", Utils.humanReadableByteCount(totalSize), sources.size())
-                : String.format("%s(%d (%d bad))", Utils.humanReadableByteCount(totalSize), sources.size(), nBad);
     }
 }
