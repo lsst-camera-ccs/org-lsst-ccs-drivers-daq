@@ -32,7 +32,7 @@ public class Utils {
     private static String listSummary(Store store) throws DAQException {
         long capacity = store.getCapacity();
         long remaining = store.getRemaining();
-        return String.format("%s/%s (%3.3g%%) bytes used\n", Utils.humanReadableByteCount(capacity - remaining), Utils.humanReadableByteCount(capacity), 100.0 * (capacity - remaining) / capacity);
+        return String.format("%s/%s (%3.3g%%) bytes used", Utils.humanReadableByteCount(capacity - remaining), Utils.humanReadableByteCount(capacity), 100.0 * (capacity - remaining) / capacity);
     }
 
     /**
@@ -58,19 +58,19 @@ public class Utils {
             }
             List<Image> images = folder.listImages();
             Collections.sort(images);
-            return images.stream().map(image -> String.format("%s %s %s %s\n", image.getMetaData().getName(), imageSize(image), image.getMetaData().getTimestamp(), image.getMetaData().getAnnotation()));
+            return images.stream().map(image -> String.format("%s %s %s %s", image.getMetaData().getName(), imageSize(image), image.getMetaData().getTimestamp(), image.getMetaData().getAnnotation()));
         } else {
             Image image = imageFromPath(store, matcher);
-            String summary = String.format("%s %s %s %s\n", image.getMetaData().getName(), imageSize(image), image.getMetaData().getTimestamp(), image.getMetaData().getAnnotation());
+            String summary = String.format("%s %s %s %s", image.getMetaData().getName(), imageSize(image), image.getMetaData().getTimestamp(), image.getMetaData().getAnnotation());
             List<Source> sources = image.listSources();
             Collections.sort(sources);
             return Stream.concat(Stream.of(summary), sources.stream().map(source -> {
                 try {
                     SourceMetaData smd = source.getMetaData();
-                    return String.format("   %s %s %s\n", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength()),
+                    return String.format("   %s %s %s", smd.getLocation(), Utils.humanReadableByteCount(smd.getLength()),
                             Arrays.toString(smd.getRegisterValues()));
                 } catch (DAQException x) {
-                    return String.format("   Bad source %s\n", x.getMessage());
+                    return String.format("   Bad source %s", x.getMessage());
                 }                
             }));
         }
