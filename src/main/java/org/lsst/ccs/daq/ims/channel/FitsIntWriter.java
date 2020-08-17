@@ -51,7 +51,6 @@ public class FitsIntWriter implements WritableIntChannel {
     private final File[] files;
     private final Map<String, Object> props;
     private final Reb reb;
-    private boolean isInitialized = false;
 
     /**
      * A FitsIntWriter constructor that can be called before the source
@@ -175,7 +174,6 @@ public class FitsIntWriter implements WritableIntChannel {
             DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
             XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, readoutConfig.getXor());
             decompress = new Decompress18BitChannel(xor);
-            isInitialized = true;
         } catch (IOException | FitsException | RuntimeException t) {
             cleanupOnError(reb.getLocation(), t);            
         }
@@ -201,7 +199,7 @@ public class FitsIntWriter implements WritableIntChannel {
     }
 
     public boolean isInitialized() {
-        return isInitialized;
+        return isOpen();
     }
 
     @Override
@@ -216,12 +214,14 @@ public class FitsIntWriter implements WritableIntChannel {
 
     @Override
     public boolean isOpen() {
-        return decompress.isOpen();
+        return decompress !=null && decompress.isOpen();
     }
 
     @Override
     public void close() throws IOException {
-        decompress.close();
+        if (decompress != null) {
+            decompress.close();
+        }
         for (FitsFileWriter writer : writers) {
             if (writer != null) {
                 writer.close();
