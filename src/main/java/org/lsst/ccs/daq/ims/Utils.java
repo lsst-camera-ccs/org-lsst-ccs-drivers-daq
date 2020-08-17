@@ -110,8 +110,8 @@ public class Utils {
                 }
             }
             return nBad == 0 
-                    ? String.format("%s(%d sources)", Utils.humanReadableByteCount(totalSize), sources.size())
-                    : String.format("%s(%d sources (%d bad))", Utils.humanReadableByteCount(totalSize), sources.size(), nBad);
+                    ? String.format("%s (%d sources)", Utils.humanReadableByteCount(totalSize), sources.size())
+                    : String.format("%s (%d sources (%d bad))", Utils.humanReadableByteCount(totalSize), sources.size(), nBad);
         } catch (DAQException x) {
             return "???";
         }
