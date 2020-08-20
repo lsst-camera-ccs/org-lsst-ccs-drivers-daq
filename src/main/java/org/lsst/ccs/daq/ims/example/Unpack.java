@@ -34,7 +34,8 @@ public class Unpack {
             ib.clear();
             oib.clear();
             outputBuffer.clear();
-            reader.read(ib);
+            int read = reader.read(ib);
+            if (read<=0) break;
             ib.flip();
             decompress.write(ib);
             outputBuffer.position(oib.position()*4);
