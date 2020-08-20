@@ -20,7 +20,7 @@ public class IntFileChannelReader implements ReadableIntChannel {
     private IntBuffer ib = bb.asIntBuffer();
 
 
-    IntFileChannelReader(FileChannel channel, long position, int length) throws IOException {
+    public IntFileChannelReader(FileChannel channel, long position, int length) throws IOException {
         this.channel = channel;
         this.position = position;
         this.length = length;
