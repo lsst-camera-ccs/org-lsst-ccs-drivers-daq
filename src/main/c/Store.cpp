@@ -561,7 +561,7 @@ void setRegisterList
 }
 
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_setRegisterList
-  (JNIEnv *env, jobject obj, jlong camera, jint ccdCount,  jintArray regs) {
+  (JNIEnv *env, jobject obj, jlong store, jlong camera, jint ccdCount,  jintArray regs) {
       CMS::Camera* camera_ = (CMS::Camera*) camera;
       if (ccdCount == 1) {
          setRegisterList(env, camera_->wavefront, regs);
