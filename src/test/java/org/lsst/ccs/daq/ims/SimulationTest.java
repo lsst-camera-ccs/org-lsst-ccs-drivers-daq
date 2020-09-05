@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -62,7 +63,7 @@ public class SimulationTest {
         lastMeta.clear();
         lastRegisterLists.clear();
         
-        long startSequencer = store.startSequencer(4);
+        Instant startSequencer = camera.startSequencer(4);
         assertEquals(4, lastOpcode.get());
         assertNull(lastMeta.get(0));
         assertNull(lastRegisterLists.get(Location.LocationType.SCIENCE));

@@ -299,6 +299,19 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
     delete ((Store*) store);
 }
 
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachCamera
+(JNIEnv* env, jobject obj, jlong store) {
+    Store* store_ = (Store*) store;
+    CMS::Camera* camera = new CMS::Camera(*store_);
+    return (jlong) camera;
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detachCamera
+(JNIEnv* env, jobject obj, jlong camera) {
+    delete ((CMS::Camera*) camera);
+}
+
+
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_capacity
 (JNIEnv * env, jobject obj, jlong store) {
 
@@ -547,15 +560,22 @@ void setRegisterList
     env->ReleaseIntArrayElements(regs, regArray, JNI_ABORT);
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_triggerImage
-  (JNIEnv *env, jobject obj, jlong store, jstring folder, jstring imageName, jstring annotation, jint opcode, jobject bitset,
-       jintArray scienceRegs, jintArray guiderRegs, jintArray wavefrontRegs) {
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_setRegisterList
+  (JNIEnv *env, jobject obj, jlong camera, jint ccdCount,  jintArray regs) {
+      CMS::Camera* camera_ = (CMS::Camera*) camera;
+      if (ccdCount == 1) {
+         setRegisterList(env, camera_->wavefront, regs);
+      } else if (ccdCount == 2) {
+         setRegisterList(env, camera_->guiding, regs);
+      } else if (ccdCount == 3) {
+         setRegisterList(env, camera_->science, regs);
+      }
+}
 
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_triggerImage
+  (JNIEnv *env, jobject obj, jlong store, jlong camera, jstring folder, jstring imageName, jstring annotation, jint opcode, jobject bitset) {
     Store* store_ = (Store*) store;
-    CMS::Camera camera(*store_);
-    setRegisterList(env, camera.science, scienceRegs);
-    setRegisterList(env, camera.guiding, guiderRegs);
-    setRegisterList(env, camera.wavefront, wavefrontRegs);
+    CMS::Camera* camera_ = (CMS::Camera*) camera;
     jobject result = NULL;
 
     const char *image_name = env->GetStringUTFChars(imageName, 0);
@@ -563,7 +583,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_tr
     const char *annotation_ = env->GetStringUTFChars(annotation, 0);
     DAQ::LocationSet locations_ = convertLocations(env, bitset);
     ImageMetadata meta(image_name, folder_name, locations_, opcode, annotation_);
-    int rc = camera.trigger(meta);
+    int rc = camera_->trigger(meta);
     if (rc != CMS::Exception::NONE) {
        char x[MESSAGE_LENGTH];
        snprintf(x, MESSAGE_LENGTH, "Triggering image %s in folder %s failed", image_name, folder_name);
@@ -586,11 +606,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_tr
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startSequencer
-  (JNIEnv *env, jobject obj, jlong store, jint opcode) {
-
-    Store* store_ = (Store*) store;
-    CMS::Camera camera(*store_);
+  (JNIEnv *env, jobject obj, jlong camera, jint opcode) {
+    CMS::Camera* camera_ = (CMS::Camera*) camera;
     OSA::TimeStamp timestamp;
-    camera.sequence(opcode, timestamp);
+    camera_->sequence(opcode, timestamp);
     return (jlong)timestamp;
 }

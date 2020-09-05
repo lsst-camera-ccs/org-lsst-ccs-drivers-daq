@@ -2,11 +2,13 @@ package org.lsst.ccs.daq.ims;
 
 import java.time.Instant;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.Location.LocationType;
 import org.lsst.ccs.utilities.location.LocationSet;
 
@@ -22,6 +24,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     private final Random random = new Random();
     private final Version release = new Version("daq-simulation", toNanos(Instant.now()), false, 12345);
     private final SynchronousQueue<ImageMetaData> queue = new SynchronousQueue<>();
+    private final Map<Location.LocationType, int[]> registerLists = new HashMap<>();
 
     @Override
     public long attachStore(String partition) throws DAQException {
@@ -33,6 +36,16 @@ class StoreSimulatedImplementation implements StoreImplementation {
 
     }
 
+    @Override
+    public long attachCamera(long store) throws DAQException {
+        return 101;
+    }
+
+    @Override
+    public void detachCamera(long camera) throws DAQException {
+
+    }
+    
     @Override
     public long capacity(long store) throws DAQException {
         return 500_000_000_000L;
@@ -136,7 +149,12 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public ImageMetaData triggerImage(long store, ImageMetaData meta,  Map<LocationType, int[]> registerLists) throws DAQException {
+    public void setRegisterList(long store, long camera, LocationType type, int[] registerList) throws DAQException {
+        registerLists.put(type, registerList);
+    }
+    
+    @Override
+    public ImageMetaData triggerImage(long store, long camera, ImageMetaData meta) throws DAQException {
         Instant now = Instant.now();
         long id = random.nextLong();
         storeSimulation.fireTrigger(meta.getOpcode(), meta, registerLists);
@@ -146,7 +164,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public long startSequencer(long store, int opcode) throws DAQException {
+    public long startSequencer(long camera, int opcode) throws DAQException {
         Instant now = Instant.now();
         storeSimulation.fireTrigger(opcode, null, null);
         return toNanos(now);

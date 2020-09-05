@@ -14,6 +14,10 @@ interface StoreImplementation {
    
    void detachStore(long store) throws DAQException;
 
+   long attachCamera(long store) throws DAQException;
+
+   void detachCamera(long camera) throws DAQException;
+
    long capacity(long store) throws DAQException;
 
    long remaining(long store) throws DAQException;
@@ -50,8 +54,9 @@ interface StoreImplementation {
 
    Version getClientVersion() throws DAQException;
 
-   ImageMetaData triggerImage(long store, ImageMetaData meta, Map<Location.LocationType, int[]> registerLists) throws DAQException;
+   void setRegisterList(long store, long camera, Location.LocationType type, int[] registerList) throws DAQException;
+   
+   ImageMetaData triggerImage(long store, long camera, ImageMetaData meta) throws DAQException;
 
-   long startSequencer(long store, int opcode) throws DAQException;
-
+   long startSequencer(long camera, int opcode) throws DAQException;
 }
