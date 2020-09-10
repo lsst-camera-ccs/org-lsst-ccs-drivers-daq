@@ -47,6 +47,7 @@ static jmethodID JCimageSourceStreamCallbackMethod;
 static jclass JCexClass;
 static jmethodID JCexConstructor;
 static jmethodID JCexConstructor2;
+static jclass JCintArrayClass;
 
 jstring decode(JNIEnv* env, jint error) {
    const char* decoded = IMS::Exception::decode(error);
@@ -277,6 +278,12 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     if (env->ExceptionCheck()) {
         return JNI_VERSION;
     } 
+
+    jclass intArrayClass = env->FindClass("[I");
+    if (env->ExceptionCheck()) {
+        return JNI_VERSION;
+    }
+    JCintArrayClass = (jclass) env->NewGlobalRef(intArrayClass);
 
     // Call corresponding function in Statistics.cpp
     JNI_Stats_OnLoad(env);
@@ -636,18 +643,39 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
     delete ((RMS::Client*) client);
 }
 
-JNIEXPORT jintArray JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_readRegisters
-  (JNIEnv *env, jobject obj, jlong client, jobject bitset, jint address) {
+JNIEXPORT jobjectArray JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_readRegisters
+  (JNIEnv *env, jobject obj, jlong client, jobject locations, jintArray addresses) {
+
+    int numRegs = env->GetArrayLength(addresses);
+    if (numRegs >= RMS::InstructionList::MAXIMUM) {
+        char text[MESSAGE_LENGTH];
+        snprintf(text, MESSAGE_LENGTH, "Too many registers specified: %d", numRegs);
+        throwDAQException(env, text);
+        return NULL;
+    }
+
+    DAQ::LocationSet locations_ = convertLocations(env, locations);
     RMS::Client* client_ = (RMS::Client*) client;
-    RMS::InstructionList reg(RMS::Instruction(RMS::Instruction::GET, address));
-    MyHarvester harvester;
-    client_->access(reg, harvester);
-    if (harvester.errors().numof() > 0) {
+    RMS::InstructionList instList;
+
+    int* regArray = env->GetIntArrayElements(addresses, NULL);
+    for (int j = 0; j < numRegs; j++) {
+        instList.insert(RMS::Instruction::GET, regArray[j]);
+    }
+    env->ReleaseIntArrayElements(addresses, regArray, JNI_ABORT);
+
+    MyHarvester harvester(numRegs);
+    client_->access(locations_, instList, harvester);
+    if (harvester.errorCount() > 0) {
         char x[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "%d errors reading address %d", harvester.errors().numof(), address);
+        snprintf(x, MESSAGE_LENGTH, "%d errors reading registers", harvester.errorCount());
         throwDAQException(env, x);
     }
-    jintArray result = env->NewIntArray(25*4);
-    env->SetIntArrayRegion(result, 0, 25*4, harvester.values());
+    jobjectArray result = env->NewObjectArray(numRegs, JCintArrayClass, NULL);
+    for (int j=0; j < numRegs; j++) {
+        jintArray intArray = env->NewIntArray(locations_.SIZE);
+        env->SetIntArrayRegion(intArray, 0, locations_.SIZE, harvester.values(j));
+        env->SetObjectArrayElement(result, j, intArray);
+    }
     return result;
 }

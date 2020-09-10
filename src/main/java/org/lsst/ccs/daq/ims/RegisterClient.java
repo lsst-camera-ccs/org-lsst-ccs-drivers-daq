@@ -20,7 +20,7 @@ public class RegisterClient {
         store.detachClient(this.client);
     }
     
-    public int[] readRegisters(LocationSet locations, int address) throws DAQException {
-        return store.readRegisters(client, locations.getBitSet(), address);
+    public int[][] readRegisters(LocationSet locations, int... addresses) throws DAQException {
+        return store.readRegisters(client, locations.getBitSet(), addresses);
     }
 }

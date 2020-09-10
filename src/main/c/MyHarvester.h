@@ -8,17 +8,18 @@
 
 class MyHarvester : public RMS::Harvest {
 public:
-    MyHarvester();
+    MyHarvester(int size);
 public:
-    ~MyHarvester() {}
+    ~MyHarvester() { delete _values; }
 public:
     void process(const DAQ::Location& loc, const RMS::InstructionList& result, int32_t error);
-    DAQ::LocationSet errors() { return _errors; }
-    int* values() { return _values; }
+    int errorCount() { return _errors.numof(); }
+    int* values(int i) { return _values+i*_all.SIZE; }
 private:
+    int _size;
     DAQ::LocationSet _all;
     DAQ::LocationSet _errors;
-    int _values[4*25];
+    int* _values;
 };
 
 #endif

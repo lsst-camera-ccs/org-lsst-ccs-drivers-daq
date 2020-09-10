@@ -490,12 +490,12 @@ public class CommandTool {
     }
 
     @Command(name = "readReg", description = "Read registers")
-    public void readReg(int address) throws DAQException {
+    public void readReg(int... address) throws DAQException {
         checkStore();
         RegisterClient registerClient = store.getRegisterClient();
-        int[] values = registerClient.readRegisters(locations(), address);
+        int[][] values = registerClient.readRegisters(locations(), address);
         for (Location location : locations()) {
-            System.out.printf("%s: %d\n", location, values[location.index()]);
+            System.out.printf("%s: %s\n", location, Arrays.toString(values[location.index()]));
         }
     }
     

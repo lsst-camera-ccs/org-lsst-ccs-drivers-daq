@@ -99,7 +99,7 @@ public class Store implements AutoCloseable {
         }
     }
 
-        /**
+    /**
      * Gets the camera associated with this store.The camera can be used to trigger images.
      *
      * @return The camera associated with this store.
@@ -393,7 +393,7 @@ public class Store implements AutoCloseable {
         impl.detachClient(client);
     }
 
-    int[] readRegisters(long client, BitSet locations, int address) throws DAQException {
-        return impl.readRegisters(client, locations, address);
+    int[][] readRegisters(long client, BitSet locations, int[] addresses) throws DAQException {
+        return impl.readRegisters(client, locations, addresses);
     }
 }
