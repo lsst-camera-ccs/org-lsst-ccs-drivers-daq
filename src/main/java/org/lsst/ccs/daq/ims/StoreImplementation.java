@@ -67,4 +67,6 @@ interface StoreImplementation {
     void detachClient(long client) throws DAQException;
 
     int[][] readRegisters(long client, BitSet locations, int[] addresses) throws DAQException;
+
+    void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException;
 }

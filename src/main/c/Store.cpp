@@ -679,3 +679,35 @@ JNIEXPORT jobjectArray JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementati
     }
     return result;
 }
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_writeRegisters
+  (JNIEnv *env, jobject obj, jlong client, jobject locations, jintArray addresses, jintArray values) {
+
+    int numRegs = env->GetArrayLength(addresses);
+    if (numRegs > RMS::InstructionList::MAXIMUM) {
+        char text[MESSAGE_LENGTH];
+        snprintf(text, MESSAGE_LENGTH, "Too many registers specified: %d", numRegs);
+        throwDAQException(env, text);
+        return;
+    }
+
+    DAQ::LocationSet locations_ = convertLocations(env, locations);
+    RMS::Client* client_ = (RMS::Client*) client;
+    RMS::InstructionList instList;
+
+    int* regArray = env->GetIntArrayElements(addresses, NULL);
+    int* regValues = env->GetIntArrayElements(values, NULL);
+    for (int j = 0; j < numRegs; j++) {
+        instList.insert(RMS::Instruction::PUT, regArray[j], regValues[j]);
+    }
+    env->ReleaseIntArrayElements(addresses, regArray, JNI_ABORT);
+    env->ReleaseIntArrayElements(addresses, regValues, JNI_ABORT);
+
+    MyHarvester harvester(numRegs);
+    client_->access(locations_, instList, harvester);
+    if (harvester.errorCount() > 0) {
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "%d errors writing registers", harvester.errorCount());
+        throwDAQException(env, x);
+    }
+}

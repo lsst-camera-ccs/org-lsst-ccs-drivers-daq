@@ -60,6 +60,11 @@ class StoreSimulatedImplementation implements StoreImplementation {
     public int[][] readRegisters(long client, BitSet locations, int[] addresses) throws DAQException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
     @Override
     public long capacity(long store) throws DAQException {

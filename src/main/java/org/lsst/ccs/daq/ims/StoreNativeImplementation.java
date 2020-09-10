@@ -110,4 +110,7 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native int[][] readRegisters(long client, BitSet locations, int[] addresses) throws DAQException;
+
+    @Override
+    public synchronized native void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException;
 }
