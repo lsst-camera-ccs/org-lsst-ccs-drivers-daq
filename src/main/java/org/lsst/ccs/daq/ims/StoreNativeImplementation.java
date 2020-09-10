@@ -4,6 +4,7 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import org.lsst.ccs.utilities.location.Location.LocationType;
+import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
  * The native implementation of the store. This implementation required the DAQ
@@ -28,6 +29,12 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native void detachCamera(long camera) throws DAQException;
+    
+    @Override
+    public synchronized native long attachClient(String partition) throws DAQException;
+
+    @Override
+    public synchronized native void detachClient(long client) throws DAQException;
 
     @Override
     public synchronized native long capacity(long store) throws DAQException;
@@ -99,4 +106,8 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native long startSequencer(long camera, int opcode) throws DAQException;
+
+
+    @Override
+    public synchronized native int[] readRegisters(long client, BitSet locations, int address) throws DAQException;
 }

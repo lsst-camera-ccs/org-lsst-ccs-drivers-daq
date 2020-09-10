@@ -23,6 +23,7 @@ import org.lsst.ccs.utilities.location.LocationSet;
 public class Store implements AutoCloseable {
 
     private Camera camera;
+    private RegisterClient client;
     private final Catalog catalog;
     private final String partition;
     private final long store;
@@ -89,13 +90,31 @@ public class Store implements AutoCloseable {
      * @throws org.lsst.ccs.daq.ims.DAQException
      */
     public Camera getCamera() throws DAQException {
-        if (camera == null) {
-            long camera_ = impl.attachCamera(store);
-            this.camera = new Camera(this, camera_);
+        synchronized (this) {
+            if (camera == null) {
+                long camera_ = impl.attachCamera(store);
+                this.camera = new Camera(this, camera_);
+            }
+            return camera;
         }
-        return camera;
     }
 
+        /**
+     * Gets the camera associated with this store.The camera can be used to trigger images.
+     *
+     * @return The camera associated with this store.
+     * @throws org.lsst.ccs.daq.ims.DAQException
+     */
+    public RegisterClient getRegisterClient() throws DAQException {
+        synchronized (this) {
+            if (client == null) {
+                long client_ = impl.attachClient(getPartition());
+                this.client = new RegisterClient(this, client_);
+            }
+            return client;
+        }
+    }
+    
     /**
      * The name of the associated DAQ partition.
      *
@@ -290,6 +309,9 @@ public class Store implements AutoCloseable {
         if (camera != null) {
             camera.detach();
         }
+        if (client != null) {
+            client.detach();
+        }
         impl.detachStore(store);
     }
 
@@ -365,5 +387,13 @@ public class Store implements AutoCloseable {
 
     void setRegisterList(long camera, Location.LocationType rebType, int[] registerAddresses) throws DAQException {
         impl.setRegisterList(store, camera, rebType, registerAddresses);
+    }
+
+    void detachClient(long client) throws DAQException {
+        impl.detachClient(client);
+    }
+
+    int[] readRegisters(long client, BitSet locations, int address) throws DAQException {
+        return impl.readRegisters(client, locations, address);
     }
 }

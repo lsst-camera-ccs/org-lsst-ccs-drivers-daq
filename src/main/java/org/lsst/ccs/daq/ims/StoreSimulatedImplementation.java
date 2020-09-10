@@ -45,6 +45,21 @@ class StoreSimulatedImplementation implements StoreImplementation {
     public void detachCamera(long camera) throws DAQException {
 
     }
+
+    @Override
+    public long attachClient(String partition) throws DAQException {
+        return 102;
+    }
+
+    @Override
+    public void detachClient(long client) throws DAQException {
+    }
+
+
+    @Override
+    public int[] readRegisters(long client, BitSet locations, int address) throws DAQException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
     @Override
     public long capacity(long store) throws DAQException {

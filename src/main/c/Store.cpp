@@ -14,10 +14,14 @@
 #include "xds/Page.hh"
 #include "cms/Camera.hh"
 #include "cms/Exception.hh"
+#include "rms/Client.hh"
+#include "rms/Instruction.hh"
+#include "rms/InstructionList.hh"
 
 #include "MyFolders.h"
 #include "MyProcessor.h"
 #include "MyBarrier.h"
+#include "MyHarvester.h"
 #include "Statistics.h"
 
 #define MESSAGE_LENGTH 256
@@ -611,4 +615,39 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_star
     OSA::TimeStamp timestamp;
     camera_->sequence(opcode, timestamp);
     return (jlong)timestamp;
+}
+
+
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachClient
+(JNIEnv* env, jobject obj, jstring partition) {
+
+    const char *partition_name = env->GetStringUTFChars(partition, 0);
+    try {
+        RMS::Client *client = new RMS::Client(partition_name);
+        env->ReleaseStringUTFChars(partition, partition_name);
+        return (jlong) client;
+    } catch (DSM::Exception& x) {
+        return env->ThrowNew(JCexClass, x.what());
+    }
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detachClient
+(JNIEnv* env, jobject obj, jlong client) {
+    delete ((RMS::Client*) client);
+}
+
+JNIEXPORT jintArray JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_readRegisters
+  (JNIEnv *env, jobject obj, jlong client, jobject bitset, jint address) {
+    RMS::Client* client_ = (RMS::Client*) client;
+    RMS::InstructionList reg(RMS::Instruction(RMS::Instruction::GET, address));
+    MyHarvester harvester;
+    client_->access(reg, harvester);
+    if (harvester.errors().numof() > 0) {
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "%d errors reading address %d", harvester.errors().numof(), address);
+        throwDAQException(env, x);
+    }
+    jintArray result = env->NewIntArray(25*4);
+    env->SetIntArrayRegion(result, 0, 25*4, harvester.values());
+    return result;
 }

@@ -49,6 +49,7 @@ import org.lsst.ccs.daq.ims.Folder;
 import org.lsst.ccs.daq.ims.Image;
 import org.lsst.ccs.daq.ims.ImageListener;
 import org.lsst.ccs.daq.ims.ImageMetaData;
+import org.lsst.ccs.daq.ims.RegisterClient;
 import org.lsst.ccs.daq.ims.Source;
 import org.lsst.ccs.daq.ims.Source.ChannelMode;
 import org.lsst.ccs.daq.ims.SourceMetaData;
@@ -488,6 +489,16 @@ public class CommandTool {
         }
     }
 
+    @Command(name = "readReg", description = "Read registers")
+    public void readReg(int address) throws DAQException {
+        checkStore();
+        RegisterClient registerClient = store.getRegisterClient();
+        int[] values = registerClient.readRegisters(locations(), address);
+        for (Location location : locations()) {
+            System.out.printf("%s: %d\n", location, values[location.index()]);
+        }
+    }
+    
     private void checkStore() {
         if (store == null) {
             throw new RuntimeException("Please connect to store first");
