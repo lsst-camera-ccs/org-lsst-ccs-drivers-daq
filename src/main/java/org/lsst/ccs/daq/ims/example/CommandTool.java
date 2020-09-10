@@ -38,6 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
 import nom.tam.fits.TruncatedFileException;
@@ -493,9 +494,9 @@ public class CommandTool {
     public void readReg(int... address) throws DAQException {
         checkStore();
         RegisterClient registerClient = store.getRegisterClient();
-        int[][] values = registerClient.readRegisters(locations(), address);
+        Map<Location, int[]> result = registerClient.readRegisters(locations(), address);
         for (Location location : locations()) {
-            System.out.printf("%s: %s\n", location, Arrays.toString(values[location.index()]));
+            System.out.printf("%s: %s\n",location, Arrays.stream(result.get(location)).mapToObj(i->String.format("%08x", i)).collect(Collectors.joining(",")));
         }
     }
     

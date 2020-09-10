@@ -556,7 +556,7 @@ void setRegisterList
 
     if (regs == NULL) return;
     int numRegs = env->GetArrayLength(regs);
-    if (numRegs >= RMS::InstructionList::MAXIMUM) {
+    if (numRegs > RMS::InstructionList::MAXIMUM) {
         char text[MESSAGE_LENGTH];
         snprintf(text, MESSAGE_LENGTH, "Too many registers specified: %d", numRegs);
         throwDAQException(env, text);
@@ -647,7 +647,7 @@ JNIEXPORT jobjectArray JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementati
   (JNIEnv *env, jobject obj, jlong client, jobject locations, jintArray addresses) {
 
     int numRegs = env->GetArrayLength(addresses);
-    if (numRegs >= RMS::InstructionList::MAXIMUM) {
+    if (numRegs > RMS::InstructionList::MAXIMUM) {
         char text[MESSAGE_LENGTH];
         snprintf(text, MESSAGE_LENGTH, "Too many registers specified: %d", numRegs);
         throwDAQException(env, text);
@@ -671,10 +671,10 @@ JNIEXPORT jobjectArray JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementati
         snprintf(x, MESSAGE_LENGTH, "%d errors reading registers", harvester.errorCount());
         throwDAQException(env, x);
     }
-    jobjectArray result = env->NewObjectArray(numRegs, JCintArrayClass, NULL);
-    for (int j=0; j < numRegs; j++) {
-        jintArray intArray = env->NewIntArray(locations_.SIZE);
-        env->SetIntArrayRegion(intArray, 0, locations_.SIZE, harvester.values(j));
+    jobjectArray result = env->NewObjectArray(locations_.SIZE, JCintArrayClass, NULL);
+    for (int j=0; j < locations_.SIZE; j++) {
+        jintArray intArray = env->NewIntArray(numRegs);
+        env->SetIntArrayRegion(intArray, 0, numRegs, harvester.values(j));
         env->SetObjectArrayElement(result, j, intArray);
     }
     return result;

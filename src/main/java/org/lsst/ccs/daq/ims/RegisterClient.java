@@ -1,5 +1,8 @@
 package org.lsst.ccs.daq.ims;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
@@ -20,7 +23,12 @@ public class RegisterClient {
         store.detachClient(this.client);
     }
     
-    public int[][] readRegisters(LocationSet locations, int... addresses) throws DAQException {
-        return store.readRegisters(client, locations.getBitSet(), addresses);
+    public Map<Location, int[]> readRegisters(LocationSet locations, int... addresses) throws DAQException {
+        int[][] values =  store.readRegisters(client, locations.getBitSet(), addresses);
+        Map<Location, int[]> result = new LinkedHashMap<>();
+        for (Location l : locations) {
+            result.put(l, values[l.index()]);
+        }
+        return result;
     }
 }
