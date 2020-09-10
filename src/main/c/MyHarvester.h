@@ -4,6 +4,7 @@
 #include "rms/Harvest.hh"
 #include "rms/InstructionList.hh"
 #include "daq/Location.hh"
+#include "daq/LocationSet.hh"
 
 class MyHarvester : public RMS::Harvest {
 public:
