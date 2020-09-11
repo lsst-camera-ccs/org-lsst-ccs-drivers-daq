@@ -58,7 +58,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
 
     @Override
     public int[][] readRegisters(long client, BitSet locations, int[] addresses) throws DAQException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return new int[locations.size()][addresses.length];
     }
 
     @Override
