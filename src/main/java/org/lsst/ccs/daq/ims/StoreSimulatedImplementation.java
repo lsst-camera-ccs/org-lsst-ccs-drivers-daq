@@ -55,17 +55,28 @@ class StoreSimulatedImplementation implements StoreImplementation {
     public void detachClient(long client) throws DAQException {
     }
 
-
     @Override
-    public int[][] readRegisters(long client, BitSet locations, int[] addresses) throws DAQException {
-        return new int[locations.size()][addresses.length];
+    public int[][] readRegisters(long client, BitSet bitset, int[] addresses) throws DAQException {
+        int[][] result = new int[4*25][addresses.length];
+        LocationSet locations = new LocationSet(bitset);
+        for (Location l : locations) {
+            for (int i=0; i<addresses.length; i++) {
+                result[l.index()][i] = storeSimulation.readRegister(l, addresses[i]);
+            }
+        }
+        return result;
     }
 
     @Override
-    public void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void writeRegisters(long client, BitSet bitset, int[] addresses, int[] values) throws DAQException {
+        LocationSet locations = new LocationSet(bitset);
+        for (Location l : locations) {
+            for (int i=0; i<addresses.length; i++) {
+                storeSimulation.writeRegister(l, addresses[i], values[i]);
+            }
+        }
     }
-    
+
     @Override
     public long capacity(long store) throws DAQException {
         return 500_000_000_000L;
@@ -139,12 +150,12 @@ class StoreSimulatedImplementation implements StoreImplementation {
     @Override
     public int waitForImage(Store callback, long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException {
         try {
-            ImageMetaData meta = imageTimeoutMicros==0 ? queue.take() : queue.poll(imageTimeoutMicros, TimeUnit.MICROSECONDS);
+            ImageMetaData meta = imageTimeoutMicros == 0 ? queue.take() : queue.poll(imageTimeoutMicros, TimeUnit.MICROSECONDS);
             if (meta == null) {
                 return 68; // Timeout
             } else {
                 callback.imageCreatedCallback(meta);
-                TimeUnit.MICROSECONDS.sleep(sourceTimeoutMicros/2);
+                TimeUnit.MICROSECONDS.sleep(sourceTimeoutMicros / 2);
                 callback.imageCompleteCallback(meta);
                 return 0;
             }
@@ -172,7 +183,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     public void setRegisterList(long store, long camera, LocationType type, int[] registerList) throws DAQException {
         registerLists.put(type, registerList);
     }
-    
+
     @Override
     public ImageMetaData triggerImage(long store, long camera, ImageMetaData meta) throws DAQException {
         Instant now = Instant.now();

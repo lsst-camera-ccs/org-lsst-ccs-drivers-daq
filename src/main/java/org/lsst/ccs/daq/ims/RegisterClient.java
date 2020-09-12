@@ -6,7 +6,7 @@ import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
- * A getRegisterClient for reading and writing registers
+ * A c;ass for doing bulk read/write operations on REB registers.
  * @author tonyj
  */
 public class RegisterClient {
