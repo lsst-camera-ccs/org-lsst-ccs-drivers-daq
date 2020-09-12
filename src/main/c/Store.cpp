@@ -24,7 +24,7 @@
 #include "MyHarvester.h"
 #include "Statistics.h"
 
-#define MESSAGE_LENGTH 256
+#define MESSAGE_LENGTH 1024
 
 using namespace IMS;
 
@@ -668,7 +668,9 @@ JNIEXPORT jobjectArray JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementati
     client_->access(locations_, instList, harvester);
     if (harvester.errorCount() > 0) {
         char x[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "%d errors reading registers", harvester.errorCount());
+        char encoded[MESSAGE_LENGTH];
+        harvester.errors().encode(encoded);
+        snprintf(x, MESSAGE_LENGTH, "%d errors reading registers %s", harvester.errorCount(), encoded);
         throwDAQException(env, x);
     }
     jobjectArray result = env->NewObjectArray(locations_.SIZE, JCintArrayClass, NULL);

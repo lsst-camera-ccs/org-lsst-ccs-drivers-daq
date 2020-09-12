@@ -14,6 +14,7 @@ public:
 public:
     void process(const DAQ::Location& loc, const RMS::InstructionList& result, int32_t error);
     int errorCount() { return _errors.numof(); }
+    DAQ::LocationSet errors() { return _errors; }
     int* values(int i) { return _values+i*_size; }
 private:
     int _size;
