@@ -21,6 +21,10 @@ $(OBJ)/MyProcessor.o: MyProcessor.cpp MyProcessor.h
 	mkdir -p $(OBJ)
 	$(CC) -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -o $@ -c $<
 
+$(OBJ)/MyHarvester.o: MyHarvester.cpp MyHarvester.h
+	mkdir -p $(OBJ)
+	$(CC) -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -o $@ -c $<
+
 $(OBJ)/MyBarrier.o: MyBarrier.cpp MyBarrier.h
 	mkdir -p $(OBJ)
 	$(CC) -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -o $@ -c $<
@@ -33,6 +37,6 @@ $(OBJ)/Statistics.o: Statistics.cpp $(INC)/org_lsst_ccs_daq_ims_Stats.h
 	mkdir -p $(OBJ)
 	$(CC) -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -o $@ -c $<
 
-$(LIBTGT)/libccs_daq_ims.so: $(OBJ)/Store.o $(OBJ)/MyFolders.o $(OBJ)/MyProcessor.o $(OBJ)/Channel.o $(OBJ)/MyBarrier.o $(OBJ)/Statistics.o
+$(LIBTGT)/libccs_daq_ims.so: $(OBJ)/Store.o $(OBJ)/MyFolders.o $(OBJ)/MyProcessor.o $(OBJ)/Channel.o $(OBJ)/MyBarrier.o $(OBJ)/Statistics.o $(OBJ)/MyHarvester.o
 	mkdir -p ${LIBTGT}
-	$(CC) -shared -Wl,-rpath=$(DAQ_HOME)/x86/lib -L$(DAQ_HOME)/x86/lib -ldaq_ims -ldaq_dsm -ldaq_rms -ldaq_rds -ldaq_cms -o $@ $^
+	$(CC) -shared -Wl,-rpath=$(DAQ_HOME)/x86/lib -L$(DAQ_HOME)/x86/lib -ldaq_ims -ldaq_dsm -ldaq_rms -ldaq_rds -ldaq_cms -ldaq_rms -o $@ $^

@@ -38,6 +38,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
 import nom.tam.fits.TruncatedFileException;
@@ -49,6 +50,7 @@ import org.lsst.ccs.daq.ims.Folder;
 import org.lsst.ccs.daq.ims.Image;
 import org.lsst.ccs.daq.ims.ImageListener;
 import org.lsst.ccs.daq.ims.ImageMetaData;
+import org.lsst.ccs.daq.ims.RegisterClient;
 import org.lsst.ccs.daq.ims.Source;
 import org.lsst.ccs.daq.ims.Source.ChannelMode;
 import org.lsst.ccs.daq.ims.SourceMetaData;
@@ -488,6 +490,16 @@ public class CommandTool {
         }
     }
 
+    @Command(name = "readReg", description = "Read registers")
+    public void readReg(int... address) throws DAQException {
+        checkStore();
+        RegisterClient registerClient = store.getRegisterClient();
+        Map<Location, int[]> result = registerClient.readRegisters(locations(), address);
+        for (Location location : locations()) {
+            System.out.printf("%s: %s\n",location, Arrays.stream(result.get(location)).mapToObj(i->String.format("%08x", i)).collect(Collectors.joining(",")));
+        }
+    }
+    
     private void checkStore() {
         if (store == null) {
             throw new RuntimeException("Please connect to store first");

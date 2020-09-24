@@ -12,7 +12,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.lsst.ccs.utilities.location.Location.LocationType;
 import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
@@ -23,7 +22,8 @@ import org.lsst.ccs.utilities.location.LocationSet;
  */
 public class Store implements AutoCloseable {
 
-    private final Camera camera;
+    private Camera camera;
+    private RegisterClient client;
     private final Catalog catalog;
     private final String partition;
     private final long store;
@@ -39,10 +39,11 @@ public class Store implements AutoCloseable {
     static {
         // FIXME: This requires a System (not bootstrap) property be set.
         String runMode = System.getProperty("org.lsst.ccs.run.mode");
-        if (runMode != null) LOG.log(Level.INFO, "runMode={0}", runMode);
-        impl
-                = "simulation".equals(runMode)
-                ? new StoreSimulatedImplementation() : new StoreNativeImplementation();
+        if (runMode != null) {
+            LOG.log(Level.INFO, "runMode={0}", runMode);
+        }
+        impl = "simulation".equals(runMode)
+               ? new StoreSimulatedImplementation() : new StoreNativeImplementation();
     }
     private Future<?> waitForImageTask;
 
@@ -69,7 +70,6 @@ public class Store implements AutoCloseable {
         this.partition = partition;
         this.executor = executor;
         catalog = new Catalog(this);
-        camera = new Camera(this);
         store = impl.attachStore(partition);
     }
 
@@ -84,15 +84,37 @@ public class Store implements AutoCloseable {
     }
 
     /**
-     * Gets the camera associated with this store. The camera can be used to
-     * trigger images.
+     * Gets the camera associated with this store.The camera can be used to trigger images.
      *
      * @return The camera associated with this store.
+     * @throws org.lsst.ccs.daq.ims.DAQException
      */
-    public Camera getCamera() {
-        return camera;
+    public Camera getCamera() throws DAQException {
+        synchronized (this) {
+            if (camera == null) {
+                long camera_ = impl.attachCamera(store);
+                this.camera = new Camera(this, camera_);
+            }
+            return camera;
+        }
     }
 
+    /**
+     * Gets the camera associated with this store.The camera can be used to trigger images.
+     *
+     * @return The camera associated with this store.
+     * @throws org.lsst.ccs.daq.ims.DAQException
+     */
+    public RegisterClient getRegisterClient() throws DAQException {
+        synchronized (this) {
+            if (client == null) {
+                long client_ = impl.attachClient(getPartition());
+                this.client = new RegisterClient(this, client_);
+            }
+            return client;
+        }
+    }
+    
     /**
      * The name of the associated DAQ partition.
      *
@@ -148,7 +170,7 @@ public class Store implements AutoCloseable {
                     try {
                         Thread.currentThread().setName("ImageStreamThread_" + partition);
                         long waitForImageStore = impl.attachStore(partition);
-                        try { 
+                        try {
                             while (!Thread.currentThread().isInterrupted()) {
                                 int rc = impl.waitForImage(Store.this, waitForImageStore, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
                                 if (rc != 0 && rc != 68) { // 68 appears to mean timeout
@@ -160,7 +182,7 @@ public class Store implements AutoCloseable {
                         }
                     } catch (Throwable x) {
                         LOG.log(Level.SEVERE, x, () -> String.format("Thread %s exiting", Thread.currentThread().getName()));
-                    } 
+                    }
                 });
 
             }
@@ -284,6 +306,12 @@ public class Store implements AutoCloseable {
         if (waitForImageTask != null && !waitForImageTask.isDone()) {
             waitForImageTask.cancel(true);
         }
+        if (camera != null) {
+            camera.detach();
+        }
+        if (client != null) {
+            client.detach();
+        }
         impl.detachStore(store);
     }
 
@@ -337,12 +365,12 @@ public class Store implements AutoCloseable {
         return impl.addSourceToImage(store, id, location.index(), (byte) location.type().getCCDCount(), "test-platform", registerValues);
     }
 
-    ImageMetaData triggerImage(ImageMetaData meta, Map<LocationType, int[]> registerLists) throws DAQException {
-        return impl.triggerImage(store, meta, registerLists);
+    ImageMetaData triggerImage(long camera, ImageMetaData meta) throws DAQException {
+        return impl.triggerImage(store, camera, meta);
     }
 
-    long startSequencer(int opcode) throws DAQException {
-        return impl.startSequencer(store, opcode);
+    long startSequencer(long camera, int opcode) throws DAQException {
+        return impl.startSequencer(camera, opcode);
     }
 
     public static Version getClientVersion() throws DAQException {
@@ -351,5 +379,25 @@ public class Store implements AutoCloseable {
 
     static String decodeException(int rc) {
         return impl.decodeException(rc);
+    }
+
+    void detachCamera(long camera) throws DAQException {
+        impl.detachCamera(camera);
+    }
+
+    void setRegisterList(long camera, Location.LocationType rebType, int[] registerAddresses) throws DAQException {
+        impl.setRegisterList(store, camera, rebType, registerAddresses);
+    }
+
+    void detachClient(long client) throws DAQException {
+        impl.detachClient(client);
+    }
+
+    int[][] readRegisters(long client, BitSet locations, int[] addresses) throws DAQException {
+        return impl.readRegisters(client, locations, addresses);
+    }
+
+    void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException {
+        impl.writeRegisters(client, locations, addresses, values);
     }
 }

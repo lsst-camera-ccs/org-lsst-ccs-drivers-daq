@@ -2,11 +2,13 @@ package org.lsst.ccs.daq.ims;
 
 import java.time.Instant;
 import java.util.BitSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.Location.LocationType;
 import org.lsst.ccs.utilities.location.LocationSet;
 
@@ -22,6 +24,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     private final Random random = new Random();
     private final Version release = new Version("daq-simulation", toNanos(Instant.now()), false, 12345);
     private final SynchronousQueue<ImageMetaData> queue = new SynchronousQueue<>();
+    private final Map<Location.LocationType, int[]> registerLists = new HashMap<>();
 
     @Override
     public long attachStore(String partition) throws DAQException {
@@ -31,6 +34,47 @@ class StoreSimulatedImplementation implements StoreImplementation {
     @Override
     public void detachStore(long store) throws DAQException {
 
+    }
+
+    @Override
+    public long attachCamera(long store) throws DAQException {
+        return 101;
+    }
+
+    @Override
+    public void detachCamera(long camera) throws DAQException {
+
+    }
+
+    @Override
+    public long attachClient(String partition) throws DAQException {
+        return 102;
+    }
+
+    @Override
+    public void detachClient(long client) throws DAQException {
+    }
+
+    @Override
+    public int[][] readRegisters(long client, BitSet bitset, int[] addresses) throws DAQException {
+        int[][] result = new int[4*25][addresses.length];
+        LocationSet locations = new LocationSet(bitset);
+        for (Location l : locations) {
+            for (int i=0; i<addresses.length; i++) {
+                result[l.index()][i] = storeSimulation.readRegister(l, addresses[i]);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public void writeRegisters(long client, BitSet bitset, int[] addresses, int[] values) throws DAQException {
+        LocationSet locations = new LocationSet(bitset);
+        for (Location l : locations) {
+            for (int i=0; i<addresses.length; i++) {
+                storeSimulation.writeRegister(l, addresses[i], values[i]);
+            }
+        }
     }
 
     @Override
@@ -106,12 +150,12 @@ class StoreSimulatedImplementation implements StoreImplementation {
     @Override
     public int waitForImage(Store callback, long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException {
         try {
-            ImageMetaData meta = imageTimeoutMicros==0 ? queue.take() : queue.poll(imageTimeoutMicros, TimeUnit.MICROSECONDS);
+            ImageMetaData meta = imageTimeoutMicros == 0 ? queue.take() : queue.poll(imageTimeoutMicros, TimeUnit.MICROSECONDS);
             if (meta == null) {
                 return 68; // Timeout
             } else {
                 callback.imageCreatedCallback(meta);
-                TimeUnit.MICROSECONDS.sleep(sourceTimeoutMicros/2);
+                TimeUnit.MICROSECONDS.sleep(sourceTimeoutMicros / 2);
                 callback.imageCompleteCallback(meta);
                 return 0;
             }
@@ -136,7 +180,12 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public ImageMetaData triggerImage(long store, ImageMetaData meta,  Map<LocationType, int[]> registerLists) throws DAQException {
+    public void setRegisterList(long store, long camera, LocationType type, int[] registerList) throws DAQException {
+        registerLists.put(type, registerList);
+    }
+
+    @Override
+    public ImageMetaData triggerImage(long store, long camera, ImageMetaData meta) throws DAQException {
         Instant now = Instant.now();
         long id = random.nextLong();
         storeSimulation.fireTrigger(meta.getOpcode(), meta, registerLists);
@@ -146,7 +195,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public long startSequencer(long store, int opcode) throws DAQException {
+    public long startSequencer(long camera, int opcode) throws DAQException {
         Instant now = Instant.now();
         storeSimulation.fireTrigger(opcode, null, null);
         return toNanos(now);

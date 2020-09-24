@@ -1,8 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 import org.lsst.ccs.utilities.location.Location;
 
 /**
@@ -12,11 +10,12 @@ import org.lsst.ccs.utilities.location.Location;
  */
 public class Camera {
     private final Store store;
-    public final static int OPCODE_STOP = 31;
-    private final Map<Location.LocationType, int[]> registerLists = new HashMap<>();
+    private final long camera;
+    public final static int OPCODE_STEP = 31;
     
-    Camera(Store store) {
+    Camera(Store store, long camera) {
         this.store = store;
+        this.camera = camera;
     }
     
     /**
@@ -26,7 +25,7 @@ public class Camera {
      * @throws DAQException 
      */
     public void setRegisterList(Location.LocationType rebType, int[] registerAddresses) throws DAQException {
-        registerLists.put(rebType, registerAddresses);
+        store.setRegisterList(camera, rebType, registerAddresses);
     }
    
     /**
@@ -36,7 +35,7 @@ public class Camera {
      * @throws DAQException 
      */
     public Image triggerImage(ImageMetaData meta) throws DAQException {
-        return new Image(store, store.triggerImage(meta, registerLists));
+        return new Image(store, store.triggerImage(camera, meta));
     }
    
     /**
@@ -47,7 +46,11 @@ public class Camera {
      * @throws DAQException 
      */
     public Instant startSequencer(int opcode) throws DAQException {
-        long timestampNanos = store.startSequencer(opcode);
+        long timestampNanos = store.startSequencer(camera, opcode);
         return Instant.ofEpochSecond(timestampNanos / 1_000_000_000, timestampNanos % 1_000_000_000);
+    }
+
+    void detach() throws DAQException {
+        store.detachCamera(this.camera);
     }
 }

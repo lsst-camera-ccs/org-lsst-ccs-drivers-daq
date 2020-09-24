@@ -4,6 +4,7 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import org.lsst.ccs.utilities.location.Location.LocationType;
+import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
  * The native implementation of the store. This implementation required the DAQ
@@ -22,6 +23,18 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native void detachStore(long store) throws DAQException;
+
+    @Override
+    public synchronized native long attachCamera(long store) throws DAQException;
+
+    @Override
+    public synchronized native void detachCamera(long camera) throws DAQException;
+    
+    @Override
+    public synchronized native long attachClient(String partition) throws DAQException;
+
+    @Override
+    public synchronized native void detachClient(long client) throws DAQException;
 
     @Override
     public synchronized native long capacity(long store) throws DAQException;
@@ -76,18 +89,28 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public native Version getClientVersion() throws DAQException;
-
-    private synchronized native void setRegisterList(long store, boolean science, boolean guider, int[] registerAddresses) throws DAQException;
-
+    
     @Override
-    public ImageMetaData triggerImage(long store, ImageMetaData meta,  Map<LocationType, int[]> registerLists) throws DAQException {
-        return triggerImage(store, meta.getCreationFolderName(), meta.getName(), meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet(),
-                registerLists.get(LocationType.SCIENCE), registerLists.get(LocationType.GUIDER), registerLists.get(LocationType.WAVEFRONT));
+    public void setRegisterList(long store, long camera, LocationType type, int[] registerList) throws DAQException {
+        setRegisterList(store, camera, type.getCCDCount(), registerList);
     }
 
-    private synchronized native ImageMetaData triggerImage(long store, String metaData, String name, String annotation, int opcode, BitSet locationBitSet,
-            int[] scienceRegisterList, int[] guiderRegisterList, int[] wavefrontRegisterList) throws DAQException;
+    @Override
+    public ImageMetaData triggerImage(long store, long camera, ImageMetaData meta) throws DAQException {
+        return triggerImage(store, camera, meta.getCreationFolderName(), meta.getName(), meta.getAnnotation(), meta.getOpcode(), meta.getLocationBitSet());
+    }
+
+    private synchronized native void setRegisterList(long store, long camera, int ccdCount, int[] registerAddresses) throws DAQException;
+
+    private synchronized native ImageMetaData triggerImage(long store, long camera, String metaData, String name, String annotation, int opcode, BitSet locationBitSet) throws DAQException;
 
     @Override
-    public synchronized native long startSequencer(long store, int opcode) throws DAQException;
+    public synchronized native long startSequencer(long camera, int opcode) throws DAQException;
+
+
+    @Override
+    public synchronized native int[][] readRegisters(long client, BitSet locations, int[] addresses) throws DAQException;
+
+    @Override
+    public synchronized native void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException;
 }

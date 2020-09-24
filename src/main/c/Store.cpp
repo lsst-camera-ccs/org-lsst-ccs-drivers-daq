@@ -14,13 +14,17 @@
 #include "xds/Page.hh"
 #include "cms/Camera.hh"
 #include "cms/Exception.hh"
+#include "rms/Client.hh"
+#include "rms/Instruction.hh"
+#include "rms/InstructionList.hh"
 
 #include "MyFolders.h"
 #include "MyProcessor.h"
 #include "MyBarrier.h"
+#include "MyHarvester.h"
 #include "Statistics.h"
 
-#define MESSAGE_LENGTH 256
+#define MESSAGE_LENGTH 1024
 
 using namespace IMS;
 
@@ -43,6 +47,7 @@ static jmethodID JCimageSourceStreamCallbackMethod;
 static jclass JCexClass;
 static jmethodID JCexConstructor;
 static jmethodID JCexConstructor2;
+static jclass JCintArrayClass;
 
 jstring decode(JNIEnv* env, jint error) {
    const char* decoded = IMS::Exception::decode(error);
@@ -274,6 +279,12 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
         return JNI_VERSION;
     } 
 
+    jclass intArrayClass = env->FindClass("[I");
+    if (env->ExceptionCheck()) {
+        return JNI_VERSION;
+    }
+    JCintArrayClass = (jclass) env->NewGlobalRef(intArrayClass);
+
     // Call corresponding function in Statistics.cpp
     JNI_Stats_OnLoad(env);
     
@@ -298,6 +309,19 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
 (JNIEnv* env, jobject obj, jlong store) {
     delete ((Store*) store);
 }
+
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachCamera
+(JNIEnv* env, jobject obj, jlong store) {
+    Store* store_ = (Store*) store;
+    CMS::Camera* camera = new CMS::Camera(*store_);
+    return (jlong) camera;
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detachCamera
+(JNIEnv* env, jobject obj, jlong camera) {
+    delete ((CMS::Camera*) camera);
+}
+
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_capacity
 (JNIEnv * env, jobject obj, jlong store) {
@@ -532,7 +556,7 @@ void setRegisterList
 
     if (regs == NULL) return;
     int numRegs = env->GetArrayLength(regs);
-    if (numRegs >= RMS::InstructionList::MAXIMUM) {
+    if (numRegs > RMS::InstructionList::MAXIMUM) {
         char text[MESSAGE_LENGTH];
         snprintf(text, MESSAGE_LENGTH, "Too many registers specified: %d", numRegs);
         throwDAQException(env, text);
@@ -547,15 +571,22 @@ void setRegisterList
     env->ReleaseIntArrayElements(regs, regArray, JNI_ABORT);
 }
 
-JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_triggerImage
-  (JNIEnv *env, jobject obj, jlong store, jstring folder, jstring imageName, jstring annotation, jint opcode, jobject bitset,
-       jintArray scienceRegs, jintArray guiderRegs, jintArray wavefrontRegs) {
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_setRegisterList
+  (JNIEnv *env, jobject obj, jlong store, jlong camera, jint ccdCount,  jintArray regs) {
+      CMS::Camera* camera_ = (CMS::Camera*) camera;
+      if (ccdCount == 1) {
+         setRegisterList(env, camera_->wavefront, regs);
+      } else if (ccdCount == 2) {
+         setRegisterList(env, camera_->guiding, regs);
+      } else if (ccdCount == 3) {
+         setRegisterList(env, camera_->science, regs);
+      }
+}
 
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_triggerImage
+  (JNIEnv *env, jobject obj, jlong store, jlong camera, jstring folder, jstring imageName, jstring annotation, jint opcode, jobject bitset) {
     Store* store_ = (Store*) store;
-    CMS::Camera camera(*store_);
-    setRegisterList(env, camera.science, scienceRegs);
-    setRegisterList(env, camera.guiding, guiderRegs);
-    setRegisterList(env, camera.wavefront, wavefrontRegs);
+    CMS::Camera* camera_ = (CMS::Camera*) camera;
     jobject result = NULL;
 
     const char *image_name = env->GetStringUTFChars(imageName, 0);
@@ -563,7 +594,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_tr
     const char *annotation_ = env->GetStringUTFChars(annotation, 0);
     DAQ::LocationSet locations_ = convertLocations(env, bitset);
     ImageMetadata meta(image_name, folder_name, locations_, opcode, annotation_);
-    int rc = camera.trigger(meta);
+    int rc = camera_->trigger(meta);
     if (rc != CMS::Exception::NONE) {
        char x[MESSAGE_LENGTH];
        snprintf(x, MESSAGE_LENGTH, "Triggering image %s in folder %s failed", image_name, folder_name);
@@ -586,11 +617,99 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_tr
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startSequencer
-  (JNIEnv *env, jobject obj, jlong store, jint opcode) {
-
-    Store* store_ = (Store*) store;
-    CMS::Camera camera(*store_);
+  (JNIEnv *env, jobject obj, jlong camera, jint opcode) {
+    CMS::Camera* camera_ = (CMS::Camera*) camera;
     OSA::TimeStamp timestamp;
-    camera.sequence(opcode, timestamp);
+    camera_->sequence(opcode, timestamp);
     return (jlong)timestamp;
+}
+
+
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachClient
+(JNIEnv* env, jobject obj, jstring partition) {
+
+    const char *partition_name = env->GetStringUTFChars(partition, 0);
+    try {
+        RMS::Client *client = new RMS::Client(partition_name);
+        env->ReleaseStringUTFChars(partition, partition_name);
+        return (jlong) client;
+    } catch (DSM::Exception& x) {
+        return env->ThrowNew(JCexClass, x.what());
+    }
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detachClient
+(JNIEnv* env, jobject obj, jlong client) {
+    delete ((RMS::Client*) client);
+}
+
+JNIEXPORT jobjectArray JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_readRegisters
+  (JNIEnv *env, jobject obj, jlong client, jobject locations, jintArray addresses) {
+
+    int numRegs = env->GetArrayLength(addresses);
+    if (numRegs > RMS::InstructionList::MAXIMUM) {
+        char text[MESSAGE_LENGTH];
+        snprintf(text, MESSAGE_LENGTH, "Too many registers specified: %d", numRegs);
+        throwDAQException(env, text);
+        return NULL;
+    }
+
+    DAQ::LocationSet locations_ = convertLocations(env, locations);
+    RMS::Client* client_ = (RMS::Client*) client;
+    RMS::InstructionList instList;
+
+    int* regArray = env->GetIntArrayElements(addresses, NULL);
+    for (int j = 0; j < numRegs; j++) {
+        instList.insert(RMS::Instruction::GET, regArray[j]);
+    }
+    env->ReleaseIntArrayElements(addresses, regArray, JNI_ABORT);
+
+    MyHarvester harvester(numRegs);
+    client_->access(locations_, instList, harvester);
+    if (harvester.errorCount() > 0) {
+        char x[MESSAGE_LENGTH];
+        char encoded[MESSAGE_LENGTH];
+        harvester.errors().encode(encoded);
+        snprintf(x, MESSAGE_LENGTH, "%d errors reading registers %s", harvester.errorCount(), encoded);
+        throwDAQException(env, x);
+    }
+    jobjectArray result = env->NewObjectArray(locations_.SIZE, JCintArrayClass, NULL);
+    for (int j=0; j < locations_.SIZE; j++) {
+        jintArray intArray = env->NewIntArray(numRegs);
+        env->SetIntArrayRegion(intArray, 0, numRegs, harvester.values(j));
+        env->SetObjectArrayElement(result, j, intArray);
+    }
+    return result;
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_writeRegisters
+  (JNIEnv *env, jobject obj, jlong client, jobject locations, jintArray addresses, jintArray values) {
+
+    int numRegs = env->GetArrayLength(addresses);
+    if (numRegs > RMS::InstructionList::MAXIMUM) {
+        char text[MESSAGE_LENGTH];
+        snprintf(text, MESSAGE_LENGTH, "Too many registers specified: %d", numRegs);
+        throwDAQException(env, text);
+        return;
+    }
+
+    DAQ::LocationSet locations_ = convertLocations(env, locations);
+    RMS::Client* client_ = (RMS::Client*) client;
+    RMS::InstructionList instList;
+
+    int* regArray = env->GetIntArrayElements(addresses, NULL);
+    int* regValues = env->GetIntArrayElements(values, NULL);
+    for (int j = 0; j < numRegs; j++) {
+        instList.insert(RMS::Instruction::PUT, regArray[j], regValues[j]);
+    }
+    env->ReleaseIntArrayElements(addresses, regArray, JNI_ABORT);
+    env->ReleaseIntArrayElements(addresses, regValues, JNI_ABORT);
+
+    MyHarvester harvester(numRegs);
+    client_->access(locations_, instList, harvester);
+    if (harvester.errorCount() > 0) {
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "%d errors writing registers", harvester.errorCount());
+        throwDAQException(env, x);
+    }
 }
