@@ -20,7 +20,6 @@ import org.lsst.ccs.daq.ims.Source;
 import org.lsst.ccs.daq.ims.SourceMetaData;
 import org.lsst.ccs.imagenaming.ImageName;
 import org.lsst.ccs.utilities.ccd.CCD;
-import org.lsst.ccs.utilities.ccd.CCDType;
 import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.ccd.image.data.RawImageData;
 import org.lsst.ccs.utilities.image.FitsFileWriter;
@@ -95,7 +94,7 @@ public class FitsIntWriter implements WritableIntChannel {
                 int sensorIndex = readoutConfig.getDataSensorMap()[i];
                 Map<String, Object> ccdProps = new HashMap<>();
                 ccdProps.putAll(props);
-                ccdProps.put("CCDSlot", location.getSensorName(sensorIndex));
+                ccdProps.put("CCDSlot", reb.isAuxtelREB() ? "S00" : location.getSensorName(sensorIndex));
                 files[i] = fileNamer.computeFileName(ccdProps);
                 writers[i] = new FitsFileWriter(files[i]);
             }
