@@ -61,9 +61,7 @@ import org.lsst.ccs.daq.ims.channel.FitsIntReader;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
 import org.lsst.ccs.daq.ims.example.FitsFile.RawSource;
-import org.lsst.ccs.utilities.ccd.CCDType;
 import org.lsst.ccs.utilities.ccd.FocalPlane;
-import org.lsst.ccs.utilities.ccd.Raft;
 import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
 import org.lsst.ccs.utilities.location.Location;
@@ -85,11 +83,9 @@ public class CommandTool {
     private static final Logger LOG = Logger.getLogger(CommandTool.class.getName());
 
     private Store store;
-    private final FocalPlane focalPlane = FocalPlane.createFocalPlane();
+    private FocalPlane focalPlane = FocalPlane.createFocalPlane();
 
     public CommandTool() {
-        // TODO: Temporary fix
-        ((Raft) focalPlane.getChild(2, 2)).setCCDType(CCDType.getCCDType("itl"));
     }
 
     @Command(name = "connect", description = "Connect to a DAQ store")
@@ -98,6 +94,12 @@ public class CommandTool {
             store.close();
         }
         store = new Store(partition);
+        // TODO: This should be overridable by a command argument
+        if (partition.equals("ats")) {
+            focalPlane = FocalPlane.createFocalPlane("AUXTEL");
+        } else {
+            focalPlane = FocalPlane.createFocalPlane();
+        }
     }
 
     @Command(name = "close", description = "Close DAQ store")
