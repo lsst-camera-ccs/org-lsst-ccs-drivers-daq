@@ -21,7 +21,6 @@ import org.lsst.ccs.daq.ims.SourceMetaData;
 import org.lsst.ccs.imagenaming.ImageName;
 import org.lsst.ccs.utilities.ccd.CCD;
 import org.lsst.ccs.utilities.ccd.CCDType;
-import org.lsst.ccs.utilities.ccd.ITLCCDType;
 import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.ccd.image.data.RawImageData;
 import org.lsst.ccs.utilities.image.FitsFileWriter;
@@ -156,7 +155,7 @@ public class FitsIntWriter implements WritableIntChannel {
                 PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(ccdProps);
                 CCD ccd = reb.getCCDs().get(sensorIndex);
                 if (reb.isAuxtelREB()) {
-                    ccd = CCD.createCCD(CCDType.getCCDType("itl"));
+                    //ccd = CCD.createCCD(CCDType.getCCDType("itl"));
                 } else if (!ccd.getName().equals(ccdProps.get("CCDSlot"))) {
                     throw new IOException(String.format("Geometry (%s) inconsistent with DAQ location (%s)",
                             ccd.getName(), ccdProps.get("CCDSlot")));
