@@ -7,9 +7,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import nom.tam.fits.FitsException;
@@ -126,7 +124,7 @@ class FitsFile implements Comparable<FitsFile> {
             this.sources = new TreeMap<>();
         }
 
-        void add(FitsFile fitsFile) {
+        void add(FitsFile fitsFile, Path meta) throws IOException {
             String ccdSlot = fitsFile.getCcdSlot();
             Location location = Location.of(fitsFile.getRaftBay() + "/Reb" + ccdSlot.substring(1, 2));
             FitsSource source = (FitsSource) sources.get(location);
@@ -134,7 +132,7 @@ class FitsFile implements Comparable<FitsFile> {
                 source = new FitsSource(location);
                 sources.put(location, source);
             }
-            source.add(fitsFile);
+            source.add(fitsFile, meta);
         }
 
         void add(Location location, Path raw, Path meta) throws IOException {
@@ -162,9 +160,10 @@ class FitsFile implements Comparable<FitsFile> {
     static class Source {
 
         protected final Location location;
+        protected final static int[] NOMETA = new int[0];
 
         Source(Location location) {
-           this.location = location;
+            this.location = location;
         }
 
         public Location getLocation() {
@@ -174,10 +173,10 @@ class FitsFile implements Comparable<FitsFile> {
     }
 
     static class RawSource extends Source {
+
         private final Path raw;
         private final int[] meta;
-        private final static int[] NOMETA = new int[0];
-        
+
         RawSource(Location location, Path raw, Path meta) throws IOException {
             super(location);
             this.raw = raw;
@@ -185,7 +184,7 @@ class FitsFile implements Comparable<FitsFile> {
                 this.meta = NOMETA;
             } else {
                 String line = Files.newBufferedReader(meta).readLine();
-                this.meta = Arrays.stream(line.substring(1,line.length()-1).split(",")).map(String::trim).mapToInt(Integer::parseInt).toArray();
+                this.meta = Arrays.stream(line.substring(1, line.length() - 1).split(",")).map(String::trim).mapToInt(Integer::parseInt).toArray();
             }
         }
 
@@ -201,24 +200,30 @@ class FitsFile implements Comparable<FitsFile> {
         Path getRaw() {
             return raw;
         }
-        
-        
+
     }
-    
+
     static class FitsSource extends Source {
 
-        private final SortedSet<FitsFile> files;
+        private final TreeMap<FitsFile, int[]> files;
 
         FitsSource(Location location) {
             super(location);
-            files = new TreeSet<>();
+            files = new TreeMap<>();
         }
 
-        private void add(FitsFile fitsFile) {
-            files.add(fitsFile);
+        private void add(FitsFile fitsFile, Path meta) throws IOException {
+            int[] metaData;
+            if (meta == null) {
+                metaData = NOMETA;
+            } else {
+                String line = Files.newBufferedReader(meta).readLine();
+                metaData = Arrays.stream(line.substring(1, line.length() - 1).split(",")).map(String::trim).mapToInt(Integer::parseInt).toArray();
+            }
+            files.put(fitsFile, metaData);
         }
 
-        public SortedSet<FitsFile> getFiles() {
+        public TreeMap<FitsFile, int[]> getFiles() {
             return files;
         }
 
