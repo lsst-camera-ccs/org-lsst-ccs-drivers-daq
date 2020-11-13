@@ -23,6 +23,7 @@ public class FitsIntReader implements ReadableIntChannel {
 
     static {
         FitsFactory.setUseHierarch(true);
+        FitsFactory.setLongStringsEnabled(true);
     }
     private final Compress18BitChannel input;
     private final List<Segment> segments;

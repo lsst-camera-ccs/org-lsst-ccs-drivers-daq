@@ -24,7 +24,7 @@ import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
- *
+ * Not a real test
  * @author tonyj
  */
 public class FitsReadWriteTest {

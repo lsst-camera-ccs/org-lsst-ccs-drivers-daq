@@ -458,6 +458,7 @@ public class CommandTool {
                 try (FitsIntReader reader = new FitsIntReader(Location.LocationType.SCIENCE, files);
                         ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
                     ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
+                    buffer.order(ByteOrder.LITTLE_ENDIAN);
                     IntBuffer intBuffer = buffer.asIntBuffer();
                     for (;;) {
                         intBuffer.clear();
