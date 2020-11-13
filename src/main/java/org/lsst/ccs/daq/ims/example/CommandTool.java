@@ -452,7 +452,7 @@ public class CommandTool {
                 FitsFile.FitsSource ffSource = (FitsFile.FitsSource) fSource;
                 System.out.println("\t" + ffSource.getLocation());
                 Map.Entry<FitsFile, int[]> firstEntry = ffSource.getFiles().firstEntry();
-                int[] registerValues = firstEntry.getValue() != null ? firstEntry.getValue() : firstEntry.getKey().getReadOutParameters();
+                int[] registerValues = firstEntry.getValue();
                 Source source = image.addSource(ffSource.getLocation(), registerValues);
                 File[] files = ffSource.getFiles().keySet().stream().map(FitsFile::getFile).toArray(File[]::new);
                 try (FitsIntReader reader = new FitsIntReader(Location.LocationType.SCIENCE, files);

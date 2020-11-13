@@ -217,7 +217,7 @@ public class FitsFile implements Comparable<FitsFile> {
         private void add(FitsFile fitsFile, Path meta) throws IOException {
             int[] metaData;
             if (meta == null) {
-                metaData = NOMETA;
+                metaData = fitsFile.getReadOutParameters();
             } else {
                 try (BufferedReader reader = Files.newBufferedReader(meta)) {
                     String line = reader.readLine();
