@@ -3,6 +3,7 @@ package org.lsst.ccs.daq.ims.channel;
 import java.io.File;
 import java.io.IOException;
 import java.nio.IntBuffer;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,6 +16,7 @@ import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
 import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.daq.ims.Image;
+import org.lsst.ccs.daq.ims.ImageMetaData;
 import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.daq.ims.Source;
 import org.lsst.ccs.daq.ims.SourceMetaData;
@@ -26,6 +28,7 @@ import org.lsst.ccs.utilities.image.FitsFileWriter;
 import org.lsst.ccs.utilities.image.FitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.image.HeaderSpecification;
 import org.lsst.ccs.utilities.image.ImageSet;
+import org.lsst.ccs.utilities.location.Location.LocationType;
 import org.lsst.ccs.utilities.readout.GeometryFitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.readout.PropertiesFitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.readout.ReadOutImageSet;
@@ -45,12 +48,13 @@ public class FitsIntWriter implements WritableIntChannel {
         FitsFactory.setUseHierarch(true);
     }
 
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneId.of("UTC"));
     private Decompress18BitChannel decompress;
     private final FitsFileWriter[] writers;
     private final File[] files;
     private final Map<String, Object> props;
     private final Reb reb;
+    private final ImageMetaData imageMetaData;
 
     /**
      * A FitsIntWriter constructor that can be called before the source
@@ -64,30 +68,40 @@ public class FitsIntWriter implements WritableIntChannel {
      * @throws IOException
      */
     public FitsIntWriter(Image image, Reb reb, FileNamer fileNamer) throws IOException {
+        this(image.getMetaData(), image.getStore().getPartition(), reb, fileNamer);
+    }
+
+    FitsIntWriter(ImageMetaData imageMetaData, String partition, Reb reb, FileNamer fileNamer) throws IOException {
+        this.imageMetaData = imageMetaData;
+        this.reb = reb;
         Location location = reb.getLocation();
         int ccdCount = location.type().getCCDCount();
         files = new File[location.type() == Location.LocationType.WAVEFRONT ? 2 : ccdCount];
         writers = new FitsFileWriter[files.length];
-        this.reb = reb;
         ReadoutConfig readoutConfig = new ReadoutConfig(location.type());
         props = new HashMap<>();
         try {
-            ImageName in = new ImageName(image.getMetaData().getName());
+            ImageName in = new ImageName(imageMetaData.getName());
             props.put("ImageName", in.toString());
             props.put("ImageDate", in.getDateString());
             props.put("ImageNumber", in.getNumberString());
             props.put("ImageController", in.getController().getCode());
             props.put("ImageSource", in.getSource().getCode());
         } catch (IllegalArgumentException x) {
-            props.put("ImageName", image.getMetaData().getName());
-            props.put("ImageDate", DATE_FORMAT.format(image.getMetaData().getTimestamp()));
+            props.put("ImageName", imageMetaData.getName());
+            props.put("ImageDate", DATE_FORMAT.format(imageMetaData.getTimestamp()));
+            props.put("ImageNumber", 1);
+            props.put("ImageController", "C");
+            props.put("ImageSource", "MC");
         }
         props.put("FileCreationTime", new Date());
         props.put("RaftBay", location.getRaftName());
         props.put("RebSlot", location.getBoardName());
-        props.put("DAQPartition", image.getStore().getPartition());
-        props.put("DAQFolder", image.getMetaData().getCreationFolderName());
-        props.put("DAQAnnotation", image.getMetaData().getAnnotation());
+        props.put("DAQPartition", partition);
+        props.put("DAQFolder", imageMetaData.getCreationFolderName());
+        props.put("DAQAnnotation", imageMetaData.getAnnotation());
+        props.put("DAQTriggerTime", imageMetaData.getTimestamp());
+        props.put("Tag", String.format("%x", imageMetaData.getId()));
         try {
             // Open the FITS files (one per CCD)
             for (int i = 0; i < files.length; i++) {
@@ -125,31 +139,33 @@ public class FitsIntWriter implements WritableIntChannel {
 
     public final void completeInitialization(Source source, Map<String, HeaderSpecification> headerSpecifications, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException {
         SourceMetaData smd = source.getMetaData();
-        props.put("DAQTriggerTime", source.getImage().getMetaData().getTimestamp());
-        props.put("Tag", String.format("%x", source.getImage().getMetaData().getId()));
         props.put("Firmware", String.format("%x", smd.getFirmware()));
         props.put("Platform", smd.getPlatform());
         props.put("CCDControllerSerial", String.format("%x", smd.getSerialNumber() & 0xFFFFFFFFL));
         props.put("DAQVersion", smd.getSoftware().toString());
         //Build the ReadoutParameters
-        int[] registerValues = smd.getRegisterValues();
+        completeInitialization(source.getSourceType(), source.getLocation(), smd.getRegisterValues(), headerSpecifications, extraMetaDataProvider);
+    }
+
+    final void completeInitialization(LocationType locationType, Location sourceLocation, int[] registerValues, Map<String, HeaderSpecification> headerSpecifications, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException {
+
         ReadOutParametersBuilder builder = ReadOutParametersBuilder.create();
         builder.readoutParameterValues(registerValues);
         builder.readoutParameterNames(ReadOutParametersNew.DEFAULT_NAMES);
         ReadOutParameters readoutParameters = builder.build();
         //Set the CCDType on SCIENCE rebs
         //as they are the only ones that can have different types
-        if (source.getSourceType() == Location.LocationType.SCIENCE) {
+        if (locationType == Location.LocationType.SCIENCE) {
             reb.setCCDType(readoutParameters.getCCDType());
         }
-        ReadoutConfig readoutConfig = new ReadoutConfig(source.getSourceType());
-        WritableIntChannel[] fileChannels = new WritableIntChannel[source.getLocation().type().getCCDCount() * 16];
+        ReadoutConfig readoutConfig = new ReadoutConfig(locationType);
+        WritableIntChannel[] fileChannels = new WritableIntChannel[locationType.getCCDCount() * 16];
         try {
             for (int i = 0; i < files.length; i++) {
                 int sensorIndex = readoutConfig.getDataSensorMap()[i];
                 Map<String, Object> ccdProps = new HashMap<>();
                 ccdProps.putAll(props);
-                ccdProps.put("CCDSlot", source.getLocation().getSensorName(sensorIndex));
+                ccdProps.put("CCDSlot", sourceLocation.getSensorName(sensorIndex));
                 // NOTE: This call may have the side effect of modifying the ccdProps
                 PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(ccdProps);
                 CCD ccd = reb.getCCDs().get(sensorIndex);
@@ -175,7 +191,7 @@ public class FitsIntWriter implements WritableIntChannel {
             XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, readoutConfig.getXor());
             decompress = new Decompress18BitChannel(xor);
         } catch (IOException | FitsException | RuntimeException t) {
-            cleanupOnError(reb.getLocation(), t);            
+            cleanupOnError(reb.getLocation(), t);
         }
     }
 
@@ -214,7 +230,7 @@ public class FitsIntWriter implements WritableIntChannel {
 
     @Override
     public boolean isOpen() {
-        return decompress !=null && decompress.isOpen();
+        return decompress != null && decompress.isOpen();
     }
 
     @Override

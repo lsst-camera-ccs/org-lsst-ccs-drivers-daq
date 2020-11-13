@@ -1,10 +1,12 @@
 package org.lsst.ccs.daq.ims.example;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -13,13 +15,14 @@ import java.util.regex.Pattern;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
 import org.lsst.ccs.utilities.location.Location;
+import org.lsst.ccs.utilities.readout.ReadOutParametersNew;
 
 /**
  * Utilities for reading FITS and raw files
  *
  * @author tonyj
  */
-class FitsFile implements Comparable<FitsFile> {
+public class FitsFile implements Comparable<FitsFile> {
 
     private static final Pattern DATASEC_PATTERN = Pattern.compile("\\[(\\d+):(\\d+),(\\d+):(\\d+)\\]");
 
@@ -31,10 +34,18 @@ class FitsFile implements Comparable<FitsFile> {
     private final int naxis2;
     private final int[] datasec = new int[4];
 
-    FitsFile(File file, Header primary, Header image) throws FitsException {
+    public FitsFile(File file, Header primary, Header image) throws FitsException {
         this.file = file;
-        this.ccdSlot = getNonNullHeader(primary, "CCDSLOT");
-        this.raftBay = getNonNullHeader(primary, "RAFTBAY");
+        if (primary.containsKey("CCDSLOT")) {
+            this.ccdSlot = getNonNullHeader(primary, "CCDSLOT");
+            this.raftBay = getNonNullHeader(primary, "RAFTBAY");
+        } else {
+            // Phosim compatibility
+            String chipId = getNonNullHeader(primary, "CHIPID");
+            String[] split = chipId.split("_");
+            this.raftBay = split[0];
+            this.ccdSlot = split[1];
+        }
         this.obsId = getNonNullHeader(primary, "OBSID");
         this.naxis1 = image.getIntValue("NAXIS1");
         this.naxis2 = image.getIntValue("NAXIS2");
@@ -73,26 +84,17 @@ class FitsFile implements Comparable<FitsFile> {
         return ccdSlot;
     }
 
-    int[] getReadOutParameters() {
-        // TODO: This works for science rafts, and the old meta-data scheme only.
-        int REG_READ_ROWS = 0,
-                REG_READ_COLS = 1,
-                REG_PRE_ROWS = 2,
-                REG_PRE_COLS = 3,
-                REG_POST_ROWS = 4,
-                REG_POST_COLS = 5,
-                REG_READ_COLS2 = 6,
-                REG_OVER_ROWS = 7,
-                REG_OVER_COLS = 8,
-                NUM_REGISTERS = 9;
+    public int[] getReadOutParameters() {
+        List<String> DEFAULT_NAMES = Arrays.asList(ReadOutParametersNew.DEFAULT_NAMES);
 
-        int[] result = new int[NUM_REGISTERS];
-        result[REG_PRE_COLS] = datasec[0];
-        result[REG_PRE_ROWS] = datasec[2];
-        result[REG_READ_COLS] = datasec[1] - datasec[0];
-        result[REG_READ_ROWS] = datasec[3] - datasec[2];
-        result[REG_OVER_COLS] = naxis1 - result[REG_READ_COLS] - result[REG_PRE_COLS];
-        result[REG_OVER_ROWS] = naxis2 - result[REG_READ_ROWS] - result[REG_PRE_ROWS];
+        int[] result = new int[DEFAULT_NAMES.size()];
+        result[DEFAULT_NAMES.indexOf("UnderCols")] = datasec[0];
+        result[DEFAULT_NAMES.indexOf("PreRows")] = datasec[2];
+        result[DEFAULT_NAMES.indexOf("ReadCols")] = datasec[1] - datasec[0];
+        result[DEFAULT_NAMES.indexOf("ReadRows")] = datasec[3] - datasec[2];
+        result[DEFAULT_NAMES.indexOf("OverCols")] = naxis1 - result[DEFAULT_NAMES.indexOf("ReadCols")] - result[DEFAULT_NAMES.indexOf("UnderCols")];
+        result[DEFAULT_NAMES.indexOf("OverRows")] = naxis2 - result[DEFAULT_NAMES.indexOf("ReadRows")] - result[DEFAULT_NAMES.indexOf("PreRows")];
+        result[DEFAULT_NAMES.indexOf("OpFlags")] = datasec[0] == 3 ? 1 : 2;
         return result;
     }
 
@@ -217,8 +219,12 @@ class FitsFile implements Comparable<FitsFile> {
             if (meta == null) {
                 metaData = NOMETA;
             } else {
-                String line = Files.newBufferedReader(meta).readLine();
-                metaData = Arrays.stream(line.substring(1, line.length() - 1).split(",")).map(String::trim).mapToInt(Integer::parseInt).toArray();
+                try (BufferedReader reader = Files.newBufferedReader(meta)) {
+                    String line = reader.readLine();
+                    metaData = Arrays.stream(line.substring(1, line.length() - 1).split(",")).map(String::trim).mapToInt(Integer::parseInt).toArray();
+                } catch (IOException x) {
+                    throw new IOException("Error reading: "+meta);
+                }
             }
             files.put(fitsFile, metaData);
         }

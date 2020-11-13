@@ -405,7 +405,6 @@ public class CommandTool {
         }
     }
 
-    // Note: This method has not been actively maintained, it may be out of date with respect to read method.
     @Command(name = "write", description = "Write a set of FITS files to the store")
     public void write(String targetFolderName, File dir,
             @Argument(defaultValue = "*.fits") String pattern) throws IOException, TruncatedFileException, DAQException {
@@ -432,7 +431,7 @@ public class CommandTool {
                             id = new ObsId(ff.getObsId());
                             obsIds.put(ff.getObsId(), id);
                         }                    
-                        Path meta = file.resolveSibling(file.getFileName().toString().replace(".raw", ".meta"));
+                        Path meta = file.resolveSibling(file.getFileName().toString().replace(".fits", ".meta"));
                         if (Files.exists(meta)) {
                             id.add(ff, meta);
                         } else {
@@ -456,7 +455,7 @@ public class CommandTool {
                 int[] registerValues = firstEntry.getValue() != null ? firstEntry.getValue() : firstEntry.getKey().getReadOutParameters();
                 Source source = image.addSource(ffSource.getLocation(), registerValues);
                 File[] files = ffSource.getFiles().keySet().stream().map(FitsFile::getFile).toArray(File[]::new);
-                try (FitsIntReader reader = new FitsIntReader(files);
+                try (FitsIntReader reader = new FitsIntReader(Location.LocationType.SCIENCE, files);
                         ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
                     ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
                     IntBuffer intBuffer = buffer.asIntBuffer();

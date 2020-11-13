@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import nom.tam.fits.FitsFactory;
 import nom.tam.fits.FitsUtil;
@@ -12,6 +13,7 @@ import nom.tam.fits.Header;
 import nom.tam.fits.TruncatedFileException;
 import nom.tam.fits.header.Standard;
 import nom.tam.util.BufferedFile;
+import org.lsst.ccs.utilities.location.Location.LocationType;
 
 /**
  *
@@ -24,8 +26,16 @@ public class FitsIntReader implements ReadableIntChannel {
     }
     private final Compress18BitChannel input;
     private final List<Segment> segments;
-    
-    public FitsIntReader(File... files) throws IOException, TruncatedFileException {
+
+    public FitsIntReader(LocationType sourceType, File... files) throws IOException, TruncatedFileException {
+        ReadoutConfig config = new ReadoutConfig(sourceType);
+        List<String> segmentNames = Arrays.asList(config.getDataSegmentNames());
+        int[] dataSegmentMap = config.getDataSegmentMap();
+        int[] inverseSegmentMap = new int[dataSegmentMap.length];
+        int nSegmentsPerCCD = dataSegmentMap.length;
+        for (int i=0; i<dataSegmentMap.length; i++) {
+            inverseSegmentMap[dataSegmentMap[i]] = i;
+        }
         segments = new ArrayList<>();
         for (File file : files) {
             openFITSFile(segments, file);
@@ -35,11 +45,21 @@ public class FitsIntReader implements ReadableIntChannel {
         int j = 0;
         for (Segment segment : segments) {
             FileChannel channel = segment.getChannel();
-            inputs[j++] = new IntFileChannelReader(channel, segment.getSeekPosition(), segment.getDataSize());
+            String extName = segment.getExtensionName();
+            int index = segmentNames.indexOf(extName);
+            if (index < 0) {
+                throw new IOException("Invalid segment name "+extName);
+            }
+            int channelNumber = inverseSegmentMap[index] + nSegmentsPerCCD * config.getDataSensorMap()[j / nSegmentsPerCCD];
+            inputs[channelNumber] = new IntFileChannelReader(channel, segment.getSeekPosition(), segment.getDataSize());
+            if (segment.getBZero() != 0) {
+               inputs[channelNumber] = new SubtractingReadableIntChannel(inputs[channelNumber], segment.getBZero());
+            }
+            j++;
         }
-
+        
         MultiplexingIntChannel multiplex = new MultiplexingIntChannel(inputs);
-        XORReadableIntChannel xor = new XORReadableIntChannel(multiplex, 0x1FFFF);
+        XORReadableIntChannel xor = new XORReadableIntChannel(multiplex, config.getXor());
         input = new Compress18BitChannel(xor);
     }
 
@@ -50,7 +70,6 @@ public class FitsIntReader implements ReadableIntChannel {
             segment.close();
         }
     }
-
 
     private static void openFITSFile(List<Segment> segments, File file) throws IOException, TruncatedFileException {
         BufferedFile bf = new BufferedFile(file, "r");
@@ -96,6 +115,7 @@ public class FitsIntReader implements ReadableIntChannel {
         private final int nAxis1;
         private final int nAxis2;
         private final FileChannel channel;
+        private final int bzero;
 
         public Segment(Header header, BufferedFile bf, long filePointer, String ccdSlot) {
             this.header = header;
@@ -105,6 +125,11 @@ public class FitsIntReader implements ReadableIntChannel {
             this.ccdSlot = ccdSlot;
             nAxis1 = header.getIntValue(Standard.NAXIS1);
             nAxis2 = header.getIntValue(Standard.NAXIS2);
+            bzero = header.getIntValue(Standard.BZERO);
+        }
+        
+        private String getExtensionName() {
+            return header.getStringValue(Standard.EXTNAME);
         }
 
         private int getDataSize() {
@@ -121,6 +146,10 @@ public class FitsIntReader implements ReadableIntChannel {
 
         private void close() throws IOException {
             channel.close();
+        }
+
+        private int getBZero() {
+            return bzero;
         }
     }
 }
