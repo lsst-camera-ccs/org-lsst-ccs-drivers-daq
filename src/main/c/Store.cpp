@@ -49,7 +49,7 @@ static jmethodID JCexConstructor;
 static jmethodID JCexConstructor2;
 static jclass JCintArrayClass;
 
-jstring decode(JNIEnv* env, jint error) {
+jstring decodeException(JNIEnv* env, jint error) {
    const char* decoded = IMS::Exception::decode(error);
    // TODO: Check for other exceptions
    return env->NewStringUTF(decoded);
@@ -63,7 +63,7 @@ void throwDAQException(JNIEnv* env, const char* message) {
 
 void throwDAQException(JNIEnv* env, const char* message, jint error) {
     jstring message_ = env->NewStringUTF(message);
-    jstring decoded = decode(env, error);
+    jstring decoded = decodeException(env, error);
     jthrowable exception = (jthrowable) env->NewObject(JCexClass, JCexConstructor, message_, error, decoded);
     env->Throw(exception);
 }
@@ -533,8 +533,8 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitF
 }
 
 JNIEXPORT jstring JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_decodeException
-  (JNIEnv *env , jclass, jint error) {
-    return decode(env, error);
+  (JNIEnv *env , jobject obj, jint error) {
+    return decodeException(env, error);
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_getConfiguredSources
