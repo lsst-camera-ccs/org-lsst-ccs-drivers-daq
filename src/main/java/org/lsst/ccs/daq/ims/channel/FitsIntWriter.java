@@ -172,7 +172,8 @@ public class FitsIntWriter implements WritableIntChannel {
                 }
             }
             DemultiplexingIntChannel demultiplex = new DemultiplexingIntChannel(fileChannels);
-            XORWritableIntChannel xor = new XORWritableIntChannel(demultiplex, readoutConfig.getXor());
+            WritableIntChannel pixelFilter = createPixelFilter(demultiplex);
+            XORWritableIntChannel xor = new XORWritableIntChannel(pixelFilter, readoutConfig.getXor());
             decompress = new Decompress18BitChannel(xor);
         } catch (IOException | FitsException | RuntimeException t) {
             cleanupOnError(reb.getLocation(), t);            
@@ -236,6 +237,16 @@ public class FitsIntWriter implements WritableIntChannel {
      */
     public List<File> getFiles() {
         return Collections.unmodifiableList(Arrays.asList(files));
+    }
+
+    /**
+     * Allows a pixel filter to be inserted in the decompression train.
+     * Typically used to check for bad pixels. 
+     * @param channel 
+     * @return 
+     */
+    protected WritableIntChannel createPixelFilter(WritableIntChannel channel) {
+        return channel;
     }
 
     /**

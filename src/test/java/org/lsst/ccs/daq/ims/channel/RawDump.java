@@ -20,7 +20,7 @@ import org.lsst.ccs.daq.ims.Store;
 public class RawDump {
 
     public static void main(String[] args) throws IOException, DAQException {
-        ByteBuffer buffer = ByteBuffer.allocateDirect(1200000);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
         buffer.order(ByteOrder.LITTLE_ENDIAN);
         try (Store store = new Store("camera")) {
             Folder raw = store.getCatalog().find("raw");
@@ -29,23 +29,27 @@ public class RawDump {
             for (Image image : images) {
                 List<Source> sources = image.listSources();
                 for (Source source : sources) {
-                    try (ByteChannel openChannel = source.openChannel(Source.ChannelMode.READ);
-                            NullIntWriter devNull = new NullIntWriter();
-                            BadPixelDetector bad = new BadPixelDetector(devNull);
-                            XORWritableIntChannel xor = new XORWritableIntChannel(bad, 0x1FFFF);
-                            Decompress18BitChannel decompress18BitChannel = new Decompress18BitChannel(xor)) {
-                        for (;;) {
-                            buffer.clear();
-                            int read = openChannel.read(buffer);
-                            if (read < 0) {
-                                break;
-                            }
-                            buffer.flip();
-                            IntBuffer intBuffer = buffer.asIntBuffer();
+                    if (source.getMetaData().getLength() > 0) {
+                        try (ByteChannel openChannel = source.openChannel(Source.ChannelMode.READ);
+                                NullIntWriter devNull = new NullIntWriter();
+                                BadPixelDetector bad = new BadPixelDetector(devNull);
+                                XORWritableIntChannel xor = new XORWritableIntChannel(bad, 0x1FFFF);
+                                Decompress18BitChannel decompress18BitChannel = new Decompress18BitChannel(xor)) {
+                            for (;;) {
+                                buffer.clear();
+                                int read = openChannel.read(buffer);
+                                if (read < 0) {
+                                    break;
+                                }
+                                buffer.flip();
+                                IntBuffer intBuffer = buffer.asIntBuffer();
 
-                            decompress18BitChannel.write(intBuffer);
+                                decompress18BitChannel.write(intBuffer);
+                            }
+                            System.out.printf("%s %s %d/%d\n", image.getMetaData().getName(), source.getLocation(), bad.getBadPixels(), bad.getTotalPixels());
+                        } catch (IOException x) {
+                            System.out.printf("%s %s Error\n", image.getMetaData().getName(), source.getLocation());
                         }
-                        System.out.printf("%s %s %d/%d\n", image, source, bad.getBadPixels(), bad.getTotalPixels());
                     }
                 }
             }
