@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -12,14 +13,15 @@ import org.lsst.ccs.utilities.location.Location;
  *
  * @author  Tony Johnson
  */
-public class DAQStats {
+public class DAQStats implements Serializable {
     
     // Map associates each statistic with its name, and allows loop over them
     @SkipEncoding
     final Map<String, Long> statMap;
     @SkipEncoding
     private final Location location;
-
+    private static final long serialVersionUID = 4987149134292057592L;
+    
     DAQStats(int statMapInitialSize, byte bay, byte board) {
         this.statMap = new LinkedHashMap<>(statMapInitialSize);
         this.location = new Location(bay, board);
