@@ -47,8 +47,14 @@ public class FitsFile implements Comparable<FitsFile> {
             this.ccdSlot = split[1];
         }
         this.obsId = getNonNullHeader(primary, "OBSID");
-        this.naxis1 = image.getIntValue("NAXIS1");
-        this.naxis2 = image.getIntValue("NAXIS2");
+        boolean isCompressed = image.getBooleanValue("ZIMAGE");
+        if (isCompressed) {
+            this.naxis1 = image.getIntValue("ZNAXIS1");
+            this.naxis2 = image.getIntValue("ZNAXIS2");            
+        } else {
+            this.naxis1 = image.getIntValue("NAXIS1");
+            this.naxis2 = image.getIntValue("NAXIS2");
+        }
         String dataSecString = getNonNullHeader(image, "DATASEC");
         Matcher matcher = DATASEC_PATTERN.matcher(dataSecString);
         if (!matcher.matches()) {
