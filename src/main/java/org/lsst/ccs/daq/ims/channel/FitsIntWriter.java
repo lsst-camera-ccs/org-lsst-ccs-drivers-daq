@@ -51,6 +51,7 @@ public class FitsIntWriter implements WritableIntChannel {
     private final File[] files;
     private final Map<String, Object> props;
     private final Reb reb;
+    private int expectedDataLength = 0;
 
     /**
      * A FitsIntWriter constructor that can be called before the source
@@ -165,6 +166,7 @@ public class FitsIntWriter implements WritableIntChannel {
                     providers.addAll(extraMetaDataProvider.getMetaDataProvider(ccd));
                 }
                 writers[i].createHDUs(imageSet, null, providers, RawImageData.BitsPerPixel.BIT32, headerSpecifications);
+                expectedDataLength = RawImageData.BitsPerPixel.BIT32.bytes() * imageSet.getParallelPixels() * imageSet.getSerialPixels();
 
                 int nImageExtensions = imageSet.getImageExtensionNames().size();
                 for (int j = 0; j < nImageExtensions; j++) {
@@ -237,6 +239,10 @@ public class FitsIntWriter implements WritableIntChannel {
      */
     public List<File> getFiles() {
         return Collections.unmodifiableList(Arrays.asList(files));
+    }
+    
+    public int getExpectedDataLength() {
+        return expectedDataLength;
     }
 
     /**
