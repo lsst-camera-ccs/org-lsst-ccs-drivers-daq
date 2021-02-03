@@ -407,7 +407,6 @@ public class CommandTool {
         }
     }
 
-    // Note: This method has not been actively maintained, it may be out of date with respect to read method.
     @Command(name = "write", description = "Write a set of FITS files to the store")
     public void write(String targetFolderName, File dir,
             @Argument(defaultValue = "*.fits") String pattern) throws IOException, TruncatedFileException, DAQException {
@@ -433,9 +432,13 @@ public class CommandTool {
                         if (id == null) {
                             id = new ObsId(ff.getObsId());
                             obsIds.put(ff.getObsId(), id);
+                        }                    
+                        Path meta = file.resolveSibling(file.getFileName().toString().replace(".fits", ".meta"));
+                        if (Files.exists(meta)) {
+                            id.add(ff, meta);
+                        } else {
+                            id.add(ff, null);
                         }
-                        id.add(ff);
-
                     } catch (FitsException x) {
                         throw new IOException("Error reading FITS file: " + file, x);
                     }
@@ -450,12 +453,14 @@ public class CommandTool {
             for (FitsFile.Source fSource : id.getSources().values()) {
                 FitsFile.FitsSource ffSource = (FitsFile.FitsSource) fSource;
                 System.out.println("\t" + ffSource.getLocation());
-                int[] registerValues = ffSource.getFiles().first().getReadOutParameters();
+                Map.Entry<FitsFile, int[]> firstEntry = ffSource.getFiles().firstEntry();
+                int[] registerValues = firstEntry.getValue();
                 Source source = image.addSource(ffSource.getLocation(), registerValues);
-                File[] files = ffSource.getFiles().stream().map(FitsFile::getFile).toArray(File[]::new);
-                try (FitsIntReader reader = new FitsIntReader(files);
+                File[] files = ffSource.getFiles().keySet().stream().map(FitsFile::getFile).toArray(File[]::new);
+                try (FitsIntReader reader = new FitsIntReader(Location.LocationType.SCIENCE, files);
                         ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
                     ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
+                    buffer.order(ByteOrder.LITTLE_ENDIAN);
                     IntBuffer intBuffer = buffer.asIntBuffer();
                     for (;;) {
                         intBuffer.clear();

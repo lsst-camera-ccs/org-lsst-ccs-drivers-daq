@@ -39,7 +39,6 @@ public interface ReadableIntChannel extends Channel {
                 buffer.put(read());
                 result++;
             }
-            buffer.flip();
             return result;
         } catch (EOFException x) {
             if (result > 0) {

@@ -20,13 +20,17 @@ public class Compress18BitChannel extends FilterReadableIntChannel {
     @Override
     public int read() throws IOException {
         while (bitsAvailable < 32) {
-            long in = input.read() & 0xFFFFFFFFL;
+            int data = input.read();
+            if (data<0 || data>0x3FFFF) {
+                throw new IOException("Invalid 18 bit data: "+Integer.toHexString(data));
+            }
+            long in = data & 0x3FFFFL;
             dataAvailable |= in << bitsAvailable;
             bitsAvailable += 18;
         }
         int result = (int) dataAvailable;
         bitsAvailable -= 32;
-        dataAvailable >>>= 32;
+        dataAvailable >>= 32;
         return result;
     }
 

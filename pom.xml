@@ -83,7 +83,7 @@
         <dependency>
             <groupId>org.lsst</groupId>
             <artifactId>org-lsst-ccs-image-utilities</artifactId>
-            <version>3.1.9-SNAPSHOT</version>
+            <version>3.1.9</version>
             <type>jar</type>
         </dependency>
     </dependencies>
