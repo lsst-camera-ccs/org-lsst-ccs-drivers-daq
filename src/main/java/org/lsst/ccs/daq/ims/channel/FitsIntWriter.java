@@ -54,6 +54,7 @@ public class FitsIntWriter implements WritableIntChannel {
     private final File[] files;
     private final Map<String, Object> props;
     private final Reb reb;
+    private int expectedDataLength = 0;
     private final ImageMetaData imageMetaData;
 
     /**
@@ -183,6 +184,7 @@ public class FitsIntWriter implements WritableIntChannel {
                     providers.addAll(extraMetaDataProvider.getMetaDataProvider(ccd));
                 }
                 writers[i].createHDUs(imageSet, null, providers, RawImageData.BitsPerPixel.BIT32, headerSpecifications);
+                expectedDataLength += RawImageData.BitsPerPixel.BIT32.bytes() * imageSet.getParallelPixels() * imageSet.getSerialPixels();
 
                 int nImageExtensions = imageSet.getImageExtensionNames().size();
                 for (int j = 0; j < nImageExtensions; j++) {
@@ -255,6 +257,14 @@ public class FitsIntWriter implements WritableIntChannel {
      */
     public List<File> getFiles() {
         return Collections.unmodifiableList(Arrays.asList(files));
+    }
+    
+    /***
+     * Get the total expected data output length (the data to be written to all FITS files)
+     * @return The length
+     */
+    public int getExpectedDataLength() {
+        return expectedDataLength;
     }
 
     /**
