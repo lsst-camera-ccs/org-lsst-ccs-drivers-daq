@@ -27,6 +27,9 @@ class ReadoutConfig {
     private static final Map<Location.LocationType, Integer> XOR_MAP = new HashMap<>();
     private static final Map<Location.LocationType, String[]> DATA_SEGMENT_NAME_MAP = new HashMap<>();
 
+    private static final int[] AUXTEL_SENSOR_MAP = {0};
+    private static final int[] AUXTEL_SEGMENT_MAP = {15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0};
+    
     static {
         DATA_SEGMENT_NAME_MAP.put(Location.LocationType.SCIENCE, new String[]{
             "Segment10", "Segment11", "Segment12", "Segment13", "Segment14", "Segment15", "Segment16", "Segment17",
@@ -46,26 +49,37 @@ class ReadoutConfig {
         DATA_SENSOR_MAP.put(Location.LocationType.SCIENCE, new int[]{2, 1, 0});
         DATA_SENSOR_MAP.put(Location.LocationType.GUIDER, new int[]{1, 0});
         DATA_SENSOR_MAP.put(Location.LocationType.WAVEFRONT, new int[]{0, 1});
-
+        
         XOR_MAP.put(Location.LocationType.SCIENCE, 0x1FFFF);
         XOR_MAP.put(Location.LocationType.GUIDER, 0x20000);
         XOR_MAP.put(Location.LocationType.WAVEFRONT, 0x20000);
     }
     private final Location.LocationType sourceType;
+    private final boolean isAuxTel;
     
-    ReadoutConfig(Location.LocationType sourceType) {
+    ReadoutConfig(Location.LocationType sourceType, boolean isAuxTel) {
         this.sourceType = sourceType;
+        this.isAuxTel = isAuxTel;
     }
 
     int[] getDataSegmentMap() {
+        if (isAuxTel) {
+            return AUXTEL_SEGMENT_MAP;
+        }
         return DATA_SEGMENT_MAP.get(sourceType);
     }
 
     int[] getDataSensorMap() {
+        if (isAuxTel) {
+            return AUXTEL_SENSOR_MAP;
+        }
         return DATA_SENSOR_MAP.get(sourceType);
     }
     
     String[] getDataSegmentNames() {
+        if (isAuxTel) {
+            return DATA_SEGMENT_NAME_MAP.get(Location.LocationType.SCIENCE);
+        }
         return DATA_SEGMENT_NAME_MAP.get(sourceType);
     }
 

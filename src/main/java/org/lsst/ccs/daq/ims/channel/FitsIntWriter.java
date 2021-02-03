@@ -66,10 +66,10 @@ public class FitsIntWriter implements WritableIntChannel {
     public FitsIntWriter(Image image, Reb reb, FileNamer fileNamer) throws IOException {
         Location location = reb.getLocation();
         int ccdCount = location.type().getCCDCount();
-        files = new File[location.type() == Location.LocationType.WAVEFRONT ? 2 : ccdCount];
+        files = new File[location.type() == Location.LocationType.WAVEFRONT ? (reb.isAuxtelREB() ? 1 : 2) : ccdCount];
         writers = new FitsFileWriter[files.length];
         this.reb = reb;
-        ReadoutConfig readoutConfig = new ReadoutConfig(location.type());
+        ReadoutConfig readoutConfig = new ReadoutConfig(location.type(), reb.isAuxtelREB());
         props = new HashMap<>();
         try {
             ImageName in = new ImageName(image.getMetaData().getName());
@@ -94,7 +94,7 @@ public class FitsIntWriter implements WritableIntChannel {
                 int sensorIndex = readoutConfig.getDataSensorMap()[i];
                 Map<String, Object> ccdProps = new HashMap<>();
                 ccdProps.putAll(props);
-                ccdProps.put("CCDSlot", location.getSensorName(sensorIndex));
+                ccdProps.put("CCDSlot", reb.isAuxtelREB() ? "S00" : location.getSensorName(sensorIndex));
                 files[i] = fileNamer.computeFileName(ccdProps);
                 writers[i] = new FitsFileWriter(files[i]);
             }
@@ -142,18 +142,20 @@ public class FitsIntWriter implements WritableIntChannel {
         if (source.getSourceType() == Location.LocationType.SCIENCE) {
             reb.setCCDType(readoutParameters.getCCDType());
         }
-        ReadoutConfig readoutConfig = new ReadoutConfig(source.getSourceType());
+        ReadoutConfig readoutConfig = new ReadoutConfig(source.getSourceType(), reb.isAuxtelREB());
         WritableIntChannel[] fileChannels = new WritableIntChannel[source.getLocation().type().getCCDCount() * 16];
         try {
             for (int i = 0; i < files.length; i++) {
                 int sensorIndex = readoutConfig.getDataSensorMap()[i];
                 Map<String, Object> ccdProps = new HashMap<>();
                 ccdProps.putAll(props);
-                ccdProps.put("CCDSlot", source.getLocation().getSensorName(sensorIndex));
+                ccdProps.put("CCDSlot", reb.isAuxtelREB() ? "S00" : source.getLocation().getSensorName(sensorIndex));
                 // NOTE: This call may have the side effect of modifying the ccdProps
                 PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(ccdProps);
                 CCD ccd = reb.getCCDs().get(sensorIndex);
-                if (!ccd.getName().equals(ccdProps.get("CCDSlot"))) {
+                if (reb.isAuxtelREB()) {
+                    //ccd = CCD.createCCD(CCDType.getCCDType("itl"));
+                } else if (!ccd.getName().equals(ccdProps.get("CCDSlot"))) {
                     throw new IOException(String.format("Geometry (%s) inconsistent with DAQ location (%s)",
                             ccd.getName(), ccdProps.get("CCDSlot")));
                 }
