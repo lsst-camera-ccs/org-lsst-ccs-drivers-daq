@@ -32,6 +32,7 @@ public class DAQFirmwareStats extends DAQStats implements Serializable {
     private final long last_rx;            // Last OpCode Received
     private final long tx_op;              // OpCode Transmit count
     private final long rx_op;              // OpCode Received count
+    private static final long serialVersionUID = -1348786901975717516L;
 
     DAQFirmwareStats(byte bay, byte board, long link_status, long rlink_data, long cell_errors, long link_down, long link_errors, long overflow_remote0, long overflow_remote1, long overflow_remote2, long overflow_remote3, long rx_errors, long rx_frames, long overflow_local0, long overflow_local1, long overflow_local2, long overflow_local3, long tx_errors, long tx_frames, long rx_clock, long tx_clock, long last_tx, long last_rx, long tx_op, long rx_op) {
 

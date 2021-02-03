@@ -19,7 +19,8 @@ public class DAQRmsStats extends DAQStats implements Serializable {
     private final long orphans;	    
     private final long rundowns;    
     private final long tid_hwm;	    
-
+    private static final long serialVersionUID = -6149058303405500713L;
+    
     DAQRmsStats(byte bay, byte board, long probes, long unopened, long in_reset, long link_down, long lists_posted, long ops_posted, long waits, long responses, long inv_tids, long orphans, long rundowns, long tid_hwm) {
 
         super(20, bay, board);

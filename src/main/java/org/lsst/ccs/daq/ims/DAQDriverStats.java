@@ -13,7 +13,7 @@ public class DAQDriverStats extends DAQStats implements Serializable {
     private final long rx1;   
     private final long rx2;   
     private final long rx3;   
-
+    private static final long serialVersionUID = 4894440689055979272L;
 
     DAQDriverStats(byte bay, byte board, long received, long errors, long rx0, long rx1, long rx2, long rx3) {
 

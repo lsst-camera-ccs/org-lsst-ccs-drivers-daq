@@ -17,7 +17,7 @@ public class DAQRdsStats extends DAQStats implements Serializable {
     private final long bdi_firsts;    
     private final long bdi_lasts;     
     private final long bdi_frees;     
-
+    private static final long serialVersionUID = -6474883615404798290L;
 
     DAQRdsStats(byte bay, byte board, long wakes, long discards, long no_event, long bdi_waits, long bdi_nulls, long bdi_seq_errors, long bdi_overflows, long bdi_firsts, long bdi_lasts, long bdi_frees)  {
 
