@@ -52,7 +52,7 @@ public class FitsReadWriteTest {
         IntBuffer buffer = IntBuffer.allocate(522 * 2010 * 48 * 9 / 16);
         int length = 0;
 
-        try (FitsIntReader reader = new FitsIntReader(Location.LocationType.SCIENCE, files)) {
+        try (FitsIntReader reader = new FitsIntReader(Location.LocationType.SCIENCE, false, files)) {
             for (;;) {
                 int l = reader.read(buffer);
                 if (l <= 0) {

@@ -35,7 +35,7 @@ public class FitsWriter {
 
         File dir = new File("/home/tonyj/Data/pretty/");
         File[] files = dir.listFiles((File dir1, String name) -> name.matches("1\\d_Flat_screen_0000_20190322172301.fits"));
-        try (FitsIntReader reader = new FitsIntReader(Location.LocationType.SCIENCE, files)) {
+        try (FitsIntReader reader = new FitsIntReader(Location.LocationType.SCIENCE, false, files)) {
             int[] registerValues = { 1, 2, 3, 4, 5, 6 };
             Source source = image.addSource(Location.of("R22/Reb0"), registerValues);
             try (ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {

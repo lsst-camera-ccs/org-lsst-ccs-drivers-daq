@@ -32,8 +32,8 @@ public class FitsIntReader implements ReadableIntChannel {
     private final Compress18BitChannel input;
     private final List<Segment> segments;
 
-    public FitsIntReader(LocationType sourceType, File... files) throws IOException, TruncatedFileException {
-        ReadoutConfig config = new ReadoutConfig(sourceType, false);
+    public FitsIntReader(LocationType sourceType, boolean auxtel, File... files) throws IOException, TruncatedFileException {
+        ReadoutConfig config = new ReadoutConfig(sourceType, auxtel);
         List<String> segmentNames = Arrays.asList(config.getDataSegmentNames());
         int[] dataSegmentMap = config.getDataSegmentMap();
         int[] inverseSegmentMap = new int[dataSegmentMap.length];
