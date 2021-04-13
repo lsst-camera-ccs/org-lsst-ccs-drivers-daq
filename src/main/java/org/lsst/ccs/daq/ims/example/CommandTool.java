@@ -89,13 +89,16 @@ public class CommandTool {
     }
 
     @Command(name = "connect", description = "Connect to a DAQ store")
-    public void connect(@Argument(name = "partition", description = "Partition name") String partition) throws DAQException {
+    public void connect(
+            @Argument(name = "partition", description = "Partition name") String partition, 
+            @Argument(name = "geometry", description = "Override default geometry", defaultValue = "") String geometry) throws DAQException {
         if (store != null) {
             store.close();
         }
         store = new Store(partition);
-        // TODO: This should be overridable by a command argument
-        if (partition.equals("ats")) {
+        if (!geometry.isEmpty()) {
+            focalPlane = FocalPlane.createFocalPlane(geometry);            
+        } else if (partition.equals("ats") || partition.equals("lat")) {
             focalPlane = FocalPlane.createFocalPlane("AUXTEL");
         } else {
             focalPlane = FocalPlane.createFocalPlane();
@@ -457,7 +460,7 @@ public class CommandTool {
                 int[] registerValues = firstEntry.getValue();
                 Source source = image.addSource(ffSource.getLocation(), registerValues);
                 File[] files = ffSource.getFiles().keySet().stream().map(FitsFile::getFile).toArray(File[]::new);
-                try (FitsIntReader reader = new FitsIntReader(Location.LocationType.SCIENCE, files);
+                try (FitsIntReader reader = new FitsIntReader(ffSource.getLocation().type(), files);
                         ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
                     ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
