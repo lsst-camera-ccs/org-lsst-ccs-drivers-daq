@@ -52,7 +52,7 @@ public class FitsIntReader implements ReadableIntChannel {
             String extName = segment.getExtensionName();
             int index = segmentNames.indexOf(extName);
             if (index < 0) {
-                throw new IOException("Invalid segment name " + extName);
+                throw new IOException("Invalid segment name " + extName+" (expected "+segmentNames+" for sourceType "+sourceType+")");
             }
             int channelNumber = inverseSegmentMap[index] + nSegmentsPerCCD * config.getDataSensorMap()[j / nSegmentsPerCCD];
             inputs[channelNumber] = segment.getIntChannel();
