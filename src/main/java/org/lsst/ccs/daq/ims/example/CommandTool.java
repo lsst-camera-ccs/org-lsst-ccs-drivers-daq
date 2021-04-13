@@ -456,12 +456,13 @@ public class CommandTool {
             for (FitsFile.Source fSource : id.getSources().values()) {
                 FitsFile.FitsSource ffSource = (FitsFile.FitsSource) fSource;
                 Reb reb = focalPlane.getReb(ffSource.getLocation().getRaftName() + "/" + ffSource.getLocation().getBoardName());
-                System.out.println("\t" + ffSource.getLocation() + " " + reb.getLocation());
+                System.out.println("\t" + ffSource.getLocation() + " " + reb.getLocation()+" "+reb.isAuxtelREB()+" "+reb.getCCDType()); 
+                Location.LocationType locationType = reb.isAuxtelREB() ? Location.LocationType.SCIENCE : reb.getLocation().type();
                 Map.Entry<FitsFile, int[]> firstEntry = ffSource.getFiles().firstEntry();
                 int[] registerValues = firstEntry.getValue();
                 Source source = image.addSource(reb.getLocation(), registerValues);
                 File[] files = ffSource.getFiles().keySet().stream().map(FitsFile::getFile).toArray(File[]::new);
-                try (FitsIntReader reader = new FitsIntReader(reb.getLocation().type(), files);
+                try (FitsIntReader reader = new FitsIntReader(locationType, files);
                         ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
                     ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
