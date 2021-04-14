@@ -456,7 +456,7 @@ public class CommandTool {
             for (FitsFile.Source fSource : id.getSources().values()) {
                 FitsFile.FitsSource ffSource = (FitsFile.FitsSource) fSource;
                 Reb reb = focalPlane.getReb(ffSource.getLocation().getRaftName() + "/" + ffSource.getLocation().getBoardName());
-                System.out.println("\t" + ffSource.getLocation() + " " + reb.getLocation()+" "+reb.isAuxtelREB()+" "+reb.getCCDType()); 
+                System.out.println("\t" + ffSource.getLocation()); 
                 Location.LocationType locationType = reb.isAuxtelREB() ? Location.LocationType.SCIENCE : reb.getLocation().type();
                 Map.Entry<FitsFile, int[]> firstEntry = ffSource.getFiles().firstEntry();
                 int[] registerValues = firstEntry.getValue();
