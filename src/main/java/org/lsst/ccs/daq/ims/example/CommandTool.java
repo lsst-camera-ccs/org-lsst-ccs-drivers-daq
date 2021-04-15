@@ -46,10 +46,12 @@ import nom.tam.util.BufferedFile;
 import org.lsst.ccs.command.annotations.Argument;
 import org.lsst.ccs.command.annotations.Command;
 import org.lsst.ccs.daq.ims.DAQException;
+import org.lsst.ccs.daq.ims.Emulator;
 import org.lsst.ccs.daq.ims.Folder;
 import org.lsst.ccs.daq.ims.Image;
 import org.lsst.ccs.daq.ims.ImageListener;
 import org.lsst.ccs.daq.ims.ImageMetaData;
+import org.lsst.ccs.daq.ims.Playlist;
 import org.lsst.ccs.daq.ims.RegisterClient;
 import org.lsst.ccs.daq.ims.Source;
 import org.lsst.ccs.daq.ims.Source.ChannelMode;
@@ -144,6 +146,17 @@ public class CommandTool {
             throw new RuntimeException("No such folder: " + target);
         }
         image.moveTo(targetFolderName);
+    }
+    
+    @Command(name = "pl", description = "List contents of playlist")
+    public void pl(String playlistFile) throws DAQException, IOException {
+        File file = new File(playlistFile);
+        checkStore();
+        Emulator emulator = store.getEmulator();
+        try (Playlist playlist = emulator.openPlaylist(file)) {
+            List<Image> images = playlist.getImages();
+            images.stream().forEach(System.out::println);
+        }
     }
 
     @Command(name = "locations", description = "List configured locations")

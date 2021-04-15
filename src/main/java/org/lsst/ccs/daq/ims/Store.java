@@ -23,6 +23,7 @@ import org.lsst.ccs.utilities.location.LocationSet;
 public class Store implements AutoCloseable {
 
     private Camera camera;
+    private Emulator emulator;
     private RegisterClient client;
     private final Catalog catalog;
     private final String partition;
@@ -43,7 +44,7 @@ public class Store implements AutoCloseable {
             LOG.log(Level.INFO, "runMode={0}", runMode);
         }
         impl = "simulation".equals(runMode)
-               ? new StoreSimulatedImplementation() : new StoreNativeImplementation();
+                ? new StoreSimulatedImplementation() : new StoreNativeImplementation();
     }
     private Future<?> waitForImageTask;
 
@@ -84,7 +85,7 @@ public class Store implements AutoCloseable {
     }
 
     /**
-     * Gets the camera associated with this store.The camera can be used to trigger images.
+     * Gets the camera associated with this store. The camera can be used to trigger images.
      *
      * @return The camera associated with this store.
      * @throws org.lsst.ccs.daq.ims.DAQException
@@ -98,9 +99,25 @@ public class Store implements AutoCloseable {
             return camera;
         }
     }
+    /**
+     * Gets the emulator associated with this store. This can be used to manage
+     * playlists.
+     *
+     * @return The emulator associated with this store.
+     * @throws org.lsst.ccs.daq.ims.DAQException
+     */
+    public Emulator getEmulator() throws DAQException {
+        synchronized (this) {
+            if (emulator == null) {
+                this.emulator = new Emulator(this);
+            }
+            return emulator;
+        }
+    }
 
     /**
-     * Gets the camera associated with this store.The camera can be used to trigger images.
+     * Gets the camera associated with this store.The camera can be used to
+     * trigger images.
      *
      * @return The camera associated with this store.
      * @throws org.lsst.ccs.daq.ims.DAQException
@@ -114,7 +131,7 @@ public class Store implements AutoCloseable {
             return client;
         }
     }
-    
+
     /**
      * The name of the associated DAQ partition.
      *
@@ -312,6 +329,9 @@ public class Store implements AutoCloseable {
         }
         if (client != null) {
             client.detach();
+        }
+        if (emulator != null) {
+            emulator.detach();
         }
         impl.detachStore(store);
     }
