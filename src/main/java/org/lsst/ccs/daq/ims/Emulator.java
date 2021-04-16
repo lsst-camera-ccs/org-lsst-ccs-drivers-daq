@@ -2,8 +2,11 @@ package org.lsst.ccs.daq.ims;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.BitSet;
 import java.util.List;
 import java.util.logging.Logger;
+
+import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
  * A connection to the DAQ emulator for managing playlists.
@@ -24,8 +27,8 @@ public class Emulator {
      * Connect to DAQ Statistics clients
      *
      * @param store
-     * @throws DAQException If the partition does not exist, or something else
-     * goes wrong
+     * @throws DAQException If the partition does not exist, or something else goes
+     *                      wrong
      */
     Emulator(Store store) throws DAQException {
         this.store = store;
@@ -42,19 +45,24 @@ public class Emulator {
     }
 
     public void addImageToPlaylist(long playlist, Image image) throws DAQException {
-        throw new UnsupportedOperationException("Not supported yet."); 
+        addImageToPlaylist(emuClient, store.getStore(), playlist, image.getMetaData().getId());
     }
 
     public void list(long playlist, List<ImageMetaData> result) throws DAQException {
-        list(emuClient, playlist, result);
+        list(emuClient, store.getStore(), playlist, result);
     }
 
     public int playlistSize(long playlist) throws DAQException {
         return playlistSize(emuClient, playlist);
     }
 
-    public void startPlaylist(long playlist) throws DAQException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void startPlaylist(long playlist, boolean repeat) throws DAQException {
+        startPlaylist(emuClient, playlist, repeat);
+    }
+
+    public LocationSet getLocations() {
+        BitSet locations = getLocations(emuClient);
+        return new LocationSet(locations);
     }
 
     void detach() throws DAQException {
@@ -62,8 +70,7 @@ public class Emulator {
         detachEmuClient(emuClient);
     }
 
-
-    /* Native methods  */
+    /* Native methods */
     private synchronized native long attachEmuClient(String partition) throws DAQException;
 
     private synchronized native void detachEmuClient(long emuClient) throws DAQException;
@@ -74,8 +81,16 @@ public class Emulator {
 
     private synchronized native int playlistSize(long emuClient, long playlist) throws DAQException;
 
-    private synchronized native void list(long emuClient, long playlist, List<ImageMetaData> result) throws DAQException;
-    
+    private synchronized native void list(long emuClient, long store, long playlist, List<ImageMetaData> result)
+            throws DAQException;
+
+    private synchronized native void addImageToPlaylist(long emuClient, long store, long playlist, long id)
+            throws DAQException;
+
+    private synchronized native void startPlaylist(long emuClient, long playlist, boolean repeat) throws DAQException;
+
+    private synchronized native BitSet getLocations(long emuClient);
+
     static native String decodeException(int rc);
 
 }

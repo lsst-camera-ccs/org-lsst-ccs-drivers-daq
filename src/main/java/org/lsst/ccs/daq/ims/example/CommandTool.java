@@ -147,7 +147,7 @@ public class CommandTool {
         }
         image.moveTo(targetFolderName);
     }
-    
+
     @Command(name = "pl", description = "List contents of playlist")
     public void pl(String playlistFile) throws DAQException, IOException {
         File file = new File(playlistFile);
@@ -155,7 +155,35 @@ public class CommandTool {
         Emulator emulator = store.getEmulator();
         try (Playlist playlist = emulator.openPlaylist(file)) {
             List<Image> images = playlist.getImages();
-            images.stream().forEach(System.out::println);
+            images.stream().map(image -> String.format("%s %s %s %s", image.getMetaData().getName(), Utils.imageSize(image), image.getMetaData().getTimestamp(), image.getMetaData().getAnnotation())).forEach(System.out::println);
+        }
+    }
+
+    @Command(name = "pla", description = "Add an image to a playlist")
+    public void pla(String playlistFile, String imagePath) throws DAQException, IOException {
+        checkStore();
+        Image image = Utils.imageFromPath(store, imagePath);
+        Emulator emulator = store.getEmulator();
+        File file = new File(playlistFile);
+        try (Playlist playlist = emulator.openPlaylist(file)) {
+            playlist.add(image);
+        }
+    }
+
+    @Command(name = "emulators", description = "List configured emulators")
+    public LocationSet emulators() throws DAQException {
+        checkStore();
+        Emulator emulator = store.getEmulator();
+        return emulator.getLocations();
+    }
+
+    @Command(name = "play", description = "Start a playlist")
+    public void play(String playlistFile, @Argument(name = "repeat", description = "Repeat", defaultValue = "false") boolean repeat) throws DAQException, IOException {
+        checkStore();
+        File file = new File(playlistFile);
+        Emulator emulator = store.getEmulator();
+        try (Playlist playlist = emulator.openPlaylist(file)) {
+            playlist.start(repeat);
         }
     }
 
@@ -204,7 +232,7 @@ public class CommandTool {
         return Store.getClientVersion();
     }
 
-    
+
     @Command(name = "readRaw")
     public void readRaw(String path,
             @Argument(defaultValue = ".", description = "Folder where .raw (and .meta) files will be written") File dir,
@@ -445,7 +473,7 @@ public class CommandTool {
                         if (id == null) {
                             id = new ObsId(ff.getObsId());
                             obsIds.put(ff.getObsId(), id);
-                        }                    
+                        }
                         Path meta = file.resolveSibling(file.getFileName().toString().replace(".fits", ".meta"));
                         if (Files.exists(meta)) {
                             id.add(ff, meta);
@@ -519,7 +547,7 @@ public class CommandTool {
             System.out.printf("%s: %s\n",location, Arrays.stream(result.get(location)).mapToObj(i->String.format("%08x", i)).collect(Collectors.joining(",")));
         }
     }
-    
+
     private void checkStore() {
         if (store == null) {
             throw new RuntimeException("Please connect to store first");

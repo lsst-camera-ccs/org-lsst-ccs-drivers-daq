@@ -421,4 +421,8 @@ public class Store implements AutoCloseable {
     void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException {
         impl.writeRegisters(client, locations, addresses, values);
     }
+
+    long getStore() {
+        return store;
+    }
 }

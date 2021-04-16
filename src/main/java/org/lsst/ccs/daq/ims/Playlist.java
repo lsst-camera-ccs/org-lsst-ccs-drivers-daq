@@ -38,8 +38,8 @@ public class Playlist implements AutoCloseable {
         return emulator.playlistSize(playlist);
     }
 
-    public void start() throws DAQException {
-        emulator.startPlaylist(playlist);
+    public void start(boolean repeat) throws DAQException {
+        emulator.startPlaylist(playlist, repeat);
     }
 
     @Override

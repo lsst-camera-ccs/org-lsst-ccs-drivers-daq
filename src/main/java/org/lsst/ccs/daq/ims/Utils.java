@@ -71,7 +71,7 @@ public class Utils {
                             Arrays.toString(smd.getRegisterValues()));
                 } catch (DAQException x) {
                     return String.format("   Bad source %s", x.getMessage());
-                }                
+                }
             }));
         }
 
@@ -96,8 +96,8 @@ public class Utils {
         }
         return image;
     }
-    
-    private static String imageSize(Image image){
+
+    public static String imageSize(Image image){
         try {
             List<Source> sources = image.listSources();
             long totalSize = 0;
@@ -109,7 +109,7 @@ public class Utils {
                     nBad++;
                 }
             }
-            return nBad == 0 
+            return nBad == 0
                     ? String.format("%s (%d sources)", Utils.humanReadableByteCount(totalSize), sources.size())
                     : String.format("%s (%d sources (%d bad))", Utils.humanReadableByteCount(totalSize), sources.size(), nBad);
         } catch (DAQException x) {

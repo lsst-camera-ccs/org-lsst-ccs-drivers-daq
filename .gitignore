@@ -2,4 +2,7 @@ target/
 *.log
 logs/
 /nbproject/
+/.*/
+.project
+.classpath
 /src/main/cpp/nbproject/

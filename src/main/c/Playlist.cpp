@@ -13,7 +13,6 @@
 
 #define MESSAGE_LENGTH 256
 
-
 static jclass JCexClass;
 static jmethodID JCexConstructor;
 
@@ -77,7 +76,7 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_Emulator_openPlaylist
     const char *fileName_ = env->GetStringUTFChars(fileName, 0);
     try {
         EMU::PlayList* playlist = new EMU::PlayList(fileName_);
-        return (jlong) playlist; 
+        return (jlong) playlist;
     } catch (EMU::Exception& x) {
         env->ReleaseStringUTFChars(fileName, fileName_);
         return env->ThrowNew(JCexClass, x.what());
@@ -103,13 +102,37 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Emulator_list
     unsigned remaining = playlist_->length();
     const IMS::Id* id  = playlist_->vector();
     while(remaining--) {
-   
+
         IMS::Image image(*id, *store_);
         if(image) {
             addObjectToList(env, result, createImageMetaData(env, image));
         } else {
-            //printf(NOSUCH_IMAGE, INDENT, BLANK, id->value());
+            char x[MESSAGE_LENGTH];
+            snprintf(x, MESSAGE_LENGTH, "Image in playlist not found");
+            throwDAQEmulationException(env, x, image.error());
+            return;
         }
         id++;
     }
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Emulator_addImageToPlaylist
+  (JNIEnv *env, jobject obj, jlong client, jlong store, jlong playlist, jlong id) {
+    EMU::PlayList* playlist_ = (EMU::PlayList*) playlist;
+    IMS::Id id_((uint64_t) id);
+    playlist_->insert(id_);
+}
+
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_Emulator_getLocations
+  (JNIEnv *env, jobject obj, jlong client) {
+    EMU::Client* client_ = (EMU::Client*) client;
+    const DSI::LocationSet& locations = client_->emulators();
+    return createBitSet(env, locations);
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Emulator_startPlaylist
+  (JNIEnv *env, jobject obj, jlong client, jlong playlist, jboolean repeat) {
+    EMU::Client* client_ = (EMU::Client*) client;
+    EMU::PlayList* playlist_ = (EMU::PlayList*) playlist;
+    client_->play(*playlist_, repeat);
 }

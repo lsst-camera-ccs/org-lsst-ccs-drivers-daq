@@ -21,7 +21,7 @@ public class Folder implements Comparable<Folder> {
     }
 
     /**
-     * Obtain a list of images in this folder.The returned list is not sorted, 
+     * Obtain a list of images in this folder. The returned list is not sorted,
      * but implements comparable so can easily be sorted if required.
      * @return The list of folders.
      * @throws DAQException
@@ -53,10 +53,10 @@ public class Folder implements Comparable<Folder> {
         }
     }
 
-    /** 
+    /**
      * Create a new image in this folder. The new image will initially have no data
      * associated with it, but will be writable.
-     * @see ImageMetaData#ImageMetaData(java.lang.String, java.lang.String, int, java.util.Set) 
+     * @see ImageMetaData#ImageMetaData(java.lang.String, java.lang.String, int, java.util.Set)
      * @param meta The meta data corresponding to the image to be created.
      * @return The newly created image
      * @throws DAQException if the image cannot be created, or some other error occurs.
