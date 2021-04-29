@@ -184,9 +184,10 @@ public class FitsIntWriter implements WritableIntChannel {
                     providers.addAll(extraMetaDataProvider.getMetaDataProvider(ccd));
                 }
                 writers[i].createHDUs(imageSet, null, providers, RawImageData.BitsPerPixel.BIT32, headerSpecifications);
-                expectedDataLength += RawImageData.BitsPerPixel.BIT32.bytes() * imageSet.getParallelPixels() * imageSet.getSerialPixels();
 
                 int nImageExtensions = imageSet.getImageExtensionNames().size();
+                expectedDataLength += nImageExtensions * RawImageData.BitsPerPixel.BIT32.bytes() * imageSet.getParallelPixels() * imageSet.getSerialPixels();
+
                 for (int j = 0; j < nImageExtensions; j++) {
                     fileChannels[i * nImageExtensions + j] = new FitsAsyncWriteChannel(writers[i], readoutConfig.getDataSegmentNames()[readoutConfig.getDataSegmentMap()[j]]);
                 }
@@ -258,9 +259,9 @@ public class FitsIntWriter implements WritableIntChannel {
     public List<File> getFiles() {
         return Collections.unmodifiableList(Arrays.asList(files));
     }
-    
+
     /***
-     * Get the total expected data output length (the data to be written to all FITS files)
+     * Get the total expected data output length (the data to be written to all segments of all FITS files)
      * @return The length
      */
     public int getExpectedDataLength() {
@@ -269,9 +270,9 @@ public class FitsIntWriter implements WritableIntChannel {
 
     /**
      * Allows a pixel filter to be inserted in the decompression train.
-     * Typically used to check for bad pixels. 
-     * @param channel 
-     * @return 
+     * Typically used to check for bad pixels.
+     * @param channel
+     * @return
      */
     protected WritableIntChannel createPixelFilter(WritableIntChannel channel) {
         return channel;
