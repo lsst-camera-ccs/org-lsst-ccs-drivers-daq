@@ -21,6 +21,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -39,6 +41,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.CRC32;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.Header;
 import nom.tam.fits.TruncatedFileException;
@@ -92,14 +95,14 @@ public class CommandTool {
 
     @Command(name = "connect", description = "Connect to a DAQ store")
     public void connect(
-            @Argument(name = "partition", description = "Partition name") String partition, 
+            @Argument(name = "partition", description = "Partition name") String partition,
             @Argument(name = "geometry", description = "Override default geometry", defaultValue = "") String geometry) throws DAQException {
         if (store != null) {
             store.close();
         }
         store = new Store(partition);
         if (!geometry.isEmpty()) {
-            focalPlane = FocalPlane.createFocalPlane(geometry);            
+            focalPlane = FocalPlane.createFocalPlane(geometry);
         } else if (partition.equals("ats") || partition.equals("lat")) {
             focalPlane = FocalPlane.createFocalPlane("AUXTEL");
         } else {
@@ -115,7 +118,7 @@ public class CommandTool {
         }
     }
 
-    @Command(name = "list", alias="ls", description = "List folders/files")
+    @Command(name = "list", alias = "ls", description = "List folders/files")
     public void list(@Argument(name = "folder", description = "Path", defaultValue = "") String path) throws DAQException {
         checkStore();
         Utils.list(store, path).forEach(System.out::println);
@@ -235,6 +238,73 @@ public class CommandTool {
         return Store.getClientVersion();
     }
 
+    @Command(name = "checkRaw")
+    public void checkRaw(String path,
+            @Argument(defaultValue = "1048576") int bufferSize,
+            @Argument(defaultValue = "4") int nThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
+        checkStore();
+        Image image = Utils.imageFromPath(store, path);
+        List<Source> sources = image.listSources();
+        long totalSize = 0;
+        for (Source source : sources) {
+            totalSize += source.size();
+        }
+        System.out.printf("Expected size %,d bytes\n", totalSize);
+
+        ThreadFactory readThreadFactory = (Runnable r) -> new ReadThread(r, bufferSize, image.getStore().getPartition());
+
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(nThreads, nThreads, 60L,
+                TimeUnit.SECONDS, new LinkedBlockingQueue<>(), readThreadFactory);
+        try {
+            executor.prestartAllCoreThreads();
+            List<Future<Object[]>> futures = new ArrayList<>();
+            long start = System.nanoTime();
+            for (Source source : sources) {
+                Callable<Object[]> callable = () -> {
+
+                    CRC32 cksum = new CRC32();
+                    ReadThread thread = (ReadThread) Thread.currentThread();
+                    ByteBuffer buffer = thread.buffer;
+                    try (ByteChannel channel = source.openChannel(thread.store, Source.ChannelMode.READ)) {
+                        long readSize = 0;
+                        for (;;) {
+                            int l = channel.read(buffer);
+                            if (l < 0) {
+                                break;
+                            }
+                            readSize += l;
+                            buffer.flip();
+                            cksum.update(buffer);
+                            buffer.clear();
+                        }
+                        return new Object[]{source, readSize, cksum.getValue()};
+                    }
+                };
+                futures.add(executor.submit(callable));
+            }
+            Map<Source, Long> checksums = new HashMap<>();
+            long totalReadSize = 0;
+            for (Future<Object[]> future : futures) {
+                Object[] result = future.get();
+                totalReadSize += (Long) result[1];
+                Source source = (Source) result[0];
+                checksums.put(source, (Long) result[2]);
+            }
+            long stop = System.nanoTime();
+
+            System.out.printf(
+                    "Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
+            
+            List<Source> sourceList = new ArrayList<>(checksums.keySet());
+            Collections.sort(sourceList);
+            for (Source source : sourceList) {
+                System.err.printf("Source %s crc32 %d\n", source, checksums.get(source));
+            }
+            
+        } finally {
+            executor.shutdown();
+        }
+    }
 
     @Command(name = "readRaw")
     public void readRaw(String path,
@@ -270,7 +340,7 @@ public class CommandTool {
                     ReadThread thread = (ReadThread) Thread.currentThread();
                     ByteBuffer buffer = thread.buffer;
                     try (ByteChannel channel = source.openChannel(thread.store, Source.ChannelMode.READ);
-                           FileChannel out = new FileOutputStream(file).getChannel()) {
+                            FileChannel out = new FileOutputStream(file).getChannel()) {
                         long readSize = 0;
                         for (;;) {
                             int l = channel.read(buffer);
@@ -497,7 +567,7 @@ public class CommandTool {
             for (FitsFile.Source fSource : id.getSources().values()) {
                 FitsFile.FitsSource ffSource = (FitsFile.FitsSource) fSource;
                 Reb reb = focalPlane.getReb(ffSource.getLocation().getRaftName() + "/" + ffSource.getLocation().getBoardName());
-                System.out.println("\t" + ffSource.getLocation()); 
+                System.out.println("\t" + ffSource.getLocation());
                 Location.LocationType locationType = reb.isAuxtelREB() ? Location.LocationType.SCIENCE : reb.getLocation().type();
                 Map.Entry<FitsFile, int[]> firstEntry = ffSource.getFiles().firstEntry();
                 int[] registerValues = firstEntry.getValue();
@@ -549,7 +619,7 @@ public class CommandTool {
         RegisterClient registerClient = store.getRegisterClient();
         Map<Location, int[]> result = registerClient.readRegisters(locations(), address);
         for (Location location : locations()) {
-            System.out.printf("%s: %s\n",location, Arrays.stream(result.get(location)).mapToObj(i->String.format("%08x", i)).collect(Collectors.joining(",")));
+            System.out.printf("%s: %s\n", location, Arrays.stream(result.get(location)).mapToObj(i -> String.format("%08x", i)).collect(Collectors.joining(",")));
         }
     }
 
