@@ -298,7 +298,7 @@ public class CommandTool {
             List<Source> sourceList = new ArrayList<>(checksums.keySet());
             Collections.sort(sourceList);
             for (Source source : sourceList) {
-                System.err.printf("Source %s crc32 %d\n", source, checksums.get(source));
+                System.err.printf("Source %s crc32 %d\n", source.getLocation(), checksums.get(source));
             }
             
         } finally {
