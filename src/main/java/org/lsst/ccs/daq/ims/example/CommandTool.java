@@ -294,13 +294,13 @@ public class CommandTool {
 
             System.out.printf(
                     "Read %,d bytes in %,dns (%d MBytes/second)\n", totalReadSize, (stop - start), 1000 * totalReadSize / (stop - start));
-            
+
             List<Source> sourceList = new ArrayList<>(checksums.keySet());
             Collections.sort(sourceList);
             for (Source source : sourceList) {
                 System.err.printf("Source %s crc32 %d\n", source.getLocation(), checksums.get(source));
             }
-            
+
         } finally {
             executor.shutdown();
         }
@@ -475,7 +475,7 @@ public class CommandTool {
         ThreadFactory readThreadFactory = (Runnable r) -> new ReadThread(r, bufferSize, image.getStore().getPartition());
 
         ThreadPoolExecutor executor = new ThreadPoolExecutor(sources.size(), sources.size(), 60L,
-                TimeUnit.SECONDS, new SynchronousQueue(), readThreadFactory);
+                TimeUnit.SECONDS, new LinkedBlockingQueue<>(), readThreadFactory);
         try {
             executor.prestartAllCoreThreads();
             List<Future<Long>> futures = new ArrayList<>();
