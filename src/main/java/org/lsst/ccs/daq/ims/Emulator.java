@@ -27,8 +27,8 @@ public class Emulator {
      * Connect to DAQ Statistics clients
      *
      * @param store
-     * @throws DAQException If the partition does not exist, or something else goes
-     *                      wrong
+     * @throws DAQException If the partition does not exist, or something else
+     * goes wrong
      */
     Emulator(Store store) throws DAQException {
         this.store = store;
@@ -65,6 +65,18 @@ public class Emulator {
         return new LocationSet(locations);
     }
 
+    public void halt() throws DAQException {
+        halt(emuClient);
+    }
+
+    public void stop() throws DAQException {
+        stop(emuClient);
+    }
+
+    public void restart() throws DAQException {
+        restart(emuClient);
+    }
+
     void detach() throws DAQException {
         // TODO: What about playlists associated with this emulator?
         detachEmuClient(emuClient);
@@ -90,6 +102,12 @@ public class Emulator {
     private synchronized native void startPlaylist(long emuClient, long playlist, boolean repeat) throws DAQException;
 
     private synchronized native BitSet getLocations(long emuClient);
+
+    private synchronized native void halt(long emuClient);
+
+    private synchronized native void stop(long emuClient);
+
+    private synchronized native void restart(long emuClient);
 
     static native String decodeException(int rc);
 

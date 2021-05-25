@@ -136,3 +136,21 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Emulator_startPlaylist
     EMU::PlayList* playlist_ = (EMU::PlayList*) playlist;
     client_->play(*playlist_, repeat);
 }
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Emulator_halt
+  (JNIEnv *env, jobject obj, jlong client) {
+    EMU::Client* client_ = (EMU::Client*) client;
+    client_->halt();
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Emulator_stop
+  (JNIEnv *env, jobject obj, jlong client) {
+    EMU::Client* client_ = (EMU::Client*) client;
+    client_->stop();
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_Emulator_restart
+  (JNIEnv *env, jobject obj, jlong client) {
+    EMU::Client* client_ = (EMU::Client*) client;
+    client_->restart();
+}
