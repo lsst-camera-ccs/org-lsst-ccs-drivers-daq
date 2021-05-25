@@ -154,7 +154,7 @@ public class CommandTool {
         image.moveTo(targetFolderName);
     }
 
-    @Command(name = "pl", description = "List contents of playlist")
+    @Command(name = "showPlaylist", alias="sp", description = "List contents of playlist")
     public void pl(String playlistFile) throws DAQException, IOException {
         File file = new File(playlistFile);
         checkStore();
@@ -165,7 +165,7 @@ public class CommandTool {
         }
     }
 
-    @Command(name = "pla", description = "Add an image to a playlist")
+    @Command(name = "addPlaylistImage", alias="ap", description = "Add an image to a playlist")
     public void pla(String playlistFile, String imagePath) throws DAQException, IOException {
         checkStore();
         Image image = Utils.imageFromPath(store, imagePath);
@@ -193,6 +193,27 @@ public class CommandTool {
         }
     }
 
+    @Command(name = "halt", description = "Halt a playlist")
+    public void halt() throws DAQException {
+        checkStore();
+        Emulator emulator = store.getEmulator();
+        emulator.halt();
+    }
+
+    @Command(name = "stop", description = "Stop a playlist")
+    public void stop() throws DAQException {
+        checkStore();
+        Emulator emulator = store.getEmulator();
+        emulator.stop();
+    }
+    
+    @Command(name = "restart", description = "Restart a playlist")
+    public void restart() throws DAQException {
+        checkStore();
+        Emulator emulator = store.getEmulator();
+        emulator.restart();
+    }
+    
     @Command(name = "locations", description = "List configured locations")
     public LocationSet locations() throws DAQException {
         checkStore();
