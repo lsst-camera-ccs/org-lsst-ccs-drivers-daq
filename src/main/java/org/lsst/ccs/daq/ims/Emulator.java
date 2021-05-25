@@ -40,23 +40,23 @@ public class Emulator {
         return new Playlist(store, this, playlist);
     }
 
-    public void closePlayList(long playlist) throws DAQException {
+    void closePlayList(long playlist) throws DAQException {
         closePlaylist(emuClient, playlist);
     }
 
-    public void addImageToPlaylist(long playlist, Image image) throws DAQException {
+    void addImageToPlaylist(long playlist, Image image) throws DAQException {
         addImageToPlaylist(emuClient, store.getStore(), playlist, image.getMetaData().getId());
     }
 
-    public void list(long playlist, List<ImageMetaData> result) throws DAQException {
+    void list(long playlist, List<ImageMetaData> result) throws DAQException {
         list(emuClient, store.getStore(), playlist, result);
     }
 
-    public int playlistSize(long playlist) throws DAQException {
+    int playlistSize(long playlist) throws DAQException {
         return playlistSize(emuClient, playlist);
     }
 
-    public void startPlaylist(long playlist, boolean repeat) throws DAQException {
+    void startPlaylist(long playlist, boolean repeat) throws DAQException {
         startPlaylist(emuClient, playlist, repeat);
     }
 
