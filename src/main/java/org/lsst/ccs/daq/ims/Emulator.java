@@ -27,8 +27,8 @@ public class Emulator {
      * Connect to DAQ Statistics clients
      *
      * @param store
-     * @throws DAQException If the partition does not exist, or something else goes
-     *                      wrong
+     * @throws DAQException If the partition does not exist, or something else
+     * goes wrong
      */
     Emulator(Store store) throws DAQException {
         this.store = store;
@@ -40,29 +40,41 @@ public class Emulator {
         return new Playlist(store, this, playlist);
     }
 
-    public void closePlayList(long playlist) throws DAQException {
+    void closePlayList(long playlist) throws DAQException {
         closePlaylist(emuClient, playlist);
     }
 
-    public void addImageToPlaylist(long playlist, Image image) throws DAQException {
+    void addImageToPlaylist(long playlist, Image image) throws DAQException {
         addImageToPlaylist(emuClient, store.getStore(), playlist, image.getMetaData().getId());
     }
 
-    public void list(long playlist, List<ImageMetaData> result) throws DAQException {
+    void list(long playlist, List<ImageMetaData> result) throws DAQException {
         list(emuClient, store.getStore(), playlist, result);
     }
 
-    public int playlistSize(long playlist) throws DAQException {
+    int playlistSize(long playlist) throws DAQException {
         return playlistSize(emuClient, playlist);
     }
 
-    public void startPlaylist(long playlist, boolean repeat) throws DAQException {
+    void startPlaylist(long playlist, boolean repeat) throws DAQException {
         startPlaylist(emuClient, playlist, repeat);
     }
 
     public LocationSet getLocations() {
         BitSet locations = getLocations(emuClient);
         return new LocationSet(locations);
+    }
+
+    public void halt() throws DAQException {
+        halt(emuClient);
+    }
+
+    public void stop() throws DAQException {
+        stop(emuClient);
+    }
+
+    public void restart() throws DAQException {
+        restart(emuClient);
     }
 
     void detach() throws DAQException {
@@ -90,6 +102,12 @@ public class Emulator {
     private synchronized native void startPlaylist(long emuClient, long playlist, boolean repeat) throws DAQException;
 
     private synchronized native BitSet getLocations(long emuClient);
+
+    private synchronized native void halt(long emuClient);
+
+    private synchronized native void stop(long emuClient);
+
+    private synchronized native void restart(long emuClient);
 
     static native String decodeException(int rc);
 

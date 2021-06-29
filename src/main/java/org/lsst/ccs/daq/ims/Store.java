@@ -186,7 +186,7 @@ public class Store implements AutoCloseable {
                 waitForImageTask = executor.submit(() -> {
                     try {
                         Thread.currentThread().setName("ImageStreamThread_" + partition);
-                        LOG.log(Level.INFO, () -> String.format("DAQ image listened starting with timeouts %,d %,d", IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS));
+                        LOG.log(Level.INFO, () -> String.format("DAQ image listener starting with timeouts %,d %,d", IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS));
                         long waitForImageStore = impl.attachStore(partition);
                         try {
                             while (!Thread.currentThread().isInterrupted()) {
