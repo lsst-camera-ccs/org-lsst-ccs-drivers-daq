@@ -32,7 +32,7 @@ public class Utils {
     private static String listSummary(Store store) throws DAQException {
         long capacity = store.getCapacity();
         long remaining = store.getRemaining();
-        return String.format("%s/%s (%3.3g%%) bytes used", Utils.humanReadableByteCount(capacity - remaining), Utils.humanReadableByteCount(capacity), 100.0 * (capacity - remaining) / capacity);
+        return String.format("%s/%s (%3.3g%%) used", Utils.humanReadableByteCount(capacity - remaining), Utils.humanReadableByteCount(capacity), 100.0 * (capacity - remaining) / capacity);
     }
 
     /**

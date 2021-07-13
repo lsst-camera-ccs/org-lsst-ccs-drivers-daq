@@ -261,7 +261,7 @@ public class CommandTool {
 
     @Command(name = "checkRaw")
     public void checkRaw(String path,
-            @Argument(defaultValue = "1048576") int bufferSize,
+            @Argument(defaultValue = "1950720") int bufferSize,
             @Argument(defaultValue = "4") int nThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
         Image image = Utils.imageFromPath(store, path);
@@ -330,7 +330,7 @@ public class CommandTool {
     @Command(name = "readRaw")
     public void readRaw(String path,
             @Argument(defaultValue = ".", description = "Folder where .raw (and .meta) files will be written") File dir,
-            @Argument(defaultValue = "1048576") int bufferSize,
+            @Argument(defaultValue = "1950720") int bufferSize,
             @Argument(defaultValue = "4") int nThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
         Image image = Utils.imageFromPath(store, path);
@@ -439,7 +439,7 @@ public class CommandTool {
                 Path file = rawSource.getRaw();
                 try (FileChannel in = new FileInputStream(file.toFile()).getChannel();
                         ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
-                    ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
+                    ByteBuffer buffer = ByteBuffer.allocateDirect(1950720);
                     for (;;) {
                         buffer.clear();
                         int len = in.read(buffer);
@@ -482,7 +482,7 @@ public class CommandTool {
     @Command(name = "read", description = "Read and decode data in image")
     public void read(String path,
             @Argument(defaultValue = ".", description = "Folder where FITS files will be written") File dir,
-            @Argument(defaultValue = "1048576") int bufferSize,
+            @Argument(defaultValue = "1950720") int bufferSize,
             @Argument(defaultValue = "4") int nThreads) throws DAQException, IOException, FitsException, InterruptedException, ExecutionException {
         checkStore();
         Image image = Utils.imageFromPath(store, path);
@@ -596,7 +596,7 @@ public class CommandTool {
                 File[] files = ffSource.getFiles().keySet().stream().map(FitsFile::getFile).toArray(File[]::new);
                 try (FitsIntReader reader = new FitsIntReader(locationType, reb.isAuxtelREB(), files);
                         ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
-                    ByteBuffer buffer = ByteBuffer.allocateDirect(1024 * 1024);
+                    ByteBuffer buffer = ByteBuffer.allocateDirect(1950720);
                     buffer.order(ByteOrder.LITTLE_ENDIAN);
                     IntBuffer intBuffer = buffer.asIntBuffer();
                     for (;;) {
