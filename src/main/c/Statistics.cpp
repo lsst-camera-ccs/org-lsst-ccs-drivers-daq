@@ -11,7 +11,6 @@
 #include "daq/InterfaceFirmwareStats.hh"
 #include "rms/Errors.hh"
 #include "dsm/Exception.hh"
-#include "xds/Page.hh"
 
 #define MESSAGE_LENGTH 256
 

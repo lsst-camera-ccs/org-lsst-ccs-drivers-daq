@@ -10,8 +10,8 @@
 #include "dsm/Exception.hh"
 #include "ims/SourceMetadata.hh"
 #include "daq/LocationSet.hh"
+#include "daq/Path.hh"
 #include "dsm/Exception.hh"
-#include "xds/Page.hh"
 #include "cms/Camera.hh"
 #include "cms/Exception.hh"
 #include "rms/Client.hh"
@@ -118,7 +118,7 @@ jobject createImageMetaData(JNIEnv* env, Image& image) {
     return env->NewObject(JCimageMetaDataClass, JCimageMetaDataConstructor, id_, name, folder, annotation, version_, opcode, timestamp, bitset);
 }
 
-jobject createSourceMetaData(JNIEnv* env, const Source& source) {
+jobject createSourceMetaData(JNIEnv* env, Source& source) {
     const SourceMetadata metaData = source.metadata();
     jbyte sensor = metaData.sensor();
     jbyte lane = metaData.lane();
@@ -327,14 +327,14 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_capa
 (JNIEnv * env, jobject obj, jlong store) {
 
     DSI::LocationSet missing;
-    return ((Store *) store)->capacity(missing) << XDS::Page::SIZE2;
+    return ((Store *) store)->capacity() * XDS::Page::SIZE;
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_remaining
 (JNIEnv * env, jobject obj, jlong store) {
 
     DSI::LocationSet missing;
-    return ((Store *) store)->remaining(missing) << XDS::Page::SIZE2;
+    return ((Store *) store)->remaining() * XDS::Page::SIZE;
 }
 
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_listFolders
@@ -500,7 +500,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_ad
     }
     DAQ::Location element(elementIndex);
     const char *platform_ = env->GetStringUTFChars(platform, 0);
-    SourceMetadata smd((DAQ::Sensor::Type) type, DAQ::Lane::Type::EMULATION, platform_);
+    SourceMetadata smd((DAQ::Sensor::Type) type, DAQ::Path::LANE::EMULATOR, platform_);
     RMS::InstructionList il;
     jint size = env->GetArrayLength(registerValues);
     jint* values = env->GetIntArrayElements(registerValues, 0);

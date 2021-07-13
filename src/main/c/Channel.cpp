@@ -23,8 +23,8 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_DAQSourceChannel_write
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_DAQSourceChannel_close
 (JNIEnv *rnv, jobject obj, jlong source_, jboolean write) {
     Source* source = (Source*) source_;
-    if (write) {
-        source->terminate();
-    }
+    //if (write) {
+    //    source->terminate();
+    //}
     delete source;
 }
