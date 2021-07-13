@@ -326,15 +326,13 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_capacity
 (JNIEnv * env, jobject obj, jlong store) {
 
-    DSI::LocationSet missing;
-    return ((Store *) store)->capacity() * XDS::Page::SIZE;
+    return ((Store *) store)->capacity() * (jlong) XDS::Page::SIZE;
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_remaining
 (JNIEnv * env, jobject obj, jlong store) {
 
-    DSI::LocationSet missing;
-    return ((Store *) store)->remaining() * XDS::Page::SIZE;
+    return ((Store *) store)->remaining() * (jlong) XDS::Page::SIZE;
 }
 
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_listFolders
