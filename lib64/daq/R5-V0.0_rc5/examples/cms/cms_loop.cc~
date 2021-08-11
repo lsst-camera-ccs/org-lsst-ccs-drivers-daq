@@ -1,0 +1,72 @@
+/*
+** ++
+**  Package:
+**	
+**
+**  Abstract:      
+**
+**  Author:
+**      Michael Huffer, SLAC <mehsys@slac.stanford.edu>
+**
+**  Creation Date:
+**	000 - , 2007
+**
+**  Revision History:
+**	None.
+**
+** --
+*/
+
+#include <stdio.h> 
+#include <stdlib.h>
+
+#include "ims/Store.hh"
+#include "ims/ImageMetadata.hh"
+#include "cms/Camera.hh"
+#include "cms/Exception.hh"
+
+#define PROGRAM   argv[0]
+#define PARTITION argv[1]
+#define LOOPS     argv[2]
+
+static const char ANNOUNCE[] = "Enter the CMS Camera command line editor. Input to the editor requires two arguments. Where:\n" 
+                               "The first argument corresponds to the name of a valid partition and the second to the name of the default folder.\n"; 
+
+static const char SUCCESS[]        = "Triggered using opcode %d the image named %s at %s\n";
+static const char FAILED[]         = "Failed to trigger using opcode %d the image to be named %s (%s)\n";
+
+int main(int argc, char** argv)
+ {
+
+ if(!--argc) {printf(ANNOUNCE); return EXIT_SUCCESS;}
+ 
+ IMS::Store store(PARTITION); 
+  
+ CMS::Camera camera(store);
+ 
+ unsigned loops = strtoul(LOOPS, 0, 0);
+ static unsigned OPCODE = 1;
+
+ char image[32];
+
+ for(unsigned loop=0; loop<loops; ++loop)
+ {
+   sprintf(image, "jgt_%03i", loop);
+
+   IMS::ImageMetadata metadata(image, "jgt", camera.sources(), OPCODE);
+
+   int error = camera.trigger(metadata);
+
+   if(!error)
+     printf(SUCCESS, OPCODE,  image, metadata.timestamp().decode());
+   else
+     printf(FAILED, OPCODE, image, CMS::Exception::decode(error));
+
+   printf("<ENTER> to continue\n"); getchar();
+
+ }
+
+ return EXIT_SUCCESS;
+ }
+
+
