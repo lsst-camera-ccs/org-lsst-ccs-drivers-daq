@@ -1,0 +1,311 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <csignal>
+
+#include "daq/LocationSet.hh"
+#include "rms/InstructionList.hh"
+#include "cms/Camera.hh"
+#include "cms/Exception.hh"
+#include "ims/Path.hh"
+#include "ims/Image.hh"
+#include "ims/Stream.hh"
+#include "ims/Barrier.hh"
+
+#define PROGRAM    argv[0]
+#define PARTITION  argv[1]
+#define IMAGE_BASE argv[2]
+#define START      argv[3]
+#define REPEATS    argv[4]
+#define SOURCES    argv[5]
+
+#define INVALID        -1 // invalid opcode...
+
+#define ONE_SOURCE_SIZE 127401984
+
+static const char USAGE[] = "usage: cms_trigger <partition> <image base name> <starting index> <number of images> [sources]\n";
+
+static const char folder[]="jgt";
+static bool doExit = false;
+static const DAQ::LocationSet _parse_targets(const DAQ::LocationSet&, int argc, const char** argv);
+
+static int _trigger(IMS::Stream&, CMS::Camera&, const IMS::Path&, const DAQ::LocationSet&);
+static int _compare(IMS::Store& store, const IMS::Path& true_path, const IMS::Path& test_path);
+static uint8_t* _read_source(IMS::Source& source, uint8_t* buffer);
+static int _remove (IMS::Store&,  const IMS::Path&);
+static int _check(IMS::Store& store, const IMS::Path& test_path);
+
+void quitIt(int s)
+{
+  printf("\n");
+  if(doExit)
+  {
+    printf("\n");
+    exit(1);
+  }
+  doExit=true;
+}
+
+
+/*
+** ++
+**
+**
+** --
+*/
+static const char NOT_VALID[]      = "% is not a valid image specifier (first argument must be of the form: 'folder-name/image-name')\n";
+static const char NO_SOURCES[]     = "No valid sources specified\n";
+
+
+int main(int argc, char* argv[])
+{
+  
+  if(argc < 5) {printf(USAGE); return EXIT_SUCCESS;}
+  
+  struct sigaction sigIntHandler;
+  sigIntHandler.sa_handler = quitIt;
+  sigemptyset(&sigIntHandler.sa_mask);
+  sigIntHandler.sa_flags = 0;
+  sigaction(SIGINT, &sigIntHandler, NULL);
+  
+  IMS::Store store(PARTITION);
+  CMS::Camera camera(store);
+  DAQ::LocationSet sources = _parse_targets(camera.sources(), argc-5, (const char**)&SOURCES);
+  
+  if(!sources) {printf(NO_SOURCES); return -1;}
+  
+  IMS::Stream stream(camera.store());
+  sleep(1);
+
+  unsigned repeats = atol(REPEATS);
+  unsigned image_number = atol(START);
+  char image_name[64];
+  unsigned iterations = 0;
+  
+  while(!doExit)
+  {
+    sprintf(image_name, "%s%i", IMAGE_BASE, image_number);
+    
+    IMS::Path test_path(image_name, folder);
+    if(!test_path) {printf(NOT_VALID, image_name); return -1;}
+
+    static const char TRUE_IMAGE[] = "emu1";
+    static const char TRUE_FOLDER[] = "emu";
+    IMS::Path true_path(TRUE_IMAGE, TRUE_FOLDER);
+    if(!true_path) {printf(NOT_VALID, TRUE_IMAGE); return -1;}
+    
+    int error = _trigger(stream, camera, test_path, sources);
+    if(error) break;
+    
+    //int image_errors = _check(store, test_path);
+    //if(image_errors) break;
+    
+    //int image_errors = _compare(store, true_path, test_path);
+    //if(!image_errors)  _remove (store, test_path);
+    
+    ++image_number;
+    if(++iterations==repeats) break;
+
+    //usleep(500000);
+    //sleep(1);
+    printf("<ENTER> for another trigger:");
+    getchar();
+    
+  }
+  
+  return(EXIT_SUCCESS);
+}
+
+
+#include <string.h>
+#include "daq/ScienceSet.hh"
+#include "daq/WavefrontSet.hh"
+#include "daq/GuidingSet.hh"
+
+static const DAQ::LocationSet _parse_targets(const DAQ::LocationSet& all, int argc, const char** argv)
+{
+  
+  DAQ::LocationSet targets;
+  
+  if(0 == argc) { targets |= all; return targets; }
+  
+  bool exclude = false;
+  
+  for(int i=0; i<argc; ++i)
+  {
+    DAQ::LocationSet set;
+    if(0==strncmp(argv[i], "-a", 2))
+    {
+      set |= all;
+    }
+    else if(0==strcmp(argv[i], "-x")) exclude = true;
+    else if(0==strcmp(argv[i], "-s")) set  = DAQ::ScienceSet();
+    else if(0==strcmp(argv[i], "-g")) set  = DAQ::GuidingSet();
+    else if(0==strcmp(argv[i], "-w")) set  = DAQ::WavefrontSet();
+    else                              set |= DAQ::LocationSet(1, &argv[i]);
+    
+    if(exclude) targets &= ~set;
+    else        targets |=  set;
+  }   
+  
+  targets &= all;
+  
+  return targets;
+}
+
+
+static const char SUCCESS[]        = "%s - %s 0x%016llX: ";
+static const char FAILED[]         = "Failed to trigger using opcode %d the image to be named %s (%s)\n";
+static const char INVALID_OPCODE[] = "The second argument is not a valid opcode\n";
+
+static int _trigger(IMS::Stream& stream, CMS::Camera& camera, const IMS::Path& path, const DAQ::LocationSet& sources )
+{
+  
+  const char* annotation = (const char*)0;
+  int32_t     opcode     = 7;
+  
+  if(opcode == INVALID) {printf(INVALID_OPCODE); return -1;}
+  
+  IMS::ImageMetadata metadata(path.image(), path.folder(), sources, opcode, annotation); 
+  
+  int32_t error = camera.trigger(metadata);
+  
+  if(!error)
+  {
+    //IMS::Id id = camera.store().catalog.lookup(path.image(), path.folder());
+    //printf(SUCCESS, metadata.timestamp().decode(), path.image(), id.value()); 
+    //fflush(stdout);
+    //IMS::Image stream_image(camera.store(), stream);//, 3*1000*1000);
+    //IMS::Barrier barrier(stream_image);
+    //barrier.block(stream);
+    //printf("\n");
+  }
+  else
+  {
+    printf(FAILED, opcode, path.image(), CMS::Exception::decode(error));
+    return -1;
+  }
+  
+  return 0;  
+}
+
+static int _check(IMS::Store& store, const IMS::Path& test_path)
+{
+  IMS::Id test_id = store.catalog.lookup(test_path.image(), test_path.folder());
+  IMS::Image test_image(test_id, store);
+  if(!test_image) {printf("Can't open (find metadata for image %s/%s\n", test_path.folder(), test_path.image()); return -1;}
+
+  DAQ::LocationSet locs = test_image.metadata().elements();
+  DAQ::Location loc;
+  
+  while(locs.remove(loc))
+  {
+    IMS::Source test_source(test_id, loc, store);
+    if(test_source.size() != ONE_SOURCE_SIZE)
+      return -1;
+  }
+
+  return 0;
+}
+
+static int _compare(IMS::Store& store, const IMS::Path& true_path, const IMS::Path& test_path)
+{
+  IMS::Id true_id = store.catalog.lookup(true_path.image(), true_path.folder());
+  IMS::Id test_id = store.catalog.lookup(test_path.image(), test_path.folder());
+  
+  IMS::Image true_image(true_id, store);
+  IMS::Image test_image(test_id, store);
+       
+  if(!true_image) {printf("Can't open (find metadata for image %s/%s\n", true_path.folder(), true_path.image()); return -1;}
+
+  if(!test_image) {printf("Can't open (find metadata for image %s/%s\n", test_path.folder(), test_path.image()); return -1;}
+  
+  //IMS::Image::title(); image.synopsis();
+  //IMS::Source::title();
+
+  DAQ::LocationSet locs = test_image.metadata().elements();
+  DAQ::Location loc;
+
+  // I'm lazy, this is big enough to hold a whole Source
+  static const int BUF_SIZE = 0x8000000;
+  uint8_t* true_buf = new uint8_t[BUF_SIZE];
+  uint8_t* test_buf = new uint8_t[BUF_SIZE];
+  
+  //printf("Data buffer 0x%016llX\n", data);
+
+  int read_errors    = 0;
+  int compare_errors = 0;
+  int compare_bytes  = 0;
+  while(locs.remove(loc))
+  {
+    IMS::Source true_source(true_id, loc, store);
+    IMS::Source test_source(test_id, loc, store);
+    //source.synopsis();
+    
+    memset(true_buf, 0xF, BUF_SIZE);
+    memset(test_buf, 0xF, BUF_SIZE);
+  
+    uint8_t* true_data = _read_source(true_source, true_buf);
+    uint8_t* test_data = _read_source(test_source, test_buf);
+    
+    if(!true_data || !test_data) 
+    {
+      printf("Error reading image data\n");
+      ++read_errors;
+      continue;
+    }
+
+    int source_errors = 0;
+    int remaining = test_source.size();
+    int i=0;
+    while(remaining--)
+    {
+      if(*(true_data++) != *(test_data++))
+      {
+	if(!source_errors) 
+	  printf("ERROR - Offset %i: Expected 0x%02X, found 0x%02X\n", i, *true_data, *test_data);
+	++source_errors;
+	++compare_errors;
+      }
+      ++compare_bytes;
+    }
+    
+  }
+  delete [] true_buf;
+  delete [] test_buf;
+  
+  printf("Compared %llu bytes, %i errors\n", (unsigned long long)compare_bytes, compare_errors);
+  return compare_errors;
+}
+
+#define PAGE_SIZE 0x108000
+
+static uint8_t* _read_source(IMS::Source& source, uint8_t* buffer)
+{
+
+  uint64_t remaining = source.size();
+  uint64_t offset = 0;
+  uint8_t* write_buf = buffer;
+  while(remaining)
+  {
+    uint64_t size = PAGE_SIZE<remaining ? PAGE_SIZE : remaining;
+    int error = source.read((char*)write_buf, size, offset);
+    if(error) return 0;
+    write_buf += size;
+    remaining -= size;
+    offset    += size;
+  }
+  
+  return buffer;
+}
+    
+
+static int _remove(IMS::Store& store, const IMS::Path& path)
+{
+  IMS::Id id = store.catalog.lookup(path.image(), path.folder());
+  
+  IMS::Image image(id, store);
+
+  return image.remove();
+}
