@@ -69,4 +69,16 @@ interface StoreImplementation {
     int[][] readRegisters(long client, BitSet locations, int[] addresses) throws DAQException;
 
     void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException;
+
+    long attachGuider(String partition) throws DAQException;
+
+    void detachGuider(long guider) throws DAQException;
+    
+    void startGuider(long guider, int rows, int cols, int integration, int binning, int nlocs, int[]  roiData);
+
+    void stopGuider(long guider);
+
+    void pauseGuider(long guider);
+
+    void resumeGuider(long guider);
 }

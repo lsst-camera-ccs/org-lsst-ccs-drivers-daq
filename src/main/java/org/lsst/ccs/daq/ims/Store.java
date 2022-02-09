@@ -25,6 +25,7 @@ public class Store implements AutoCloseable {
     private Camera camera;
     private Emulator emulator;
     private RegisterClient client;
+    private Guider guider;
     private final Catalog catalog;
     private final String partition;
     private final long store;
@@ -36,7 +37,8 @@ public class Store implements AutoCloseable {
     private static final int SOURCE_TIMEOUT_MICROS = Integer.getInteger("org.lsst.ccs.daq.ims.SourceTimeout", 10_000_000);
     private final static StoreImplementation impl;
     private final ExecutorService executor;
-
+    private Future<?> waitForImageTask;
+    
     static {
         // FIXME: This requires a System (not bootstrap) property be set.
         String runMode = System.getProperty("org.lsst.ccs.run.mode");
@@ -46,7 +48,7 @@ public class Store implements AutoCloseable {
         impl = "simulation".equals(runMode)
                 ? new StoreSimulatedImplementation() : new StoreNativeImplementation();
     }
-    private Future<?> waitForImageTask;
+
 
     /**
      * Connects to a DAQ store. Uses the default executor for polling thread.
@@ -99,6 +101,18 @@ public class Store implements AutoCloseable {
             return camera;
         }
     }
+
+    public Guider getGuider() throws DAQException {
+        synchronized (this) {
+            if (guider == null) {
+                long guider_ = impl.attachGuider(partition);
+                this.guider = new Guider(this, guider_);
+            }
+            return guider;
+        }
+    }
+
+
     /**
      * Gets the emulator associated with this store. This can be used to manage
      * playlists.
@@ -327,6 +341,9 @@ public class Store implements AutoCloseable {
         if (camera != null) {
             camera.detach();
         }
+        if (guider != null) {
+            guider.detach();
+        }
         if (client != null) {
             client.detach();
         }
@@ -424,5 +441,25 @@ public class Store implements AutoCloseable {
 
     long getStore() {
         return store;
+    }
+
+    void detachGuider(long guider) throws DAQException {
+        impl.detachGuider(guider);
+    }
+
+    void stopGuider(long guider) {
+        impl.stopGuider(guider);
+    }
+
+    void resumeGuider(long guider) {
+        impl.resumeGuider(guider);
+    }
+
+    void pauseGuider(long guider) {
+        impl.pauseGuider(guider);
+    }
+
+    void startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int binning, int[] roiData) {
+        impl.startGuider(guider, nRows, nCols, binning, binning, nCols, roiData);
     }
 }

@@ -2,9 +2,7 @@ package org.lsst.ccs.daq.ims;
 
 import java.util.BitSet;
 import java.util.List;
-import java.util.Map;
 import org.lsst.ccs.utilities.location.Location.LocationType;
-import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
  * The native implementation of the store. This implementation required the DAQ
@@ -113,4 +111,22 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException;
+
+    @Override
+    public synchronized native long attachGuider(String partition) throws DAQException;
+
+    @Override
+    public synchronized native void detachGuider(long guider) throws DAQException;
+
+    @Override
+    public synchronized native void startGuider(long guider, int rows, int cols, int integration, int binning, int nlocs, int[] roiData);
+
+    @Override
+    public synchronized native void stopGuider(long guider);
+
+    @Override
+    public synchronized native void pauseGuider(long guider);
+
+    @Override
+    public synchronized native void resumeGuider(long guider);
 }

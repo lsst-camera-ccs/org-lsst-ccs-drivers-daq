@@ -17,6 +17,10 @@
 #include "rms/Client.hh"
 #include "rms/Instruction.hh"
 #include "rms/InstructionList.hh"
+#include "gds/Client.hh"
+#include "gds/Status.hh"
+#include "gds/RoiCommon.hh"
+#include "gds/RoiLocation.hh"
 
 #include "MyFolders.h"
 #include "MyProcessor.h"
@@ -322,6 +326,76 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
     delete ((CMS::Camera*) camera);
 }
 
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachGuider
+(JNIEnv* env, jobject obj, jstring partition) {
+    const char *partition_name = env->GetStringUTFChars(partition, 0);
+    try {
+        GDS::Client* guider = new GDS::Client(partition_name);
+        env->ReleaseStringUTFChars(partition, partition_name);
+        return (jlong) guider;
+    } catch (DSM::Exception& x) {
+        return env->ThrowNew(JCexClass, x.what());
+    }
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detachGuider
+(JNIEnv* env, jobject obj, jlong guider) {
+    delete ((GDS::Client*) guider);
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider
+(JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jint binning, jint nlocs, jint*  roiData) {
+    GDS::Client*  guider = (GDS::Client*) guider_;
+    GDS::Status status;
+    GDS::RoiCommon common(rows, cols, integration, binning);
+    GDS::RoiLocation locs[8];
+    for (int i=0; i<nlocs; i++) {
+       int j = i*5;
+       locs[0] = GDS::RoiLocation(GDS::Location(DAQ::Location(roiData[j]), roiData[j+1]), roiData[j+2], roiData[j+3], roiData[j+4]);
+    }
+    guider->start(common, locs, nlocs, status);
+    if (!status) {
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Guider start failed, status %d", status.status());
+        throwDAQException(env, x, status.status());
+    }
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_stopGuider
+(JNIEnv* env, jobject obj, jlong guider_) {
+    GDS::Client*  guider = (GDS::Client*) guider_;
+    GDS::Status status;
+    guider->stop(status);
+    if (!status) {
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Guider stop failed, status %d", status.status());
+        throwDAQException(env, x, status.status());
+    }
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_pauseGuider
+(JNIEnv* env, jobject obj, jlong guider_) {
+    GDS::Client*  guider = (GDS::Client*) guider_;
+    GDS::Status status;
+    guider->pause(status);
+    if (!status) {
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Guider pause failed, status %d", status.status());
+        throwDAQException(env, x, status.status());
+    }
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_resumeGuider
+(JNIEnv* env, jobject obj, jlong guider_) {
+    GDS::Client*  guider = (GDS::Client*) guider_;
+    GDS::Status status;
+    guider->resume(status);
+    if (!status) {
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Guider resume failed, status %d", status.status());
+        throwDAQException(env, x, status.status());
+    }
+}
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_capacity
 (JNIEnv * env, jobject obj, jlong store) {

@@ -205,4 +205,29 @@ class StoreSimulatedImplementation implements StoreImplementation {
         return instant.getEpochSecond() * 1_000_000_000 + instant.getNano();
     }
 
+    @Override
+    public long attachGuider(String partition) throws DAQException {
+        return 999;
+    }
+
+    @Override
+    public void detachGuider(long guider) throws DAQException {
+    }
+
+    @Override
+    public void startGuider(long guider, int rows, int cols, int integration, int binning, int nlocs, int[] roiData) {
+    }
+
+    @Override
+    public void stopGuider(long guider) {
+    }
+
+    @Override
+    public void pauseGuider(long guider) {
+    }
+
+    @Override
+    public void resumeGuider(long guider) {
+    }
+
 }
