@@ -27,8 +27,11 @@
 #include "MyBarrier.h"
 #include "MyHarvester.h"
 #include "Statistics.h"
+#include "MyGuiderSubscriber.h"
+
 
 #define MESSAGE_LENGTH 1024
+#define MAX_GUIDER_LOCATIONS 8
 
 using namespace IMS;
 
@@ -52,6 +55,14 @@ static jclass JCexClass;
 static jmethodID JCexConstructor;
 static jmethodID JCexConstructor2;
 static jclass JCintArrayClass;
+static jclass JCguiderClass;
+static jmethodID JCguiderStartCallbackMethod;
+static jmethodID JCguiderStopCallbackMethod;
+static jmethodID JCguiderPauseCallbackMethod;
+static jmethodID JCguiderResumeCallbackMethod;
+static jmethodID JCguiderStampCallbackMethod;
+static jclass JCguiderStateMetadataClass;
+static jmethodID JCguiderStateMetadataConstructor;
 
 jstring decodeException(JNIEnv* env, jint error) {
    const char* decoded = IMS::Exception::decode(error);
@@ -267,6 +278,48 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
         return JNI_VERSION;
     }
 
+    jclass guiderClass = env->FindClass("org/lsst/ccs/daq/ims/Guider");
+    if (env->ExceptionCheck()) {
+        return JNI_VERSION;
+    }
+    JCguiderClass = (jclass) env->NewGlobalRef(guiderClass);
+
+    JCguiderStartCallbackMethod = env->GetMethodID(JCguiderClass, "startCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;Lorg/lsst/ccs/daq/ims/SeriesMetaData;)V");
+    if (env->ExceptionCheck()) {
+        return JNI_VERSION;
+    }
+
+    JCguiderStopCallbackMethod = env->GetMethodID(JCguiderClass, "stopCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;)V");
+    if (env->ExceptionCheck()) {
+        return JNI_VERSION;
+    }
+
+    JCguiderPauseCallbackMethod = env->GetMethodID(JCguiderClass, "pauseCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;)V");
+    if (env->ExceptionCheck()) {
+        return JNI_VERSION;
+    }
+
+    JCguiderResumeCallbackMethod = env->GetMethodID(JCguiderClass, "resumeCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;)V");
+    if (env->ExceptionCheck()) {
+        return JNI_VERSION;
+    }
+
+    JCguiderStampCallbackMethod = env->GetMethodID(JCguiderClass, "stampCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;java.nio.ByteBuffer;)V");
+    if (env->ExceptionCheck()) {
+        return JNI_VERSION;
+    }
+
+    jclass guiderStateMetadataClass = env->FindClass("org/lsst/ccs/daq/ims/Guider$StateMetaData");
+    if (env->ExceptionCheck()) {
+        return JNI_VERSION;
+    }
+    JCguiderStateMetadataClass = (jclass) env->NewGlobalRef(guiderStateMetadataClass);
+
+    JCguiderStateMetadataConstructor = env->GetMethodID(JCguiderStateMetadataClass, "<init>", "(IIIL)V");
+    if (env->ExceptionCheck()) {
+        return JNI_VERSION;
+    }
+
     jclass exClass = env->FindClass("org/lsst/ccs/daq/ims/DAQException");
     if (env->ExceptionCheck()) {
         return JNI_VERSION;
@@ -343,12 +396,22 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
     delete ((GDS::Client*) guider);
 }
 
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitForGuider
+(JNIEnv *env, jobject obj, jobject callback, jstring partition, jint imageTimeoutMicros, jint sourceTimeoutMicros) {
+    GDS::LocationSet locs;
+    const char *partition_name = env->GetStringUTFChars(partition, 0);
+    MyGuiderSubscriber subscriber(env, callback, partition_name, locs, JCguiderStartCallbackMethod, JCguiderStopCallbackMethod, JCguiderResumeCallbackMethod, JCguiderPauseCallbackMethod, JCguiderStampCallbackMethod,
+       JCguiderStateMetadataClass, JCguiderStateMetadataConstructor);
+    env->ReleaseStringUTFChars(partition, partition_name);
+    subscriber.wait();
+}
+
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider
 (JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jint binning, jint nlocs, jint*  roiData) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
     GDS::RoiCommon common(rows, cols, integration, binning);
-    GDS::RoiLocation locs[8];
+    GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];
     for (int i=0; i<nlocs; i++) {
        int j = i*5;
        locs[0] = GDS::RoiLocation(GDS::Location(DAQ::Location(roiData[j]), roiData[j+1]), roiData[j+2], roiData[j+3], roiData[j+4]);

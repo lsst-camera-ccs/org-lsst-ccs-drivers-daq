@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 import org.lsst.ccs.utilities.location.Location;
 
@@ -24,7 +25,7 @@ public class Guider {
             int j = i * 5;
             ROILocation location = rois.locations.get(i);
             roiData[j] = location.location.index();
-            roiData[j + 1] = location.sequencer;
+            roiData[j + 1] = location.sensor;
             roiData[j + 2] = location.segment;
             roiData[j + 3] = location.startRow;
             roiData[j + 4] = location.startCol;
@@ -44,6 +45,14 @@ public class Guider {
         store.resumeGuider(guider);
     }
 
+    public void addGuiderListener(GuiderListener listener) {
+        
+    }
+
+    public void removeGuiderListener(GuiderListener listener) {
+        
+    }
+    
     void detach() throws DAQException {
         store.detachGuider(this.guider);
     }
@@ -88,14 +97,14 @@ public class Guider {
     public static class ROILocation {
 
         private final Location location;
-        private final int sequencer;
+        private final int sensor;
         private final int segment;
         private final int startRow;
         private final int startCol;
 
-        public ROILocation(Location location, int sequencer, int segment, int startRow, int startCol) {
+        public ROILocation(Location location, int sensor, int segment, int startRow, int startCol) {
             this.location = location;
-            this.sequencer = sequencer;
+            this.sensor = sensor;
             this.segment = segment;
             this.startRow = startRow;
             this.startCol = startCol;
@@ -113,12 +122,57 @@ public class Guider {
             return location;
         }
 
-        public int getSequencer() {
-            return sequencer;
+        public int getSensor() {
+            return sensor;
         }
 
         public int getSegment() {
             return segment;
         }
     }
+
+    public static interface GuiderListener {
+
+        void start(StateMetaData state, SeriesMetaData series);
+
+        void stop(StateMetaData state);
+
+        void pause(StateMetaData state);
+
+        void resume(StateMetaData state);
+        
+        void stamp(StateMetaData state, ByteBuffer rawStamp);
+    }
+
+    public static class SeriesMetaData {
+
+        private GuiderROIs location;
+        private Version version;
+        private int firmware;
+        private int serialNumber;
+        
+        private SeriesMetaData() {
+        }
+    }
+
+    public static class StateMetaData {
+        
+        public enum Type { STAMP, START, STOP, PAUSE, RESUME };
+        public enum Status { SUCCESS, bdiError };
+        private final Type type;
+        private final Status status;
+        private final long sequence;
+        private final long timestamp;
+        private Location location;
+        private int sensor;
+        
+        private StateMetaData(int type, int status, int sequence, long timestamp) {
+            this.type = Type.values()[type];
+            this.status = Status.values()[status];
+            this.sequence = sequence;
+            this.timestamp = timestamp;
+        }
+    }
+
+
 }
