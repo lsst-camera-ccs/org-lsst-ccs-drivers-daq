@@ -8,10 +8,11 @@
 #include "gds/SeriesMetadata.hh"
 #include "gds/RawStamp.hh"
 
+void Guider_OnLoad(JNIEnv*);
+
 class MyGuiderSubscriber : public GDS::Subscriber {
 public:
-    MyGuiderSubscriber(JNIEnv *env, jobject callback, const char* partition, const GDS::LocationSet& locs, jmethodID startCallback, jmethodID resumeCallback, jmethodID pauseCallback, jmethodID stopCallback, jmethodID stampCallback,
-        jclass guiderStateMetadataClass, jmethodID guiderStateMetadataConstructor);
+    MyGuiderSubscriber(JNIEnv *env, jobject callback, const char* partition, const GDS::LocationSet& locs);
 public:
     ~MyGuiderSubscriber() {}
 public:
@@ -23,15 +24,9 @@ public:
 private:
     JNIEnv *env;
     jobject callback;
-    jmethodID startCallback;
-    jmethodID resumeCallback;
-    jmethodID pauseCallback;
-    jmethodID stopCallback;
-    jmethodID stampCallback;
-    jclass guiderStateMetadataClass;
-    jmethodID guiderStateMetadataConstructor;
-
     jobject createStateMetadata(JNIEnv* env, const GDS::StateMetadata& state);
+    jobject createSeriesMetadata(JNIEnv* env, const GDS::SeriesMetadata& series);
+    jobject createByteBuffer(JNIEnv* env, const GDS::RawStamp& stamp);
 };
 
 #endif

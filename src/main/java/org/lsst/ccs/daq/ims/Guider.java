@@ -148,10 +148,12 @@ public class Guider {
 
         private GuiderROIs location;
         private Version version;
-        private int firmware;
-        private int serialNumber;
+        private final int firmware;
+        private final long serialNumber;
         
-        private SeriesMetaData() {
+        private SeriesMetaData(int firmware, long serialNumber) {
+            this.firmware = firmware;
+            this.serialNumber = serialNumber;
         }
     }
 

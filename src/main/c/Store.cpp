@@ -55,14 +55,6 @@ static jclass JCexClass;
 static jmethodID JCexConstructor;
 static jmethodID JCexConstructor2;
 static jclass JCintArrayClass;
-static jclass JCguiderClass;
-static jmethodID JCguiderStartCallbackMethod;
-static jmethodID JCguiderStopCallbackMethod;
-static jmethodID JCguiderPauseCallbackMethod;
-static jmethodID JCguiderResumeCallbackMethod;
-static jmethodID JCguiderStampCallbackMethod;
-static jclass JCguiderStateMetadataClass;
-static jmethodID JCguiderStateMetadataConstructor;
 
 jstring decodeException(JNIEnv* env, jint error) {
    const char* decoded = IMS::Exception::decode(error);
@@ -278,48 +270,6 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
         return JNI_VERSION;
     }
 
-    jclass guiderClass = env->FindClass("org/lsst/ccs/daq/ims/Guider");
-    if (env->ExceptionCheck()) {
-        return JNI_VERSION;
-    }
-    JCguiderClass = (jclass) env->NewGlobalRef(guiderClass);
-
-    JCguiderStartCallbackMethod = env->GetMethodID(JCguiderClass, "startCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;Lorg/lsst/ccs/daq/ims/SeriesMetaData;)V");
-    if (env->ExceptionCheck()) {
-        return JNI_VERSION;
-    }
-
-    JCguiderStopCallbackMethod = env->GetMethodID(JCguiderClass, "stopCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;)V");
-    if (env->ExceptionCheck()) {
-        return JNI_VERSION;
-    }
-
-    JCguiderPauseCallbackMethod = env->GetMethodID(JCguiderClass, "pauseCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;)V");
-    if (env->ExceptionCheck()) {
-        return JNI_VERSION;
-    }
-
-    JCguiderResumeCallbackMethod = env->GetMethodID(JCguiderClass, "resumeCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;)V");
-    if (env->ExceptionCheck()) {
-        return JNI_VERSION;
-    }
-
-    JCguiderStampCallbackMethod = env->GetMethodID(JCguiderClass, "stampCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;java.nio.ByteBuffer;)V");
-    if (env->ExceptionCheck()) {
-        return JNI_VERSION;
-    }
-
-    jclass guiderStateMetadataClass = env->FindClass("org/lsst/ccs/daq/ims/Guider$StateMetaData");
-    if (env->ExceptionCheck()) {
-        return JNI_VERSION;
-    }
-    JCguiderStateMetadataClass = (jclass) env->NewGlobalRef(guiderStateMetadataClass);
-
-    JCguiderStateMetadataConstructor = env->GetMethodID(JCguiderStateMetadataClass, "<init>", "(IIIL)V");
-    if (env->ExceptionCheck()) {
-        return JNI_VERSION;
-    }
-
     jclass exClass = env->FindClass("org/lsst/ccs/daq/ims/DAQException");
     if (env->ExceptionCheck()) {
         return JNI_VERSION;
@@ -344,6 +294,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 
     // Call corresponding function in Statistics.cpp
     JNI_Stats_OnLoad(env);
+    Guider_OnLoad(env);
     
     // Return the JNI Version as required by method
     return JNI_VERSION;
@@ -400,8 +351,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitF
 (JNIEnv *env, jobject obj, jobject callback, jstring partition, jint imageTimeoutMicros, jint sourceTimeoutMicros) {
     GDS::LocationSet locs;
     const char *partition_name = env->GetStringUTFChars(partition, 0);
-    MyGuiderSubscriber subscriber(env, callback, partition_name, locs, JCguiderStartCallbackMethod, JCguiderStopCallbackMethod, JCguiderResumeCallbackMethod, JCguiderPauseCallbackMethod, JCguiderStampCallbackMethod,
-       JCguiderStateMetadataClass, JCguiderStateMetadataConstructor);
+    MyGuiderSubscriber subscriber(env, callback, partition_name, locs);
     env->ReleaseStringUTFChars(partition, partition_name);
     subscriber.wait();
 }
