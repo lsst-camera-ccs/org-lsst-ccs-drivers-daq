@@ -347,8 +347,8 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
     delete ((GDS::Client*) guider);
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitForGuider
-(JNIEnv *env, jobject obj, jobject callback, jstring partition, jintArray locations) {
+JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachGuiderSubscriber
+(JNIEnv* env, jobject obj, jobject callback, jstring partition, jintArray locations) {   
     GDS::LocationSet locs;
     jint* values = env->GetIntArrayElements(locations, 0);
     int nlocs = env->GetArrayLength(locations);
@@ -357,10 +357,21 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitF
         locs.insert(loc);
     }
     const char *partition_name = env->GetStringUTFChars(partition, 0);
-    MyGuiderSubscriber subscriber(env, callback, partition_name, locs);
-    subscriber.wait();
+    MyGuiderSubscriber* subscriber = new MyGuiderSubscriber(env, callback, partition_name, locs);
     env->ReleaseStringUTFChars(partition, partition_name);
     env->ReleaseIntArrayElements(locations, values, JNI_ABORT);
+    return (jlong) subscriber;
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detachGuiderSubscriber
+(JNIEnv* env, jobject obj, jlong subscriber) {
+    delete ((MyGuiderSubscriber*) subscriber);
+}
+
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitForGuider
+(JNIEnv *env, jobject obj, jlong subscriber_) {
+    MyGuiderSubscriber* subscriber =  (MyGuiderSubscriber*) subscriber_;
+    subscriber->wait();
 }
 
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider

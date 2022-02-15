@@ -446,10 +446,6 @@ public class Store implements AutoCloseable {
     void detachGuider(long guider) throws DAQException {
         impl.detachGuider(guider);
     }
-
-    void waitForGuider(Guider guider, String partition, int[] locations) throws DAQException {
-        impl.waitForGuider(guider, partition, locations);
-    }
     
     void stopGuider(long guider) throws DAQException {
         impl.stopGuider(guider);
@@ -465,5 +461,17 @@ public class Store implements AutoCloseable {
 
     void startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int binning, int[] roiData) throws DAQException {
         impl.startGuider(guider, nRows, nCols, integrationTimeMilliSeconds, binning, roiData);
+    }
+
+    long attachGuiderSubscriber(Guider guider, String partition, int[] locations) throws DAQException {
+        return impl.attachGuiderSubscriber(guider, partition, locations);
+    }
+
+    void detachGuiderSubscriber(long subscriber) throws DAQException {
+        impl.detachGuiderSubscriber(subscriber);
+    }
+    
+    void waitForGuider(long subscriber) throws DAQException {
+        impl.waitForGuider(subscriber);
     }
 }

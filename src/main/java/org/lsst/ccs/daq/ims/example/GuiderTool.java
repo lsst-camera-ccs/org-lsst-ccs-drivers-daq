@@ -84,9 +84,7 @@ public class GuiderTool {
             public void run() {
                 try {
                     Location R22 = Location.of("R22/Reb0");
-                    for (;;) {
-                        guider.listen(R22, 0);
-                    }
+                    guider.listen(R22, 0);
                 } catch (DAQException x) {
                     LOG.log(Level.SEVERE, "Error in listener", x);
                 }

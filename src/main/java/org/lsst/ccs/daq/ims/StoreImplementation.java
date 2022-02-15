@@ -72,9 +72,7 @@ interface StoreImplementation {
     long attachGuider(String partition) throws DAQException;
 
     void detachGuider(long guider) throws DAQException;
-    
-    void waitForGuider(Guider guider, String partition, int[] locations) throws DAQException;
-    
+        
     void startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData) throws DAQException;
 
     void stopGuider(long guider) throws DAQException;
@@ -82,4 +80,10 @@ interface StoreImplementation {
     void pauseGuider(long guider) throws DAQException;
 
     void resumeGuider(long guider) throws DAQException;
+
+    public long attachGuiderSubscriber(Guider guider, String partition, int[] locations) throws DAQException;
+
+    public void detachGuiderSubscriber(long subscriber) throws DAQException;
+
+    public void waitForGuider(long subscriber) throws DAQException;
 }

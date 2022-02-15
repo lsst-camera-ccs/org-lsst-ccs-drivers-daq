@@ -40,7 +40,14 @@ public class Guider {
     }
 
     public void listen(Location location, int sensor) throws DAQException {
-        store.waitForGuider(this, store.getPartition(), new int[]{location.index(), sensor});
+        long subscriber = store.attachGuiderSubscriber(this, store.getPartition(), new int[]{location.index(), sensor});
+        try {
+            for (;;) {
+                store.waitForGuider(subscriber);
+            }
+        } finally {
+            store.detachGuiderSubscriber(subscriber);
+        }
     }
     
     public void stop() throws DAQException {
