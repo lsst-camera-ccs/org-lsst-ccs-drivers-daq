@@ -70,8 +70,8 @@ public class GuiderTool {
     public void start() throws DAQException {
         checkStore();
         List<ROILocation> locations = new ArrayList<>();
-        Location R00 = Location.of("R00/Reb1");
-        locations.add(new ROILocation(R00, 0, 4, 100, 100));
+        Location R22 = Location.of("R22/Reb0");
+        locations.add(new ROILocation(R22, 0, 4, 100, 100));
         GuiderROIs roi = new GuiderROIs(50, 50, 100, 1, locations);
         guider.start(roi);
     }
@@ -83,8 +83,8 @@ public class GuiderTool {
             @Override
             public void run() {
                 try {
-                    Location R00 = Location.of("R00/Reb1");
-                    guider.listen(R00, 0);
+                    Location R22 = Location.of("R22/Reb0");
+                    guider.listen(R22, 0);
                 } catch (DAQException x) {
                     LOG.log(Level.SEVERE, "Error in listener", x);
                 }
