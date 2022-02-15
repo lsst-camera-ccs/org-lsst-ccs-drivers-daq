@@ -331,11 +331,8 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachGuider
-(JNIEnv* env, jobject obj, jstring partition) {
-    const char *partition_name = env->GetStringUTFChars(partition, 0);
-    try {
+(JNIEnv* env, jobject obj) {    try {
         GDS::Client* guider = new GDS::Client();
-        env->ReleaseStringUTFChars(partition, partition_name);
         return (jlong) guider;
     } catch (DSM::Exception& x) {
         return env->ThrowNew(JCexClass, x.what());
@@ -348,12 +345,19 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
 }
 
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitForGuider
-(JNIEnv *env, jobject obj, jobject callback, jstring partition, jint imageTimeoutMicros, jint sourceTimeoutMicros) {
+(JNIEnv *env, jobject obj, jobject callback, jstring partition, jintArray locations) {
     GDS::LocationSet locs;
+    jint* values = env->GetIntArrayElements(locations, 0);
+    int nlocs = env->GetArrayLength(locations);
+    for (int j=0; j<nlocs; j+=2) {
+        GDS::Location loc(DAQ::Location(values[j]), values[j+1]);
+        locs.insert(loc);
+    }
     const char *partition_name = env->GetStringUTFChars(partition, 0);
     MyGuiderSubscriber subscriber(env, callback, partition_name, locs);
-    env->ReleaseStringUTFChars(partition, partition_name);
     subscriber.wait();
+    env->ReleaseStringUTFChars(partition, partition_name);
+    env->ReleaseIntArrayElements(locations, values, JNI_ABORT);
 }
 
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider
@@ -369,13 +373,12 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_start
        locs[0] = GDS::RoiLocation(GDS::Location(DAQ::Location(values[j]), values[j+1]), values[j+2], values[j+3], values[j+4]);
        locs[0].dump();
     }
+    int error = guider->start(common, locs, nlocs, status);
     env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
-    guider->start(common, locs, nlocs, status);
-    env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
-    if (!status) {
+    if (!error) {
         char x[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "Guider start failed, status %d", status.status());
-        throwDAQException(env, x, status.status());
+        snprintf(x, MESSAGE_LENGTH, "Guider start failed, status %d", error);
+        throwDAQException(env, x, error);
     }
 }
 

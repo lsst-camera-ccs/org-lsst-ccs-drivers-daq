@@ -3,7 +3,6 @@ package org.lsst.ccs.daq.ims;
 import java.util.BitSet;
 import java.util.List;
 import org.lsst.ccs.utilities.location.Location;
-import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
  * An interface implemented by both the native and simulated
@@ -70,15 +69,17 @@ interface StoreImplementation {
 
     void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException;
 
-    long attachGuider(String partition) throws DAQException;
+    long attachGuider() throws DAQException;
 
     void detachGuider(long guider) throws DAQException;
     
-    void startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData);
+    void waitForGuider(Guider guider, String partition, int[] locations) throws DAQException;
+    
+    void startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData) throws DAQException;
 
-    void stopGuider(long guider);
+    void stopGuider(long guider) throws DAQException;
 
-    void pauseGuider(long guider);
+    void pauseGuider(long guider) throws DAQException;
 
-    void resumeGuider(long guider);
+    void resumeGuider(long guider) throws DAQException;
 }

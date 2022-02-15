@@ -2,6 +2,7 @@ package org.lsst.ccs.daq.ims.example;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lsst.ccs.command.annotations.Argument;
 import org.lsst.ccs.command.annotations.Command;
@@ -75,6 +76,23 @@ public class GuiderTool {
         guider.start(roi);
     }
 
+    @Command(name = "listen", description = "Listen for guider events")
+    public void listen() throws DAQException {
+        checkStore();
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Location R00 = Location.of("R00/Reb1");
+                    guider.listen(R00, 0);
+                } catch (DAQException x) {
+                    LOG.log(Level.SEVERE, "Error in listener", x);
+                }
+            }
+        });
+
+    }
+
     @Command(name = "version", description = "Get version info")
     public Version version() throws DAQException {
         return Store.getClientVersion();
@@ -92,4 +110,3 @@ public class GuiderTool {
         }
     }
 }
-

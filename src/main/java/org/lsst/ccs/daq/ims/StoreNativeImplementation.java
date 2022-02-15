@@ -113,20 +113,23 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException;
 
     @Override
-    public synchronized native long attachGuider(String partition) throws DAQException;
+    public synchronized native long attachGuider() throws DAQException;
 
     @Override
     public synchronized native void detachGuider(long guider) throws DAQException;
 
     @Override
-    public synchronized native void startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData);
+    public synchronized native void startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData) throws DAQException;
 
     @Override
-    public synchronized native void stopGuider(long guider);
+    public synchronized native void stopGuider(long guider) throws DAQException;
 
     @Override
-    public synchronized native void pauseGuider(long guider);
+    public synchronized native void pauseGuider(long guider) throws DAQException;
 
     @Override
-    public synchronized native void resumeGuider(long guider);
+    public synchronized native void resumeGuider(long guider) throws DAQException;
+
+    @Override
+    public synchronized native void waitForGuider(Guider guider, String partition, int[] locations) throws DAQException;
 }

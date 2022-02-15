@@ -206,7 +206,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public long attachGuider(String partition) throws DAQException {
+    public long attachGuider() throws DAQException {
         return 999;
     }
 
@@ -228,6 +228,10 @@ class StoreSimulatedImplementation implements StoreImplementation {
 
     @Override
     public void resumeGuider(long guider) {
+    }
+
+    @Override
+    public void waitForGuider(Guider guider, String partition, int[] locations) throws DAQException {
     }
 
 }
