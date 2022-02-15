@@ -334,7 +334,7 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_atta
 (JNIEnv* env, jobject obj, jstring partition) {
     const char *partition_name = env->GetStringUTFChars(partition, 0);
     try {
-        GDS::Client* guider = new GDS::Client(partition_name);
+        GDS::Client* guider = new GDS::Client();
         env->ReleaseStringUTFChars(partition, partition_name);
         return (jlong) guider;
     } catch (DSM::Exception& x) {
@@ -357,16 +357,19 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitF
 }
 
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider
-(JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jint binning, jint nlocs, jint*  roiData) {
+(JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jint binning, jint nlocs, jintArray roiData) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
     GDS::RoiCommon common(rows, cols, integration, binning);
     GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];
+    jint* values = env->GetIntArrayElements(roiData, 0);
     for (int i=0; i<nlocs; i++) {
        int j = i*5;
-       locs[0] = GDS::RoiLocation(GDS::Location(DAQ::Location(roiData[j]), roiData[j+1]), roiData[j+2], roiData[j+3], roiData[j+4]);
+       locs[0] = GDS::RoiLocation(GDS::Location(DAQ::Location(values[j]), values[j+1]), values[j+2], values[j+3], values[j+4]);
+       locs[0].dump();
     }
     guider->start(common, locs, nlocs, status);
+    env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
     if (!status) {
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Guider start failed, status %d", status.status());

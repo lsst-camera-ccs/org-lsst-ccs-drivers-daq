@@ -24,14 +24,14 @@ public class GuiderTool {
 
     private Store store;
     private Guider guider;
-    
+
     public GuiderTool() {
     }
 
     @Command(name = "connect", description = "Connect to a DAQ guider")
     public void connect(
             @Argument(name = "partition", description = "Partition name") String partition) throws DAQException {
-            
+
         if (store != null) {
             store.close();
         }
@@ -53,42 +53,43 @@ public class GuiderTool {
         guider.stop();
     }
 
-    @Command(name = "pause", description = "Stop the guider")
+    @Command(name = "pause", description = "Pause the guider")
     public void pause() throws DAQException {
         checkStore();
         guider.pause();
     }
-    
-    @Command(name = "stop", description = "Stop the guider")
+
+    @Command(name = "resume", description = "Resume the guider")
     public void resume() throws DAQException {
         checkStore();
         guider.resume();
     }
-    
-        @Command(name = "stop", description = "Stop the guider")
+
+    @Command(name = "start", description = "Start the guider")
     public void start() throws DAQException {
         checkStore();
         List<ROILocation> locations = new ArrayList<>();
-        Location R22 = Location.of("R22/Reb0");
-        locations.add(new ROILocation(R22, 0, 4, 100, 100));
+        Location R00 = Location.of("R00/Reb1");
+        locations.add(new ROILocation(R00, 0, 4, 100, 100));
         GuiderROIs roi = new GuiderROIs(50, 50, 100, 1, locations);
         guider.start(roi);
     }
-    
+
     @Command(name = "version", description = "Get version info")
     public Version version() throws DAQException {
         return Store.getClientVersion();
     }
-    
+
     @Command(name = "locations", description = "List configured locations")
     public LocationSet locations() throws DAQException {
         checkStore();
         return store.getConfiguredSources();
     }
-    
+
     private void checkStore() {
         if (store == null) {
             throw new RuntimeException("Please connect to store first");
         }
     }
 }
+

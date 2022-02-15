@@ -2,6 +2,7 @@ package org.lsst.ccs.daq.ims;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Arrays;
 import org.lsst.ccs.utilities.location.Location;
 
 /**
@@ -30,6 +31,7 @@ public class Guider {
             roiData[j + 3] = location.startRow;
             roiData[j + 4] = location.startCol;
         }
+	System.out.println(Arrays.toString(roiData));
         store.startGuider(guider, rois.nRows, rois.nCols, rois.integrationTimeMilliSeconds, rois.binning, roiData);
     }
 
