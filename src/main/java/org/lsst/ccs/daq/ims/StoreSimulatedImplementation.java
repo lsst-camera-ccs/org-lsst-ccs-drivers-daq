@@ -215,7 +215,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public void startGuider(long guider, int rows, int cols, int integration, int binning, int nlocs, int[] roiData) {
+    public void startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData) {
     }
 
     @Override

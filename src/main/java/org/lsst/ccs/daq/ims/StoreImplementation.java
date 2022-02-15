@@ -74,7 +74,7 @@ interface StoreImplementation {
 
     void detachGuider(long guider) throws DAQException;
     
-    void startGuider(long guider, int rows, int cols, int integration, int binning, int nlocs, int[]  roiData);
+    void startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData);
 
     void stopGuider(long guider);
 

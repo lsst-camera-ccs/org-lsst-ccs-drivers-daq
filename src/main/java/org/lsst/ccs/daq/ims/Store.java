@@ -460,6 +460,6 @@ public class Store implements AutoCloseable {
     }
 
     void startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int binning, int[] roiData) {
-        impl.startGuider(guider, nRows, nCols, binning, binning, nCols, roiData);
+        impl.startGuider(guider, nRows, nCols, binning, binning, roiData);
     }
 }

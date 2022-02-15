@@ -357,17 +357,19 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitF
 }
 
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider
-(JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jint binning, jint nlocs, jintArray roiData) {
+(JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jint binning, jintArray roiData) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
     GDS::RoiCommon common(rows, cols, integration, binning);
     GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];
     jint* values = env->GetIntArrayElements(roiData, 0);
+    int nlocs = env->GetArrayLength(roiData)/5;
     for (int i=0; i<nlocs; i++) {
        int j = i*5;
        locs[0] = GDS::RoiLocation(GDS::Location(DAQ::Location(values[j]), values[j+1]), values[j+2], values[j+3], values[j+4]);
        locs[0].dump();
     }
+    env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
     guider->start(common, locs, nlocs, status);
     env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
     if (!status) {

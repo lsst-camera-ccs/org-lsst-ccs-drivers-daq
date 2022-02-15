@@ -119,7 +119,7 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native void detachGuider(long guider) throws DAQException;
 
     @Override
-    public synchronized native void startGuider(long guider, int rows, int cols, int integration, int binning, int nlocs, int[] roiData);
+    public synchronized native void startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData);
 
     @Override
     public synchronized native void stopGuider(long guider);

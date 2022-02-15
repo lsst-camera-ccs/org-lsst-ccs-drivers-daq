@@ -1,6 +1,7 @@
 package org.lsst.ccs.daq.ims;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Arrays;
 import org.lsst.ccs.utilities.location.Location;
