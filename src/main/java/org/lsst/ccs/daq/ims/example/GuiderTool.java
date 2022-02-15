@@ -90,7 +90,7 @@ public class GuiderTool {
                 }
             }
         });
-
+        t.start();
     }
 
     @Command(name = "version", description = "Get version info")

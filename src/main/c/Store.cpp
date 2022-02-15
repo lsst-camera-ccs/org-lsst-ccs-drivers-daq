@@ -376,12 +376,12 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_start
        locs[0] = GDS::RoiLocation(GDS::Location(DAQ::Location(values[j]), values[j+1]), values[j+2], values[j+3], values[j+4]);
        locs[0].dump();
     }
-    int error = guider->start(common, locs, nlocs, status);
+    guider->start(common, locs, nlocs, status);
     env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
-    if (!error) {
+    if (!status) {
         char x[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "Guider start failed, status %d", error);
-        throwDAQException(env, x, error);
+        snprintf(x, MESSAGE_LENGTH, "Guider start failed, status %d", status.status());
+        throwDAQException(env, x, status.status());
     }
 }
 
