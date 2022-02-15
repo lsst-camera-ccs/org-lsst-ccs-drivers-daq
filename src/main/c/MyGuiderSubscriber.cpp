@@ -62,7 +62,7 @@ void MyGuiderSubscriber::stamp(const GDS::StateMetadata& state, const GDS::RawSt
     env->CallVoidMethod(callback, JCguiderStampCallbackMethod, createStateMetadata(env, state), createByteBuffer(env, stamp));
 }
 
-void MyGuider_OnLoad(JNIEnv* env) {
+void Guider_OnLoad(JNIEnv* env) {
 
     jclass guiderClass = env->FindClass("org/lsst/ccs/daq/ims/Guider");
     if (env->ExceptionCheck()) {
@@ -70,27 +70,27 @@ void MyGuider_OnLoad(JNIEnv* env) {
     }
     JCguiderClass = (jclass) env->NewGlobalRef(guiderClass);
 
-    JCguiderStartCallbackMethod = env->GetMethodID(JCguiderClass, "startCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;Lorg/lsst/ccs/daq/ims/SeriesMetaData;)V");
+    JCguiderStartCallbackMethod = env->GetMethodID(JCguiderClass, "startCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;Lorg/lsst/ccs/daq/ims/Guider$SeriesMetaData;)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    JCguiderStopCallbackMethod = env->GetMethodID(JCguiderClass, "stopCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;)V");
+    JCguiderStopCallbackMethod = env->GetMethodID(JCguiderClass, "stopCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    JCguiderPauseCallbackMethod = env->GetMethodID(JCguiderClass, "pauseCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;)V");
+    JCguiderPauseCallbackMethod = env->GetMethodID(JCguiderClass, "pauseCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    JCguiderResumeCallbackMethod = env->GetMethodID(JCguiderClass, "resumeCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;)V");
+    JCguiderResumeCallbackMethod = env->GetMethodID(JCguiderClass, "resumeCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    JCguiderStampCallbackMethod = env->GetMethodID(JCguiderClass, "stampCallback", "(Lorg/lsst/ccs/daq/ims/StateMetaData;java.nio.ByteBuffer;)V");
+    JCguiderStampCallbackMethod = env->GetMethodID(JCguiderClass, "stampCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;Ljava/nio/ByteBuffer;)V");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -101,7 +101,7 @@ void MyGuider_OnLoad(JNIEnv* env) {
     }
     JCguiderStateMetadataClass = (jclass) env->NewGlobalRef(guiderStateMetadataClass);
 
-    JCguiderStateMetadataConstructor = env->GetMethodID(JCguiderStateMetadataClass, "<init>", "(IIIL)V");
+    JCguiderStateMetadataConstructor = env->GetMethodID(JCguiderStateMetadataClass, "<init>", "(IIIJ)V");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -112,7 +112,7 @@ void MyGuider_OnLoad(JNIEnv* env) {
     }
     JCguiderSeriesMetadataClass = (jclass) env->NewGlobalRef(guiderSeriesMetadataClass);
 
-    JCguiderSeriesMetadataConstructor = env->GetMethodID(JCguiderSeriesMetadataClass, "<init>", "(IL)V");
+    JCguiderSeriesMetadataConstructor = env->GetMethodID(JCguiderSeriesMetadataClass, "<init>", "(IJ)V");
     if (env->ExceptionCheck()) {
         return;
     }

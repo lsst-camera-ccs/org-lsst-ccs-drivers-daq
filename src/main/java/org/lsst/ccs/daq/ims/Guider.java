@@ -53,6 +53,26 @@ public class Guider {
         
     }
     
+    void startCallback(StateMetaData state, SeriesMetaData series) {
+        
+    }
+
+    void stopCallback(StateMetaData state) {
+        
+    }
+
+    void pauseCallback(StateMetaData state) {
+        
+    }    
+    
+    void resumeCallback(StateMetaData state) {
+        
+    }
+    
+    void stampCallback(StateMetaData data, ByteBuffer stamp) {
+        
+    }
+
     void detach() throws DAQException {
         store.detachGuider(this.guider);
     }
