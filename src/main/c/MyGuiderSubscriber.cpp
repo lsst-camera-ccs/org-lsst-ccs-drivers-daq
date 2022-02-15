@@ -28,9 +28,9 @@ jobject MyGuiderSubscriber::createStateMetadata(JNIEnv* env, const GDS::StateMet
 }
 
 jobject MyGuiderSubscriber::createSeriesMetadata(JNIEnv* env, const GDS::SeriesMetadata& series) {
-    const RoiCommon& common = series.common();
-    const RoiLocation& location = series.location();
-    const DVI::Version version =  series.software();
+    //const RoiCommon& common = series.common();
+    //const RoiLocation& location = series.location();
+    //const DVI::Version version =  series.software();
     jint firmware = series.firmware();
     jlong serialNumber = series.serial_number();
 

@@ -464,6 +464,6 @@ public class Store implements AutoCloseable {
     }
 
     void startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int binning, int[] roiData) throws DAQException {
-        impl.startGuider(guider, nRows, nCols, binning, binning, roiData);
+        impl.startGuider(guider, nRows, nCols, integrationTimeMilliSeconds, binning, roiData);
     }
 }

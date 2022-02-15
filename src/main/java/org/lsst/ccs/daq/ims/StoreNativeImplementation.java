@@ -131,5 +131,5 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native void resumeGuider(long guider) throws DAQException;
 
     @Override
-    public synchronized native void waitForGuider(Guider guider, String partition, int[] locations) throws DAQException;
+    public native void waitForGuider(Guider guider, String partition, int[] locations) throws DAQException;
 }
