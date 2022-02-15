@@ -331,8 +331,11 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachGuider
-(JNIEnv* env, jobject obj) {    try {
-        GDS::Client* guider = new GDS::Client();
+(JNIEnv* env, jobject obj, jstring partition) {   
+    const char *partition_name = env->GetStringUTFChars(partition, 0); 
+    try {
+        GDS::Client* guider = new GDS::Client(partition_name);
+        env->ReleaseStringUTFChars(partition, partition_name);
         return (jlong) guider;
     } catch (DSM::Exception& x) {
         return env->ThrowNew(JCexClass, x.what());

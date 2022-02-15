@@ -105,7 +105,7 @@ public class Store implements AutoCloseable {
     public Guider getGuider() throws DAQException {
         synchronized (this) {
             if (guider == null) {
-                long guider_ = impl.attachGuider();
+                long guider_ = impl.attachGuider(partition);
                 this.guider = new Guider(this, guider_);
             }
             return guider;
