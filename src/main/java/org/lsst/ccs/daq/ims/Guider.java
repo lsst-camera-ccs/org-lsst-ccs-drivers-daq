@@ -40,7 +40,7 @@ public class Guider {
     }
 
     public void listen(Location location, int sensor) throws DAQException {
-        long subscriber = store.attachGuiderSubscriber(this, store.getPartition(), new int[]{location.index(), sensor});
+        long subscriber = store.attachGuiderSubscriber(store.getPartition(), new int[]{location.index(), sensor});
         try {
             for (;;) {
                 store.waitForGuider(subscriber, this);
@@ -211,11 +211,13 @@ public class Guider {
         private Location location;
         private int sensor;
         
-        private StateMetaData(int type, int status, int sequence, long timestamp) {
+        private StateMetaData(int type, int status, int sequence, long timestamp, int location, int sensor) {
             this.type = Type.values()[type];
             this.status = Status.values()[status];
             this.sequence = sequence;
             this.timestamp = timestamp;
+            this.location = new Location(location);
+            this.sensor = sensor;
         }
 
         @Override

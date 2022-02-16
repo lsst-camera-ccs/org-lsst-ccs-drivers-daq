@@ -463,8 +463,8 @@ public class Store implements AutoCloseable {
         impl.startGuider(guider, nRows, nCols, integrationTimeMilliSeconds, binning, roiData);
     }
 
-    long attachGuiderSubscriber(Guider guider, String partition, int[] locations) throws DAQException {
-        return impl.attachGuiderSubscriber(guider, partition, locations);
+    long attachGuiderSubscriber(String partition, int[] locations) throws DAQException {
+        return impl.attachGuiderSubscriber(partition, locations);
     }
 
     void detachGuiderSubscriber(long subscriber) throws DAQException {

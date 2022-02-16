@@ -348,7 +348,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachGuiderSubscriber
-(JNIEnv* env, jobject obj, jobject callback, jstring partition, jintArray locations) {   
+(JNIEnv* env, jobject obj, jstring partition, jintArray locations) {   
     GDS::LocationSet locs;
     jint* values = env->GetIntArrayElements(locations, 0);
     int nlocs = env->GetArrayLength(locations);

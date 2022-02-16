@@ -235,7 +235,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public long attachGuiderSubscriber(Guider guider, String partition, int[] locations) throws DAQException {
+    public long attachGuiderSubscriber(String partition, int[] locations) throws DAQException {
         return 999;
     }
 

@@ -24,7 +24,10 @@ jobject MyGuiderSubscriber::createStateMetadata(JNIEnv* env, const GDS::StateMet
     jint status = state.status();
     jint sequence = state.sequence();
     jlong timestamp = state.timestamp();
-    return env->NewObject(JCguiderStateMetadataClass, JCguiderStateMetadataConstructor, type, status, sequence, timestamp);
+    const GDS::Location location = state.sensor();
+    const DAQ::Location source = location.source();
+    jint sensor = location.sensor();
+    return env->NewObject(JCguiderStateMetadataClass, JCguiderStateMetadataConstructor, type, status, sequence, timestamp, location.index(), sensor);
 }
 
 jobject MyGuiderSubscriber::createSeriesMetadata(JNIEnv* env, const GDS::SeriesMetadata& series) {
@@ -106,7 +109,7 @@ void Guider_OnLoad(JNIEnv* env) {
     }
     JCguiderStateMetadataClass = (jclass) env->NewGlobalRef(guiderStateMetadataClass);
 
-    JCguiderStateMetadataConstructor = env->GetMethodID(JCguiderStateMetadataClass, "<init>", "(IIIJ)V");
+    JCguiderStateMetadataConstructor = env->GetMethodID(JCguiderStateMetadataClass, "<init>", "(IIIJII)V");
     if (env->ExceptionCheck()) {
         return;
     }
