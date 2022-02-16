@@ -8,7 +8,7 @@ import org.lsst.ccs.command.annotations.Argument;
 import org.lsst.ccs.command.annotations.Command;
 import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.daq.ims.Guider;
-import org.lsst.ccs.daq.ims.Guider.GuiderROIs;
+import org.lsst.ccs.daq.ims.Guider.ROICommon;
 import org.lsst.ccs.daq.ims.Guider.ROILocation;
 import org.lsst.ccs.daq.ims.Store;
 import org.lsst.ccs.daq.ims.Version;
@@ -72,8 +72,8 @@ public class GuiderTool {
         List<ROILocation> locations = new ArrayList<>();
         Location R22 = Location.of("R22/Reb0");
         locations.add(new ROILocation(R22, 0, 4, 100, 100));
-        GuiderROIs roi = new GuiderROIs(50, 50, 100, 1, locations);
-        guider.start(roi);
+        ROICommon roi = new ROICommon(50, 50, 100, 1);
+        guider.start(roi, locations);
     }
 
     @Command(name = "listen", description = "Listen for guider events")

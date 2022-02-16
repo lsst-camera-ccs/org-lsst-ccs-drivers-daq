@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "MyGuiderSubscriber.h"
+#include "Store.h"
 
 using namespace GDS;
 
@@ -14,9 +15,33 @@ static jclass JCguiderStateMetadataClass;
 static jmethodID JCguiderStateMetadataConstructor;
 static jclass JCguiderSeriesMetadataClass;
 static jmethodID JCguiderSeriesMetadataConstructor;
+static jclass JCguiderRoiCommonClass;
+static jmethodID JCguiderRoiCommonConstructor;
+static jclass JCguiderRoiLocationClass;
+static jmethodID JCguiderRoiLocationConstructor;
 
 MyGuiderSubscriber::MyGuiderSubscriber(const char* partition, const GDS::LocationSet& locs) :
     GDS::Subscriber(partition, locs) {
+}
+
+jobject MyGuiderSubscriber::createRoiCommon(JNIEnv* env, const GDS::RoiCommon& location) {
+    jint nrows = location.nrows();
+    jint ncols = location.ncols();
+    jint integration = location.integration();
+    jint binning = location.binning();
+
+    return env->NewObject(JCguiderRoiCommonClass, JCguiderRoiCommonConstructor, nrows, ncols, integration, binning);
+}
+
+jobject MyGuiderSubscriber::createRoiLocation(JNIEnv* env, const GDS::RoiLocation& location) {
+    GDS::Location loc = location.location();
+    const DAQ::Location source = loc.source();
+    jint sensor = loc.sensor();
+    jint segment = location.segment();
+    jint startRow = location.startrow();
+    jint startCol = location.startcol();
+
+    return env->NewObject(JCguiderRoiLocationClass, JCguiderRoiLocationConstructor, source.bay(), source.board(), sensor, segment, startRow, startCol);
 }
 
 jobject MyGuiderSubscriber::createStateMetadata(JNIEnv* env, const GDS::StateMetadata& state) {
@@ -31,15 +56,14 @@ jobject MyGuiderSubscriber::createStateMetadata(JNIEnv* env, const GDS::StateMet
 }
 
 jobject MyGuiderSubscriber::createSeriesMetadata(JNIEnv* env, const GDS::SeriesMetadata& series) {
-    //const RoiCommon& common = series.common();
-    //const RoiLocation& location = series.location();
-    //const DVI::Version version =  series.software();
+    const RoiCommon& common = series.common();
+    const RoiLocation& location = series.location();
+    const DVI::Version version =  series.software();
     jint firmware = series.firmware();
     jlong serialNumber = series.serial_number();
 
-    return env->NewObject(JCguiderSeriesMetadataClass, JCguiderSeriesMetadataConstructor, firmware, serialNumber);
+    return env->NewObject(JCguiderSeriesMetadataClass, JCguiderSeriesMetadataConstructor, firmware, serialNumber, createRoiCommon(env, common), createRoiLocation(env, location), createVersion(env, version));
 }
-
 
 jobject MyGuiderSubscriber::createByteBuffer(JNIEnv* env, const GDS::RawStamp& stamp) {
     return env->NewDirectByteBuffer(const_cast<GDS::RawStamp&>(stamp).content(), const_cast<GDS::RawStamp&>(stamp).size());
@@ -120,7 +144,29 @@ void Guider_OnLoad(JNIEnv* env) {
     }
     JCguiderSeriesMetadataClass = (jclass) env->NewGlobalRef(guiderSeriesMetadataClass);
 
-    JCguiderSeriesMetadataConstructor = env->GetMethodID(JCguiderSeriesMetadataClass, "<init>", "(IJ)V");
+    JCguiderSeriesMetadataConstructor = env->GetMethodID(JCguiderSeriesMetadataClass, "<init>", "(IJLorg/lsst/ccs/daq/ims/Guider$ROICommon;Lorg/lsst/ccs/daq/ims/Guider$ROILocation;Lorg/lsst/ccs/daq/ims/Version;)V");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+
+    jclass guiderRoiCommonClass = env->FindClass("org/lsst/ccs/daq/ims/Guider$ROICommon");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+    JCguiderRoiCommonClass = (jclass) env->NewGlobalRef(guiderRoiCommonClass);
+
+    JCguiderRoiCommonConstructor = env->GetMethodID(JCguiderRoiCommonClass, "<init>", "(IIII)V");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+
+    jclass guiderRoiLocationClass = env->FindClass("org/lsst/ccs/daq/ims/Guider$ROILocation");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+    JCguiderRoiLocationClass = (jclass) env->NewGlobalRef(guiderRoiLocationClass);
+
+    JCguiderRoiLocationConstructor = env->GetMethodID(JCguiderRoiLocationClass, "<init>", "(BBIIII)V");
     if (env->ExceptionCheck()) {
         return;
     }

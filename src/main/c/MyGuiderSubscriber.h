@@ -25,6 +25,8 @@ public:
 private:
     JNIEnv *env;
     jobject callback;
+    jobject createRoiCommon(JNIEnv* env, const GDS::RoiCommon& location);
+    jobject createRoiLocation(JNIEnv* env, const GDS::RoiLocation& location);
     jobject createStateMetadata(JNIEnv* env, const GDS::StateMetadata& state);
     jobject createSeriesMetadata(JNIEnv* env, const GDS::SeriesMetadata& series);
     jobject createByteBuffer(JNIEnv* env, const GDS::RawStamp& stamp);

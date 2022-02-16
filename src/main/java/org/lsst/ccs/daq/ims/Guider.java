@@ -23,12 +23,12 @@ public class Guider {
         this.guider = guider;
     }
 
-    public void start(GuiderROIs rois) throws DAQException {
-        final int nLocs = rois.locations.size();
+    public void start(ROICommon common, List<ROILocation> locations) throws DAQException {
+        final int nLocs = locations.size();
         int[] roiData = new int[nLocs * 5];
         for (int i = 0; i < nLocs; i++) {
             int j = i * 5;
-            ROILocation location = rois.locations.get(i);
+            ROILocation location = locations.get(i);
             roiData[j] = location.location.index();
             roiData[j + 1] = location.sensor;
             roiData[j + 2] = location.segment;
@@ -36,7 +36,7 @@ public class Guider {
             roiData[j + 4] = location.startCol;
         }
 	System.out.println(Arrays.toString(roiData));
-        store.startGuider(guider, rois.nRows, rois.nCols, rois.integrationTimeMilliSeconds, rois.binning, roiData);
+        store.startGuider(guider, common.nRows, common.nCols, common.integrationTimeMilliSeconds, common.binning, roiData);
     }
 
     public void listen(Location location, int sensor) throws DAQException {
@@ -95,20 +95,18 @@ public class Guider {
         store.detachGuider(this.guider);
     }
 
-    public static class GuiderROIs {
+    public static class ROICommon {
 
         private final int nRows;
         private final int nCols;
         private final int integrationTimeMilliSeconds;
         private final int binning;
-        private final List<ROILocation> locations;
 
-        public GuiderROIs(int nRows, int nCols, int integrationTimeMilliSeconds, int binning, List<ROILocation> locations) {
+        public ROICommon(int nRows, int nCols, int integrationTimeMilliSeconds, int binning) {
             this.nRows = nRows;
             this.nCols = nCols;
             this.integrationTimeMilliSeconds = integrationTimeMilliSeconds;
             this.binning = binning;
-            this.locations = locations;
         }
 
         public int getnRows() {
@@ -127,8 +125,9 @@ public class Guider {
             return binning;
         }
 
-        public List<ROILocation> getLocations() {
-            return locations;
+        @Override
+        public String toString() {
+            return "ROICommon{" + "nRows=" + nRows + ", nCols=" + nCols + ", integrationTimeMilliSeconds=" + integrationTimeMilliSeconds + ", binning=" + binning + '}';
         }
     }
 
@@ -140,6 +139,10 @@ public class Guider {
         private final int startRow;
         private final int startCol;
 
+        public ROILocation(byte bay, byte board, int sensor,  int segment, int startRow,  int startCol) {
+            this(new Location(bay, board), sensor, segment, startRow, startCol);
+        } 
+        
         public ROILocation(Location location, int sensor, int segment, int startRow, int startCol) {
             this.location = location;
             this.sensor = sensor;
@@ -184,20 +187,25 @@ public class Guider {
 
     public static class SeriesMetaData {
 
-        private GuiderROIs location;
-        private Version version;
+        private final ROICommon common;
+        private final ROILocation location;
+        private final Version version;
         private final int firmware;
         private final long serialNumber;
         
-        private SeriesMetaData(int firmware, long serialNumber) {
+        private SeriesMetaData(int firmware, long serialNumber, ROICommon common, ROILocation location, Version version) {
             this.firmware = firmware;
             this.serialNumber = serialNumber;
+            this.common = common;
+            this.location = location;
+            this.version = version;
         }
 
         @Override
         public String toString() {
-            return "SeriesMetaData{" + "location=" + location + ", version=" + version + ", firmware=" + firmware + ", serialNumber=" + serialNumber + '}';
+            return "SeriesMetaData{" + "common=" + common + ", location=" + location + ", version=" + version + ", firmware=" + firmware + ", serialNumber=" + serialNumber + '}';
         }
+
     }
 
     public static class StateMetaData {
@@ -208,8 +216,8 @@ public class Guider {
         private final Status status;
         private final long sequence;
         private final long timestamp;
-        private Location location;
-        private int sensor;
+        private final Location location;
+        private final int sensor;
         
         private StateMetaData(int type, int status, int sequence, long timestamp, byte bay, byte board, int sensor) {
             this.type = Type.values()[type];
