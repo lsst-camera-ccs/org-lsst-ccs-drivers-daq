@@ -15,8 +15,8 @@ static jmethodID JCguiderStateMetadataConstructor;
 static jclass JCguiderSeriesMetadataClass;
 static jmethodID JCguiderSeriesMetadataConstructor;
 
-MyGuiderSubscriber::MyGuiderSubscriber(JNIEnv *env, jobject callback, const char* partition, const GDS::LocationSet& locs) :
-    env(env), callback(callback), GDS::Subscriber(partition, locs) {
+MyGuiderSubscriber::MyGuiderSubscriber(const char* partition, const GDS::LocationSet& locs) :
+    GDS::Subscriber(partition, locs) {
 }
 
 jobject MyGuiderSubscriber::createStateMetadata(JNIEnv* env, const GDS::StateMetadata& state) {
@@ -62,6 +62,11 @@ void MyGuiderSubscriber::stamp(const GDS::StateMetadata& state, const GDS::RawSt
     env->CallVoidMethod(callback, JCguiderStampCallbackMethod, createStateMetadata(env, state), createByteBuffer(env, stamp));
 }
 
+void MyGuiderSubscriber::wait(JNIEnv *env, jobject callback) {
+    this->env = env;
+    this->callback = callback;
+    GDS::Subscriber::wait();
+}
 void Guider_OnLoad(JNIEnv* env) {
 
     jclass guiderClass = env->FindClass("org/lsst/ccs/daq/ims/Guider");

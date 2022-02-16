@@ -12,7 +12,7 @@ void Guider_OnLoad(JNIEnv*);
 
 class MyGuiderSubscriber : public GDS::Subscriber {
 public:
-    MyGuiderSubscriber(JNIEnv *env, jobject callback, const char* partition, const GDS::LocationSet& locs);
+    MyGuiderSubscriber(const char* partition, const GDS::LocationSet& locs);
 public:
     ~MyGuiderSubscriber() {}
 public:
@@ -21,6 +21,7 @@ public:
   void pause(const GDS::StateMetadata& state);
   void stop(const GDS::StateMetadata& state);
   void stamp(const GDS::StateMetadata& state, const GDS::RawStamp& stamp);
+  void wait(JNIEnv *env, jobject callback);
 private:
     JNIEnv *env;
     jobject callback;

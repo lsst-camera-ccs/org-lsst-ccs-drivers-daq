@@ -85,5 +85,5 @@ interface StoreImplementation {
 
     public void detachGuiderSubscriber(long subscriber) throws DAQException;
 
-    public void waitForGuider(long subscriber) throws DAQException;
+    public void waitForGuider(long subscriber, Guider guider) throws DAQException;
 }

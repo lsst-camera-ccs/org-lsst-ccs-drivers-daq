@@ -231,7 +231,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public void waitForGuider(long subscriber) throws DAQException {
+    public void waitForGuider(long subscriber, Guider guider) throws DAQException {
     }
 
     @Override

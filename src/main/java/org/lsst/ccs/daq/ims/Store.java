@@ -471,7 +471,7 @@ public class Store implements AutoCloseable {
         impl.detachGuiderSubscriber(subscriber);
     }
     
-    void waitForGuider(long subscriber) throws DAQException {
-        impl.waitForGuider(subscriber);
+    void waitForGuider(long subscriber, Guider guider) throws DAQException {
+        impl.waitForGuider(subscriber, guider);
     }
 }

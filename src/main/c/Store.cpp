@@ -357,7 +357,7 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_atta
         locs.insert(loc);
     }
     const char *partition_name = env->GetStringUTFChars(partition, 0);
-    MyGuiderSubscriber* subscriber = new MyGuiderSubscriber(env, callback, partition_name, locs);
+    MyGuiderSubscriber* subscriber = new MyGuiderSubscriber(partition_name, locs);
     env->ReleaseStringUTFChars(partition, partition_name);
     env->ReleaseIntArrayElements(locations, values, JNI_ABORT);
     return (jlong) subscriber;
@@ -369,9 +369,9 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
 }
 
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitForGuider
-(JNIEnv *env, jobject obj, jlong subscriber_) {
+(JNIEnv *env, jobject obj, jlong subscriber_, jobject callback) {
     MyGuiderSubscriber* subscriber =  (MyGuiderSubscriber*) subscriber_;
-    subscriber->wait();
+    subscriber->wait(env, callback);
 }
 
 JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider

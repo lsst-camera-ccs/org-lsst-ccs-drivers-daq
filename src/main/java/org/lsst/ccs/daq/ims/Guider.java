@@ -43,7 +43,7 @@ public class Guider {
         long subscriber = store.attachGuiderSubscriber(this, store.getPartition(), new int[]{location.index(), sensor});
         try {
             for (;;) {
-                store.waitForGuider(subscriber);
+                store.waitForGuider(subscriber, this);
             }
         } finally {
             store.detachGuiderSubscriber(subscriber);
