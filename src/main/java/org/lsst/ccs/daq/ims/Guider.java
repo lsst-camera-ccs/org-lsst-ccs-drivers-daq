@@ -211,12 +211,12 @@ public class Guider {
         private Location location;
         private int sensor;
         
-        private StateMetaData(int type, int status, int sequence, long timestamp, int location, int sensor) {
+        private StateMetaData(int type, int status, int sequence, long timestamp, byte bay, byte board, int sensor) {
             this.type = Type.values()[type];
             this.status = Status.values()[status];
             this.sequence = sequence;
             this.timestamp = timestamp;
-            this.location = new Location(location);
+            this.location = new Location(bay, board);
             this.sensor = sensor;
         }
 
