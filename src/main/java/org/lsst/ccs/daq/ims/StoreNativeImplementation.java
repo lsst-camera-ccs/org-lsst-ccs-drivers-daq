@@ -79,7 +79,13 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native SourceMetaData addSourceToImage(long store, long id, int index, byte type, String platform, int[] registerValues) throws DAQException;
 
     @Override
-    public native int waitForImage(Store callback, long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
+    public synchronized native long attachStream(long store, int sourceTimeoutMicros) throws DAQException;
+
+    @Override
+    public synchronized native void detachStream(long stream) throws DAQException;
+    
+    @Override
+    public native int waitForImage(Store callback, long store, long stream, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
 
     @Override
     public native String decodeException(int rc);

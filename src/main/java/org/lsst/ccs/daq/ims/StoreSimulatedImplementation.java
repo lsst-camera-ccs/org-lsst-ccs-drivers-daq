@@ -148,7 +148,16 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public int waitForImage(Store callback, long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException {
+    public long attachStream(long store, int sourceTimeoutMicros) throws DAQException {
+        return 11111;
+    }
+
+    @Override
+    public void detachStream(long stream) throws DAQException {
+    }
+
+    @Override
+    public int waitForImage(Store callback, long store, long stream, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException {
         try {
             ImageMetaData meta = imageTimeoutMicros == 0 ? queue.take() : queue.poll(imageTimeoutMicros, TimeUnit.MICROSECONDS);
             if (meta == null) {
