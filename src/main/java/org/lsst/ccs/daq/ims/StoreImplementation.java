@@ -52,7 +52,7 @@ interface StoreImplementation {
 
     void detachStream(long stream) throws DAQException;
     
-    int waitForImage(Store callback, long store, long stream, int imageTimeoutMicros, int sourceTimeoutMicro) throws DAQException;
+    int waitForImage(Store callback, long store, long stream1, long stream2, int imageTimeoutMicros, int sourceTimeoutMicro) throws DAQException;
 
     String decodeException(int rc);
 

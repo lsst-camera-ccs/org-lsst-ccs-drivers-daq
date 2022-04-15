@@ -527,14 +527,15 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
 }
 
 JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitForImage
-(JNIEnv *env, jobject obj, jobject callback, jlong store, jlong stream, jint imageTimeoutMicros, jint sourceTimeoutMicros) {
+(JNIEnv *env, jobject obj, jobject callback, jlong store, jlong stream1, jlong stream2, jint imageTimeoutMicros, jint sourceTimeoutMicros) {
     Store* store_ = (Store*) store;
-    Stream* stream_ = (Stream*) stream;
-    Image image(*store_, *stream_, imageTimeoutMicros);
+    Stream* stream1_ = (Stream*) stream1;
+    Stream* stream2_ = (Stream*) stream2;
+    Image image(*store_, *stream1_, imageTimeoutMicros);
     if (!image) return image.error();
     env->CallVoidMethod(callback, JCimageCreatedCallbackMethod, createImageMetaData(env, image));
     MyBarrier barrier(*store_, env, image, callback, JCimageSourceStreamCallbackMethod);
-    barrier.run(*stream_, sourceTimeoutMicros);
+    barrier.run(*stream2_, sourceTimeoutMicros);
     // We get here either because the image is complete, or because it timed out. We cannot tell
     // which, so we will just hope for the best!
     env->CallVoidMethod(callback, JCimageCompleteCallbackMethod, createImageMetaData(env, image));

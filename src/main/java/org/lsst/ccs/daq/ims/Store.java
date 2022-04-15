@@ -188,17 +188,20 @@ public class Store implements AutoCloseable {
                         Thread.currentThread().setName("ImageStreamThread_" + partition);
                         LOG.log(Level.INFO, () -> String.format("DAQ image listener starting with timeouts %,d %,d", IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS));
                         long waitForImageStore = impl.attachStore(partition);
-                        long stream = 0;
+                        long stream1 = 0;
+                        long stream2 = 0;
                         try {
-                            stream = impl.attachStream(store, SOURCE_TIMEOUT_MICROS);
+                            stream1 = impl.attachStream(store, SOURCE_TIMEOUT_MICROS);
+                            stream2 = impl.attachStream(store, SOURCE_TIMEOUT_MICROS);
                             while (!Thread.currentThread().isInterrupted()) {
-                                int rc = impl.waitForImage(Store.this, waitForImageStore, stream, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
+                                int rc = impl.waitForImage(Store.this, waitForImageStore, stream1, stream2, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
                                 if (rc != 0 && rc != 68) { // 68 appears to mean timeout
                                     LOG.log(Level.SEVERE, "Unexpected rc from waitForImage: {0}", rc);
                                 }
                             }
                         } finally {
-                            if (stream != 0) impl.detachStream(stream);
+                            if (stream1 != 0) impl.detachStream(stream1);
+                            if (stream2 != 0) impl.detachStream(stream2);
                             impl.detachStore(store);
                         }
                     } catch (Throwable x) {

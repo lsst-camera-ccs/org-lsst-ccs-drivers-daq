@@ -85,7 +85,7 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native void detachStream(long stream) throws DAQException;
     
     @Override
-    public native int waitForImage(Store callback, long store, long stream, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
+    public native int waitForImage(Store callback, long store, long stream1, long stream2, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
 
     @Override
     public native String decodeException(int rc);
