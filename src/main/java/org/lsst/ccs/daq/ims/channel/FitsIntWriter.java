@@ -8,7 +8,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +34,7 @@ import org.lsst.ccs.utilities.readout.ReadOutImageSet;
 import org.lsst.ccs.utilities.readout.ReadOutParameters;
 import org.lsst.ccs.utilities.readout.ReadOutParametersBuilder;
 import org.lsst.ccs.utilities.readout.ReadOutParametersNew;
+import org.lsst.ccs.utilities.taitime.CCSTimeStamp;
 
 /**
  * A writable int channel for writing a set of FITS files corresponding to a
@@ -95,7 +95,7 @@ public class FitsIntWriter implements WritableIntChannel {
             props.put("ImageController", "C");
             props.put("ImageSource", "MC");
         }
-        props.put("FileCreationTime", new Date());
+        props.put("FileCreationTime", CCSTimeStamp.currentTime());
         props.put("RaftBay", location.getRaftName());
         props.put("RebSlot", location.getBoardName());
         props.put("DAQPartition", partition);
@@ -110,7 +110,11 @@ public class FitsIntWriter implements WritableIntChannel {
                 Map<String, Object> ccdProps = new HashMap<>();
                 ccdProps.putAll(props);
                 ccdProps.put("CCDSlot", reb.isAuxtelREB() ? "S00" : location.getSensorName(sensorIndex));
+                // Note image handling has a horrible kludge where it modifies the ccdProps when computerFileName is called
+                // to add OriginalFileName. This no longer has any effect since ccdProps are copied here
                 files[i] = fileNamer.computeFileName(ccdProps);
+                // Ugly workaround for problem described above
+                props.put("OriginalFileName", ccdProps.getOrDefault("OriginalFileName", files[i].getName()));
                 writers[i] = new FitsFileWriter(files[i]);
             }
         } catch (IOException | RuntimeException t) {
