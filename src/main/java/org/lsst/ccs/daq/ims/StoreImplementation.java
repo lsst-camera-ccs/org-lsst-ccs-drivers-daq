@@ -47,7 +47,11 @@ interface StoreImplementation {
 
     SourceMetaData addSourceToImage(long store, long id, int index, byte type, String platform, int[] registerValues) throws DAQException;
 
-    int waitForImage(Store callback, long store, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
+    long attachStream(long store, int sourceTimeoutMicros) throws DAQException;
+
+    void detachStream(long stream) throws DAQException;
+    
+    int waitForImage(Store callback, long store, long stream1, long stream2, int imageTimeoutMicros, int sourceTimeoutMicro) throws DAQException;
 
     String decodeException(int rc);
 

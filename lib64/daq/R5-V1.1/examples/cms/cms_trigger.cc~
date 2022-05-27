@@ -1,0 +1,285 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <csignal>
+#include <string.h>
+#include <zlib.h>
+
+#include "daq/LocationSet.hh"
+#include "cms/Camera.hh"
+#include "cms/Exception.hh"
+#include "ims/Path.hh"
+#include "ims/Image.hh"
+#include "ims/Stream.hh"
+#include "ims/Barrier.hh"
+
+#include "ims/../src/editor/Decoder.hh"
+
+#define PROGRAM    argv[0]
+#define PARTITION  argv[1]
+#define IMAGE_BASE argv[2]
+#define START      argv[3]
+#define REPEATS    argv[4]
+#define SOURCES    argv[5]
+
+#define INVALID        -1 // invalid opcode...
+
+static const char USAGE[] = "usage: cms_trigger <partition> <image base name> <starting index> <number of images> [sources]\n";
+
+static const char folder[]="";
+static bool doExit = false;
+static const DAQ::LocationSet _parse_targets(const DAQ::LocationSet&, int argc, const char** argv);
+static uint8_t* _read_source(IMS::Source& source, uint8_t* buffer);
+
+#define IMAGE_TIMOUT  (15 * 1000 * 1000) // 15 seconds expressed in 1us tics... 
+#define SOURCE_TIMOUT (10 * 1000 * 1000) // 10 seconds expressed in 1us tics... 
+
+
+void quitIt(int s)
+{
+  printf("\n");
+  if(doExit)
+  {
+    printf("\n");
+    exit(1);
+  }
+  doExit=true;
+}
+
+
+/*
+** ++
+**
+**
+** --
+*/
+static const char SUCCESS[]        = "Triggered using opcode %d the image named %s at %s\n";
+static const char FAILED[]         = "Failed to trigger using opcode %d the image to be named %s (%s)\n";
+static const char INVALID_OPCODE[] = "The second argument is not a valid opcode\n";
+static const char NOT_VALID[]      = "% is not a valid image specifier (first argument must be of the form: 'folder-name/image-name')\n";
+static const char NO_SOURCES[]     = "No valid sources specified\n";
+
+int main(int argc, char* argv[])
+{
+
+  if(argc < 5) {printf(USAGE); return EXIT_SUCCESS;}
+  
+  struct sigaction sigIntHandler;
+  sigIntHandler.sa_handler = quitIt;
+  sigemptyset(&sigIntHandler.sa_mask);
+  sigIntHandler.sa_flags = 0;
+  sigaction(SIGINT, &sigIntHandler, NULL);
+  
+  IMS::Store store(PARTITION);
+  CMS::Camera camera(store);
+  DAQ::LocationSet sources = _parse_targets(camera.sources(), argc-5, (const char**)&SOURCES);
+  
+  //camera.science.insert(RMS::Instruction::GET, 0xA00000);
+  //camera.science.insert(RMS::Instruction::GET, 0xA00001);
+  //camera.science.insert(RMS::Instruction::GET, 0xA00002);
+  //camera.science.insert(RMS::Instruction::GET, 0xA00003);
+  //camera.science.insert(RMS::Instruction::GET, 0xA00004);
+  //camera.science.insert(RMS::Instruction::GET, 0xA00005);
+  //camera.science.insert(RMS::Instruction::GET, 0xA00006);
+  //camera.science.insert(RMS::Instruction::GET, 0xA00007);
+  //camera.science.insert(RMS::Instruction::GET, 0xA00008);
+  //camera.science.insert(RMS::Instruction::GET, 0xA00009);
+  //camera.science.insert(RMS::Instruction::GET, 0xA0000a);
+  //camera.science.insert(RMS::Instruction::GET, 0xA0000b);
+  //camera.science.insert(RMS::Instruction::GET, 0xA0000c);
+  //camera.science.insert(RMS::Instruction::GET, 0xA0000d);
+  //camera.science.insert(RMS::Instruction::GET, 0xA0000e);
+  //camera.science.insert(RMS::Instruction::GET, 0xA0000f);
+
+  if(!sources) {printf(NO_SOURCES); return -1;}
+
+  IMS::Stream* stream = new IMS::Stream(store, SOURCE_TIMOUT);
+  
+  unsigned repeats = atol(REPEATS);
+  unsigned image_number = atol(START);
+  char image_name[64];
+  char* image = &image_name[0];
+  unsigned iterations = 0;
+
+  static const int BUF_SIZE = 0x10000000;
+  uint8_t* srcbuf = new uint8_t[BUF_SIZE];
+
+  while(!doExit)
+   {
+     sprintf(image_name, "%s%i", IMAGE_BASE, image_number);
+
+     IMS::Path path(image, folder);
+       
+     if(!path) {printf(NOT_VALID, image_name); return -1;}
+       
+     const char* annotation = (const char*)0;
+     int32_t     opcode     = 7;
+     
+     if(opcode == INVALID) {printf(INVALID_OPCODE); return -1;}
+
+     IMS::ImageMetadata metadata(path.image(), path.folder(), sources, opcode, annotation); 
+     
+     int32_t error = camera.trigger(metadata);
+
+     if(!error)
+     {
+       printf(SUCCESS, opcode,  image_name, metadata.timestamp().decode());
+       IMS::Image stream_image(store, *stream);//, 3*1000*1000);
+       IMS::Barrier barrier(stream_image);
+       barrier.block(*stream, IMAGE_TIMOUT);
+
+       static const bool CHECK_SCIAB_DATA = true;
+       if(CHECK_SCIAB_DATA)
+       {
+	 DAQ::LocationSet locs = stream_image.metadata().elements();
+	 DAQ::Location loc;
+	 while(locs.remove(loc))
+	 {
+	   IMS::Source source(stream_image.id(), loc, store);
+	   
+	   memset(srcbuf, 0, BUF_SIZE);
+	   
+	   uint8_t* data = _read_source(source, srcbuf);
+	   if(!data) printf("Error reading source\n");
+	   
+	   
+	   uint32_t crc = crc32(0, NULL, 0);
+	   crc = crc32(crc, data, source.size());
+	   
+	   char locbuf[16];
+	   printf("%s - %016llX - %4s - %9llu - 0x%08X\n", stream_image.metadata().timestamp().decode(), (unsigned long long)stream_image.id().value(), loc.encode(locbuf), (unsigned long long)source.size(), crc);
+	   
+	   uint32_t sciab_crc = 0xEA824C63; // Incrementing 16-bit truncated data
+	   //uint32_t sciab_crc = 0x684FC5FF; // Constant 0x9695 16-bit data
+	   //uint32_t sciab_crc = 0xA25B6FC4; // 0x1000 stripes of incrementing 16-bit trunc data
+	   //uint32_t sciab_crc = 0x6A8D4915; // 0x30 stripes of incrementing 16-bit trunc data
+	   if(crc != sciab_crc) 
+	   {
+	     printf("ERROR - expected CRC 0x%08x\n", sciab_crc);
+	     doExit = true;
+	   }
+
+	 }
+       }
+       
+       static const bool CHECK_BAD_PIXELS = false;
+       if(CHECK_BAD_PIXELS)
+       {
+	 
+	 IMS::Editor::Decoder decoder(stream_image);
+	 decoder.run();
+	 
+	 unsigned bad_pixels = decoder.bad_pixels();
+	 
+	 printf("Bad Pixels: %i\n", bad_pixels);
+	 if(bad_pixels) doExit = true;
+       }
+
+     }
+     else
+     {
+       printf(FAILED, opcode, image_name, CMS::Exception::decode(error));
+      delete stream;
+      stream = new IMS::Stream(store, SOURCE_TIMOUT);
+     }
+     ++image_number;
+     if(++iterations==repeats) break;
+     
+     //sleep(1);
+     //printf("<ENTER> for another trigger:");
+     //getchar();
+     
+   }
+  
+  delete srcbuf;
+
+  return(EXIT_SUCCESS);
+}
+
+
+#include <string.h>
+#include "daq/ScienceSet.hh"
+#include "daq/WavefrontSet.hh"
+#include "daq/GuidingSet.hh"
+
+static const DAQ::LocationSet _parse_targets(const DAQ::LocationSet& all, int argc, const char** argv)
+{
+  
+  DAQ::LocationSet targets;
+  
+  if(0 == argc) { targets |= all; return targets; }
+
+  bool exclude = false;
+  
+  for(int i=0; i<argc; ++i)
+  {
+    DAQ::LocationSet set;
+    if(0==strncmp(argv[i], "-a", 2))
+    {
+      set |= all;
+    }
+    else if(0==strcmp(argv[i], "-x")) exclude = true;
+    else if(0==strcmp(argv[i], "-s")) set  = DAQ::ScienceSet();
+    else if(0==strcmp(argv[i], "-g")) set  = DAQ::GuidingSet();
+    else if(0==strcmp(argv[i], "-w")) set  = DAQ::WavefrontSet();
+    else                              set |= DAQ::LocationSet(1, &argv[i]);
+
+    if(exclude) targets &= ~set;
+    else        targets |=  set;
+  }   
+
+  targets &= all;
+
+  return targets;
+}
+
+
+
+//OK
+//#define PAGE_SIZE 42135552 // 195072*216
+#define PAGE_SIZE 21067776 // 195072*108
+//#define PAGE_SIZE 1755648    // LCM of One Page and One Stripe (108B)
+//#define PAGE_SIZE 975360   // 195072*5
+//#define PAGE_SIZE 780288   // 195072*4
+//#define PAGE_SIZE 585216   // 195072*3
+//#define PAGE_SIZE 390144   // 195072*2
+//#define PAGE_SIZE 195072   // One Page
+//#define PAGE_SIZE 65024    // 195072/3 // One Pagelet
+//#define PAGE_SIZE 32512    // 195072/6
+//#define PAGE_SIZE 16256    // 195072/12
+//#define PAGE_SIZE 8128     // 195072/24
+//#define PAGE_SIZE 4064     // 195072/48
+//#define PAGE_SIZE 2032     // 195072/96
+//#define PAGE_SIZE 1016     // 195072/192
+
+// Interestingly?  OK
+//#define PAGE_SIZE 512
+
+//NOK
+//#define PAGE_SIZE 2097152 // 2 MB
+//#define PAGE_SIZE 260096 // 65024*4 // 4 Pagelets
+//#define PAGE_SIZE 3048   // 1016*3
+//#define PAGE_SIZE 1536   // 512*3
+//#define PAGE_SIZE 1024   // 512*2
+
+static uint8_t* _read_source(IMS::Source& source, uint8_t* buffer)
+{
+
+  uint64_t remaining = source.size();
+  uint64_t offset = 0;
+  uint8_t* write_buf = buffer;
+  while(remaining)
+  {
+    //    if(remaining%0x10000 == 0) printf("remaining %lli\n", (unsigned long long)remaining);
+
+    uint64_t size = PAGE_SIZE<remaining ? PAGE_SIZE : remaining;
+    int error = source.read((char*)write_buf, size, offset);
+    if(error) return 0;
+    write_buf += size;
+    remaining -= size;
+    offset    += size;
+  }
+  
+  return buffer;
+}
