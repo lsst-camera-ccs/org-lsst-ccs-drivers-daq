@@ -252,4 +252,9 @@ class StoreSimulatedImplementation implements StoreImplementation {
     public void detachGuiderSubscriber(long subscriber) throws DAQException {
     }
 
+    @Override
+    public Guider.GuiderConfig guiderConfig(long guider) throws DAQException {
+        return null;
+    }
+
 }

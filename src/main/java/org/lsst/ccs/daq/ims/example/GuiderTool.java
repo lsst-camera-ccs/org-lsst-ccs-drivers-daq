@@ -66,6 +66,12 @@ public class GuiderTool {
         guider.resume();
     }
 
+    @Command(name = "config", description = "get the guider config")
+    public Guider.GuiderConfig config() throws DAQException {
+        checkStore();
+        return guider.config();
+    }
+    
     @Command(name = "start", description = "Start the guider")
     public void start() throws DAQException {
         checkStore();

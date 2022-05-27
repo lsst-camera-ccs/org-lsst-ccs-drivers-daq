@@ -10,6 +10,7 @@ static jmethodID JCguiderStartCallbackMethod;
 static jmethodID JCguiderStopCallbackMethod;
 static jmethodID JCguiderPauseCallbackMethod;
 static jmethodID JCguiderResumeCallbackMethod;
+static jmethodID JCguiderRawStampCallbackMethod;
 static jmethodID JCguiderStampCallbackMethod;
 static jclass JCguiderStateMetadataClass;
 static jmethodID JCguiderStateMetadataConstructor;
@@ -19,12 +20,14 @@ static jclass JCguiderRoiCommonClass;
 static jmethodID JCguiderRoiCommonConstructor;
 static jclass JCguiderRoiLocationClass;
 static jmethodID JCguiderRoiLocationConstructor;
+static jclass JCguiderConfigClass;
+static jmethodID JCguiderConfigConstructor;
 
 MyGuiderSubscriber::MyGuiderSubscriber(const char* partition, const GDS::LocationSet& locs) :
     GDS::Subscriber(partition, locs) {
 }
 
-jobject MyGuiderSubscriber::createRoiCommon(JNIEnv* env, const GDS::RoiCommon& location) {
+jobject createRoiCommon(JNIEnv* env, const GDS::RoiCommon& location) {
     jint nrows = location.nrows();
     jint ncols = location.ncols();
     jint integration = location.integration();
@@ -33,7 +36,7 @@ jobject MyGuiderSubscriber::createRoiCommon(JNIEnv* env, const GDS::RoiCommon& l
     return env->NewObject(JCguiderRoiCommonClass, JCguiderRoiCommonConstructor, nrows, ncols, integration, binning);
 }
 
-jobject MyGuiderSubscriber::createRoiLocation(JNIEnv* env, const GDS::RoiLocation& location) {
+jobject createRoiLocation(JNIEnv* env, const GDS::RoiLocation& location) {
     GDS::Location loc = location.location();
     const DAQ::Location source = loc.source();
     jint sensor = loc.sensor();
@@ -44,7 +47,15 @@ jobject MyGuiderSubscriber::createRoiLocation(JNIEnv* env, const GDS::RoiLocatio
     return env->NewObject(JCguiderRoiLocationClass, JCguiderRoiLocationConstructor, source.bay(), source.board(), sensor, segment, startRow, startCol);
 }
 
-jobject MyGuiderSubscriber::createStateMetadata(JNIEnv* env, const GDS::StateMetadata& state) {
+jobject createGuiderConfig(JNIEnv* env, const GDS::Status& status, const GDS::Series& series, const GDS::RoiCommon& common, const GDS::RoiLocation* location, int nLocations) {
+    jobject list = env->NewObject(JClistClass, JClistConstructor);
+    for (int i=0; i<nLocations; i++) {
+        env->CallVoidMethod(list, JClistAddMethodID, createRoiLocation(env, location[i]));
+    }
+    return env->NewObject(JCguiderConfigClass, JCguiderConfigConstructor, createRoiCommon(env, common), list);
+}
+
+jobject createStateMetadata(JNIEnv* env, const GDS::StateMetadata& state) {
     jint type = state.type();
     jint status = state.status();
     jint sequence = state.sequence();
@@ -55,7 +66,7 @@ jobject MyGuiderSubscriber::createStateMetadata(JNIEnv* env, const GDS::StateMet
     return env->NewObject(JCguiderStateMetadataClass, JCguiderStateMetadataConstructor, type, status, sequence, timestamp, location.bay(), source.board(), sensor);
 }
 
-jobject MyGuiderSubscriber::createSeriesMetadata(JNIEnv* env, const GDS::SeriesMetadata& series) {
+jobject createSeriesMetadata(JNIEnv* env, const GDS::SeriesMetadata& series) {
     const RoiCommon& common = series.common();
     const RoiLocation& location = series.location();
     const DVI::Version version =  series.software();
@@ -66,7 +77,13 @@ jobject MyGuiderSubscriber::createSeriesMetadata(JNIEnv* env, const GDS::SeriesM
 }
 
 jobject MyGuiderSubscriber::createByteBuffer(JNIEnv* env, const GDS::RawStamp& stamp) {
-    return env->NewDirectByteBuffer(const_cast<GDS::RawStamp&>(stamp).content(), const_cast<GDS::RawStamp&>(stamp).size());
+    // I know I am not going to modify the mapped buffer, but the compiler does not know that
+    return env->NewDirectByteBuffer(const_cast<uint8_t *>(stamp.content()), stamp.size());
+}
+
+jobject MyGuiderSubscriber::createByteBuffer(JNIEnv* env, const GDS::Stamp& stamp) {
+    // I know I am not going to modify the mapped buffer, but the compiler does not know that
+    return env->NewDirectByteBuffer(const_cast<uint8_t *>(stamp.content()), stamp.size());
 }
 
 void MyGuiderSubscriber::start(const GDS::StateMetadata& state, const GDS::SeriesMetadata& series) {
@@ -85,8 +102,17 @@ void MyGuiderSubscriber::stop(const GDS::StateMetadata& state) {
     env->CallVoidMethod(callback, JCguiderStopCallbackMethod, createStateMetadata(env, state));
 }
 
-void MyGuiderSubscriber::stamp(const GDS::StateMetadata& state, const GDS::RawStamp& stamp) {
+void MyGuiderSubscriber::raw_stamp(const GDS::StateMetadata& state, const GDS::RawStamp& stamp) {
+    env->CallVoidMethod(callback, JCguiderRawStampCallbackMethod, createStateMetadata(env, state), createByteBuffer(env, stamp));
+}
+
+void MyGuiderSubscriber::stamp(const GDS::StateMetadata& state, const GDS::Stamp& stamp) {
     env->CallVoidMethod(callback, JCguiderStampCallbackMethod, createStateMetadata(env, state), createByteBuffer(env, stamp));
+}
+
+uint8_t* MyGuiderSubscriber::allocate(unsigned size) {
+    //TODO: needs to be dynamically allocated?
+    return _stamp_buf;
 }
 
 void MyGuiderSubscriber::wait(JNIEnv *env, jobject callback) {
@@ -122,6 +148,11 @@ void Guider_OnLoad(JNIEnv* env) {
         return;
     }
 
+    JCguiderRawStampCallbackMethod = env->GetMethodID(JCguiderClass, "rawStampCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;Ljava/nio/ByteBuffer;)V");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+
     JCguiderStampCallbackMethod = env->GetMethodID(JCguiderClass, "stampCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;Ljava/nio/ByteBuffer;)V");
     if (env->ExceptionCheck()) {
         return;
@@ -133,7 +164,7 @@ void Guider_OnLoad(JNIEnv* env) {
     }
     JCguiderStateMetadataClass = (jclass) env->NewGlobalRef(guiderStateMetadataClass);
 
-    JCguiderStateMetadataConstructor = env->GetMethodID(JCguiderStateMetadataClass, "<init>", "(IIIJBBI)V");
+    JCguiderStateMetadataConstructor = env->GetMethodID(JCguiderStateMetadataClass, "<init>", "(IIIJJBBI)V");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -167,6 +198,17 @@ void Guider_OnLoad(JNIEnv* env) {
     JCguiderRoiLocationClass = (jclass) env->NewGlobalRef(guiderRoiLocationClass);
 
     JCguiderRoiLocationConstructor = env->GetMethodID(JCguiderRoiLocationClass, "<init>", "(BBIIII)V");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+
+    jclass guiderConfigClass = env->FindClass("org/lsst/ccs/daq/ims/Guider$Config");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+    JCguiderConfigClass = (jclass) env->NewGlobalRef(guiderConfigClass);
+
+    JCguiderConfigConstructor = env->GetMethodID(JCguiderConfigClass, "<init>", "(Lorg/lsst/ccs/daq/ims/Guider$ROICommon;Ljava/util/List;)V");
     if (env->ExceptionCheck()) {
         return;
     }

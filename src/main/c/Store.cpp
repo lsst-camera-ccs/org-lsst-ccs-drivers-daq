@@ -18,7 +18,6 @@
 #include "rms/Instruction.hh"
 #include "rms/InstructionList.hh"
 #include "gds/Client.hh"
-#include "gds/Status.hh"
 #include "gds/RoiCommon.hh"
 #include "gds/RoiLocation.hh"
 
@@ -41,8 +40,6 @@ static jclass JCbitSetClass;
 static jmethodID JCbitSetConstructor;
 static jmethodID JCbitSetSetMethodId;
 static jmethodID JCbitSetGetMethodId;
-static jclass JClistClass;
-static jmethodID JClistAddMethodID;
 static jclass JCimageMetaDataClass;
 static jmethodID JCimageMetaDataConstructor;
 static jclass JCsourceMetaDataClass;
@@ -221,6 +218,11 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
         return JNI_VERSION;
     }
     JClistClass = (jclass) env->NewGlobalRef(listClass);
+
+    JClistConstructor = env->GetMethodID(JClistClass, "<init>", "()V");
+    if (env->ExceptionCheck()) {
+        return JNI_VERSION;
+    }
 
     JClistAddMethodID = env->GetMethodID(JClistClass, "add", "(Ljava/lang/Object;)Z");
     if (env->ExceptionCheck()) {
@@ -430,6 +432,25 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_resum
         snprintf(x, MESSAGE_LENGTH, "Guider resume failed, status %d", status.status());
         throwDAQException(env, x, status.status());
     }
+}
+
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_guiderConfig
+(JNIEnv* env, jobject obj, jlong guider_) {
+    GDS::Client* guider = (GDS::Client*) guider_;
+    GDS::Status status;
+    GDS::Series series;
+    GDS::RoiCommon roiCommon;
+    GDS::RoiLocation locbuf[sizeof(GDS::RoiLocation)*GDS::LocationSet::SIZE];
+    unsigned nlocsbuf;
+    
+    int error = guider->config(status, series, roiCommon, locbuf, nlocsbuf);
+    if (!status) {
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Guider config failed, status %d", status.status());
+        throwDAQException(env, x, status.status());
+    }
+
+    return createGuiderConfig(env, status, series, roiCommon, locbuf, nlocsbuf);
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_capacity

@@ -35,7 +35,7 @@ public class Guider {
             roiData[j + 3] = location.startRow;
             roiData[j + 4] = location.startCol;
         }
-	System.out.println(Arrays.toString(roiData));
+        System.out.println(Arrays.toString(roiData));
         store.startGuider(guider, common.nRows, common.nCols, common.integrationTimeMilliSeconds, common.binning, roiData);
     }
 
@@ -49,7 +49,7 @@ public class Guider {
             store.detachGuiderSubscriber(subscriber);
         }
     }
-    
+
     public void stop() throws DAQException {
         store.stopGuider(guider);
     }
@@ -61,15 +61,19 @@ public class Guider {
     public void resume() throws DAQException {
         store.resumeGuider(guider);
     }
+    
+    public GuiderConfig config() throws DAQException {
+        return store.guiderConfig(guider);
+    }
 
     public void addGuiderListener(GuiderListener listener) {
-        
+
     }
 
     public void removeGuiderListener(GuiderListener listener) {
-        
+
     }
-    
+
     void startCallback(StateMetaData state, SeriesMetaData series) {
         LOG.log(Level.INFO, "start {0} {1}", new Object[]{state, series});
     }
@@ -79,16 +83,20 @@ public class Guider {
     }
 
     void pauseCallback(StateMetaData state) {
-        LOG.log(Level.INFO, "pause {0}", state);        
-    }    
-    
-    void resumeCallback(StateMetaData state) {
-        LOG.log(Level.INFO, "resume {0}", state);        
-        
+        LOG.log(Level.INFO, "pause {0}", state);
     }
-    
+
+    void resumeCallback(StateMetaData state) {
+        LOG.log(Level.INFO, "resume {0}", state);
+
+    }
+
+    void rawStampCallback(StateMetaData state, ByteBuffer rawStamp) {
+        LOG.log(Level.INFO, "stamp {0} {1}", new Object[]{state, rawStamp.remaining()});
+    }
+
     void stampCallback(StateMetaData state, ByteBuffer stamp) {
-        LOG.log(Level.INFO, "stamp {0} {1}", new Object[]{state, stamp.remaining()});                
+        LOG.log(Level.INFO, "stamp {0} {1}", new Object[]{state, stamp.remaining()});
     }
 
     void detach() throws DAQException {
@@ -139,10 +147,10 @@ public class Guider {
         private final int startRow;
         private final int startCol;
 
-        public ROILocation(byte bay, byte board, int sensor,  int segment, int startRow,  int startCol) {
+        public ROILocation(byte bay, byte board, int sensor, int segment, int startRow, int startCol) {
             this(new Location(bay, board), sensor, segment, startRow, startCol);
-        } 
-        
+        }
+
         public ROILocation(Location location, int sensor, int segment, int startRow, int startCol) {
             this.location = location;
             this.sensor = sensor;
@@ -181,8 +189,11 @@ public class Guider {
         void pause(StateMetaData state);
 
         void resume(StateMetaData state);
-        
-        void stamp(StateMetaData state, ByteBuffer rawStamp);
+
+        void stamp(StateMetaData state, ByteBuffer stamp);
+
+        void rawStamp(StateMetaData state, ByteBuffer rawStamp);
+
     }
 
     public static class SeriesMetaData {
@@ -192,7 +203,7 @@ public class Guider {
         private final Version version;
         private final int firmware;
         private final long serialNumber;
-        
+
         private SeriesMetaData(int firmware, long serialNumber, ROICommon common, ROILocation location, Version version) {
             this.firmware = firmware;
             this.serialNumber = serialNumber;
@@ -209,16 +220,21 @@ public class Guider {
     }
 
     public static class StateMetaData {
-        
-        public enum Type { STAMP, START, STOP, PAUSE, RESUME };
-        public enum Status { SUCCESS, bdiError };
+
+        public enum Type {
+            STAMP, START, STOP, PAUSE, RESUME
+        };
+
+        public enum Status {
+            SUCCESS, bdiError
+        };
         private final Type type;
         private final Status status;
         private final long sequence;
         private final long timestamp;
         private final Location location;
         private final int sensor;
-        
+
         private StateMetaData(int type, int status, int sequence, long timestamp, byte bay, byte board, int sensor) {
             this.type = Type.values()[type];
             this.status = Status.values()[status];
@@ -232,8 +248,26 @@ public class Guider {
         public String toString() {
             return "StateMetaData{" + "type=" + type + ", status=" + status + ", sequence=" + sequence + ", timestamp=" + timestamp + ", location=" + location + ", sensor=" + sensor + '}';
         }
-        
+
     }
 
+    public static class GuiderConfig {
+
+        private final ROICommon common;
+        private final List<ROILocation> locations;
+
+        private GuiderConfig(ROICommon common, List<ROILocation> locations) {
+            this.common = common;
+            this.locations = locations;
+        }
+
+        @Override
+        public String toString() {
+            return "GuiderConfig{" + "common=" + common + ", locations=" + locations + '}';
+        }
+        
+        
+
+    }
 
 }
