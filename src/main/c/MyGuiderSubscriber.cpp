@@ -164,7 +164,7 @@ void Guider_OnLoad(JNIEnv* env) {
     }
     JCguiderStateMetadataClass = (jclass) env->NewGlobalRef(guiderStateMetadataClass);
 
-    JCguiderStateMetadataConstructor = env->GetMethodID(JCguiderStateMetadataClass, "<init>", "(IIIJJBBI)V");
+    JCguiderStateMetadataConstructor = env->GetMethodID(JCguiderStateMetadataClass, "<init>", "(IIIJBBI)V");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -202,7 +202,7 @@ void Guider_OnLoad(JNIEnv* env) {
         return;
     }
 
-    jclass guiderConfigClass = env->FindClass("org/lsst/ccs/daq/ims/Guider$Config");
+    jclass guiderConfigClass = env->FindClass("org/lsst/ccs/daq/ims/Guider$GuiderConfig");
     if (env->ExceptionCheck()) {
         return;
     }
