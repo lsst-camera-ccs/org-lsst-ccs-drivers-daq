@@ -16,6 +16,7 @@ extern void addObjectToList(JNIEnv* env, jobject list, jobject item);
 extern jobject createImageMetaData(JNIEnv*, IMS::Image&);
 
 static jclass JClistClass;
-static jmethodID JClistConstructor;
 static jmethodID JClistAddMethodID;
+static jclass JCarrayListClass;
+static jmethodID JCarrayListConstructor;
 #endif

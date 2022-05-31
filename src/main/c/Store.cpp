@@ -213,18 +213,24 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     if (env->ExceptionCheck()) {
         return JNI_VERSION;
     }
-    jclass listClass = env->FindClass("java/util/List");
+    jclass listClass = env->FindClass("java/util/ArrayList");
     if (env->ExceptionCheck()) {
         return JNI_VERSION;
     }
     JClistClass = (jclass) env->NewGlobalRef(listClass);
 
-    JClistConstructor = env->GetMethodID(JClistClass, "<init>", "()V");
+    JClistAddMethodID = env->GetMethodID(JClistClass, "add", "(Ljava/lang/Object;)Z");
     if (env->ExceptionCheck()) {
         return JNI_VERSION;
     }
 
-    JClistAddMethodID = env->GetMethodID(JClistClass, "add", "(Ljava/lang/Object;)Z");
+    jclass arrayListClass = env->FindClass("java/util/ArrayList");
+    if (env->ExceptionCheck()) {
+        return JNI_VERSION;
+    }
+    JCarrayListClass = (jclass) env->NewGlobalRef(arrayListClass);
+
+    JCarrayListConstructor = env->GetMethodID(JCarrayListClass, "<init>", "()V");
     if (env->ExceptionCheck()) {
         return JNI_VERSION;
     }
