@@ -52,10 +52,9 @@ public class FitsIntWriter implements WritableIntChannel {
     private Decompress18BitChannel decompress;
     private final FitsFileWriter[] writers;
     private final File[] files;
-    private final Map<String, Object> props;
+    private final Map<String, Object>[] perCCDProps;
     private final Reb reb;
     private int expectedDataLength = 0;
-    private final ImageMetaData imageMetaData;
 
     /**
      * A FitsIntWriter constructor that can be called before the source
@@ -73,14 +72,14 @@ public class FitsIntWriter implements WritableIntChannel {
     }
 
     FitsIntWriter(ImageMetaData imageMetaData, String partition, Reb reb, FileNamer fileNamer) throws IOException {
-        this.imageMetaData = imageMetaData;
         this.reb = reb;
         Location location = reb.getLocation();
         int ccdCount = location.type().getCCDCount();
         files = new File[location.type() == Location.LocationType.WAVEFRONT ? (reb.isAuxtelREB() ? 1 : 2) : ccdCount];
         writers = new FitsFileWriter[files.length];
         ReadoutConfig readoutConfig = new ReadoutConfig(location.type(), reb.isAuxtelREB());
-        props = new HashMap<>();
+        perCCDProps = new Map[files.length];
+        Map<String, Object> props = new HashMap<>();
         try {
             ImageName in = new ImageName(imageMetaData.getName());
             props.put("ImageName", in.toString());
@@ -110,12 +109,11 @@ public class FitsIntWriter implements WritableIntChannel {
                 Map<String, Object> ccdProps = new HashMap<>();
                 ccdProps.putAll(props);
                 ccdProps.put("CCDSlot", reb.isAuxtelREB() ? "S00" : location.getSensorName(sensorIndex));
-                // Note image handling has a horrible kludge where it modifies the ccdProps when computerFileName is called
-                // to add OriginalFileName. This no longer has any effect since ccdProps are copied here
+                // Note image handling has a horrible kludge where it modifies the ccdProps when computeFileName is called
+                // to add OriginalFileName. 
                 files[i] = fileNamer.computeFileName(ccdProps);
-                // Ugly workaround for problem described above
-                props.put("OriginalFileName", ccdProps.getOrDefault("OriginalFileName", files[i].getName()));
                 writers[i] = new FitsFileWriter(files[i]);
+                perCCDProps[i] = ccdProps;
             }
         } catch (IOException | RuntimeException t) {
             cleanupOnError(location, t);
@@ -144,10 +142,12 @@ public class FitsIntWriter implements WritableIntChannel {
 
     public final void completeInitialization(Source source, Map<String, HeaderSpecification> headerSpecifications, PerCCDMetaDataProvider extraMetaDataProvider) throws DAQException, IOException {
         SourceMetaData smd = source.getMetaData();
-        props.put("Firmware", String.format("%x", smd.getFirmware()));
-        props.put("Platform", smd.getPlatform());
-        props.put("CCDControllerSerial", String.format("%x", smd.getSerialNumber() & 0xFFFFFFFFL));
-        props.put("DAQVersion", smd.getSoftware().toString());
+        for (Map<String, Object> props : perCCDProps) {
+            props.put("Firmware", String.format("%x", smd.getFirmware()));
+            props.put("Platform", smd.getPlatform());
+            props.put("CCDControllerSerial", String.format("%x", smd.getSerialNumber() & 0xFFFFFFFFL));
+            props.put("DAQVersion", smd.getSoftware().toString());
+        }
         //Build the ReadoutParameters
         completeInitialization(source.getSourceType(), source.getLocation(), smd.getRegisterValues(), headerSpecifications, extraMetaDataProvider);
     }
@@ -168,10 +168,7 @@ public class FitsIntWriter implements WritableIntChannel {
         try {
             for (int i = 0; i < files.length; i++) {
                 int sensorIndex = readoutConfig.getDataSensorMap()[i];
-                Map<String, Object> ccdProps = new HashMap<>();
-                ccdProps.putAll(props);
-                ccdProps.put("CCDSlot", reb.isAuxtelREB() ? "S00" : sourceLocation.getSensorName(sensorIndex));
-                // NOTE: This call may have the side effect of modifying the ccdProps
+                Map<String, Object> ccdProps = perCCDProps[i];
                 PropertiesFitsHeaderMetadataProvider propsFitsHeaderMetadataProvider = new PropertiesFitsHeaderMetadataProvider(ccdProps);
                 CCD ccd = reb.getCCDs().get(sensorIndex);
                 if (reb.isAuxtelREB()) {
