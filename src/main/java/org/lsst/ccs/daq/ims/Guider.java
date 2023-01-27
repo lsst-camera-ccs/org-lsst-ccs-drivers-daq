@@ -9,8 +9,9 @@ import java.util.logging.Logger;
 import org.lsst.ccs.utilities.location.Location;
 
 /**
- * An interface to the DAQ guider. 
- * @see Store#getGuider() 
+ * An interface to the DAQ guider.
+ *
+ * @see Store#getGuider()
  * @author tonyj
  */
 public class Guider {
@@ -27,9 +28,10 @@ public class Guider {
 
     /**
      * Start the guider, using the specified ROI locations
+     *
      * @param common
      * @param locations
-     * @throws DAQException 
+     * @throws DAQException
      */
     public Status start(ROICommon common, List<ROILocation> locations) throws DAQException {
         final int nLocs = locations.size();
@@ -77,7 +79,7 @@ public class Guider {
     public Status wake() throws DAQException {
         return store.wakeGuider(guider);
     }
-    
+
     public Config config() throws DAQException {
         return store.guiderConfig(guider);
     }
@@ -85,7 +87,7 @@ public class Guider {
     public Series series() throws DAQException {
         return store.guiderSeries(guider);
     }
-    
+
     public void addGuiderListener(GuiderListener listener) {
 
     }
@@ -126,7 +128,6 @@ public class Guider {
     /**
      * ROI parameters which are shared by all ROIs.
      */
-    
     public static class ROICommon {
 
         private final int nRows;
@@ -136,9 +137,11 @@ public class Guider {
 
         /**
          * Create an instance of ROICommand
+         *
          * @param nRows The number of rows
          * @param nCols The number of columns
-         * @param integrationTimeMilliSeconds The integration time in milliseconds
+         * @param integrationTimeMilliSeconds The integration time in
+         * milliseconds
          * @param binning Binning (no longer supported, must be 1)
          */
         public ROICommon(int nRows, int nCols, int integrationTimeMilliSeconds, int binning) {
@@ -169,15 +172,16 @@ public class Guider {
             return "ROICommon{" + "nRows=" + nRows + ", nCols=" + nCols + ", integrationTimeMilliSeconds=" + integrationTimeMilliSeconds + ", binning=" + binning + '}';
         }
     }
-    
+
     public static class SensorLocation {
+
         private final Location rebLocation;
         private final int sensor;
 
         public SensorLocation(byte bay, byte board, int sensor) {
             this(new Location(bay, board), sensor);
         }
-        
+
         public SensorLocation(Location rebLocation, int sensor) {
             this.rebLocation = rebLocation;
             this.sensor = sensor;
@@ -187,7 +191,7 @@ public class Guider {
         public String toString() {
             return "SensorLocation{" + "rebLocation=" + rebLocation + ", sensor=" + sensor + '}';
         }
-        
+
     }
 
     /**
@@ -203,6 +207,7 @@ public class Guider {
 
         /**
          * Create an ROI for a single CCD
+         *
          * @param bay The bay
          * @param board The board
          * @param sensor The sensor
@@ -216,6 +221,7 @@ public class Guider {
 
         /**
          * Create an ROI for a single CCD
+         *
          * @param location The REB location
          * @param sensor The sensor
          * @param segment The segment in which the ROI starts
@@ -258,8 +264,10 @@ public class Guider {
 
         /**
          * Guider is started
+         *
          * @param state The meta-data at start time
-         * @param series The meta-data corresponding to the series of postage stamps
+         * @param series The meta-data corresponding to the series of postage
+         * stamps
          */
         void start(StateMetaData state, SeriesMetaData series);
 
@@ -268,25 +276,26 @@ public class Guider {
         void pause(StateMetaData state);
 
         void resume(StateMetaData state);
-        
+
         /**
          * Called each time there is a single postage stamp
+         *
          * @param state The current state, including the timestamp of the stamp
          * @param stamp The data corresponding to the stamp (in what format??)
          */
-
         void stamp(StateMetaData state, ByteBuffer stamp);
 
         /**
          * Called each time there is a new postage stamp
-         * @param state The current state, including the timestamp of the stamp 
+         *
+         * @param state The current state, including the timestamp of the stamp
          * @param rawStamp The data corresponding the the raw postage stamp.
          */
         void rawStamp(StateMetaData state, ByteBuffer rawStamp);
 
     }
 
-    /** 
+    /**
      * Meta-data common to a series of ROI readouts
      */
     public static class SeriesMetaData {
@@ -314,18 +323,22 @@ public class Guider {
 
     public static class Status {
 
+        public enum State {
+            UNDEFINED, STOPPED, PAUSED, RUNNING, ERROR, OFF
+        };
+
         private final Instant timestamp;
-        private final int  status;
-        private final int  sequence;
-        private final StateMetaData.State in;
-        private final StateMetaData.State out;
+        private final int status;
+        private final int sequence;
+        private final State in;
+        private final State out;
 
         private Status(long timestampNanos, int status, int sequence, int inState, int outState) {
             this.timestamp = Instant.ofEpochSecond(timestampNanos / 1_000_000_000, timestampNanos % 1_000_000_000);
             this.status = status;
             this.sequence = sequence;
-            this.in = StateMetaData.State.values()[inState];
-            this.out = StateMetaData.State.values()[outState];
+            this.in = State.values()[inState];
+            this.out = State.values()[outState];
         }
 
         @Override
@@ -333,8 +346,7 @@ public class Guider {
             return "Status{" + "timestamp=" + timestamp + ", status=" + status + ", sequence=" + sequence + ", in=" + in + ", out=" + out + '}';
         }
     }
-    
-    
+
     /**
      * Meta-data corresponding to the instantaneous state of the guider
      */
@@ -372,19 +384,19 @@ public class Guider {
 
     public static class Config {
 
-        private final Status status;
+        private final Series series;
         private final ROICommon common;
         private final List<ROILocation> locations;
 
-        private Config(Status status, ROICommon common, List<ROILocation> locations) {
-            this.status = status;
+        private Config(Series series, ROICommon common, List<ROILocation> locations) {
+            this.series = series;
             this.common = common;
             this.locations = locations;
         }
 
         @Override
         public String toString() {
-            return "Config{" + "status=" + status + ", common=" + common + ", locations=" + locations + '}';
+            return "Config{" + "series=" + series + ", common=" + common + ", locations=" + locations + '}';
         }
     }
 
@@ -412,5 +424,5 @@ public class Guider {
         }
 
     }
-    
+
 }
