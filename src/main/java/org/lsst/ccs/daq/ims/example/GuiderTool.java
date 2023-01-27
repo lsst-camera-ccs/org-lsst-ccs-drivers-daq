@@ -66,6 +66,19 @@ public class GuiderTool {
         guider.resume();
     }
 
+    @Command(name = "sleep", description = "Sleep the guider")
+    public void sleep() throws DAQException {
+        checkStore();
+        guider.sleep();
+    }
+    
+    @Command(name = "wake", description = "Wake the guider")
+    public void wake() throws DAQException {
+        checkStore();
+        guider.wake();
+    }
+    
+    
     @Command(name = "config", description = "get the guider config")
     public Guider.GuiderConfig config() throws DAQException {
         checkStore();
@@ -76,8 +89,8 @@ public class GuiderTool {
     public void start() throws DAQException {
         checkStore();
         List<ROILocation> locations = new ArrayList<>();
-        Location R22 = Location.of("R22/Reb0");
-        locations.add(new ROILocation(R22, 0, 4, 100, 100));
+        Location R00 = Location.of("R00/RebG");
+        locations.add(new ROILocation(R00, 0, 4, 100, 100));
         ROICommon roi = new ROICommon(50, 50, 100, 1);
         guider.start(roi, locations);
     }
@@ -89,8 +102,8 @@ public class GuiderTool {
             @Override
             public void run() {
                 try {
-                    Location R22 = Location.of("R22/Reb0");
-                    guider.listen(R22, 0);
+                    Location R00 = Location.of("R00/RebG");;
+                    guider.listen(R00, 0);
                 } catch (DAQException x) {
                     LOG.log(Level.SEVERE, "Error in listener", x);
                 }

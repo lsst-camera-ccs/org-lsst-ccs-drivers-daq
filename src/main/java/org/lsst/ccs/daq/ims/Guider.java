@@ -8,7 +8,8 @@ import java.util.logging.Logger;
 import org.lsst.ccs.utilities.location.Location;
 
 /**
- *
+ * An interface to the DAQ guider. 
+ * @see Store#getGuider() 
  * @author tonyj
  */
 public class Guider {
@@ -23,6 +24,12 @@ public class Guider {
         this.guider = guider;
     }
 
+    /**
+     * Start the guider, using the specified ROI locations
+     * @param common
+     * @param locations
+     * @throws DAQException 
+     */
     public void start(ROICommon common, List<ROILocation> locations) throws DAQException {
         final int nLocs = locations.size();
         int[] roiData = new int[nLocs * 5];
@@ -60,6 +67,14 @@ public class Guider {
 
     public void resume() throws DAQException {
         store.resumeGuider(guider);
+    }
+
+    public void sleep() throws DAQException {
+        store.sleepGuider(guider);
+    }
+
+    public void wake() throws DAQException {
+        store.wakeGuider(guider);
     }
     
     public GuiderConfig config() throws DAQException {
@@ -103,6 +118,10 @@ public class Guider {
         store.detachGuider(this.guider);
     }
 
+    /**
+     * ROI parameters which are shared by all ROIs.
+     */
+    
     public static class ROICommon {
 
         private final int nRows;
@@ -110,6 +129,13 @@ public class Guider {
         private final int integrationTimeMilliSeconds;
         private final int binning;
 
+        /**
+         * Create an instance of ROICommand
+         * @param nRows The number of rows
+         * @param nCols The number of columns
+         * @param integrationTimeMilliSeconds The integration time in milliseconds
+         * @param binning Binning (no longer supported, must be 1)
+         */
         public ROICommon(int nRows, int nCols, int integrationTimeMilliSeconds, int binning) {
             this.nRows = nRows;
             this.nCols = nCols;
@@ -139,6 +165,9 @@ public class Guider {
         }
     }
 
+    /**
+     * Details of an ROI for a single sensor
+     */
     public static class ROILocation {
 
         private final Location location;
@@ -147,10 +176,27 @@ public class Guider {
         private final int startRow;
         private final int startCol;
 
+        /**
+         * Create an ROI for a single CCD
+         * @param bay The bay
+         * @param board The board
+         * @param sensor The sensor
+         * @param segment The segment in which the ROI starts
+         * @param startRow The start row
+         * @param startCol The start column
+         */
         public ROILocation(byte bay, byte board, int sensor, int segment, int startRow, int startCol) {
             this(new Location(bay, board), sensor, segment, startRow, startCol);
         }
 
+        /**
+         * Create an ROI for a single CCD
+         * @param location The REB location
+         * @param sensor The sensor
+         * @param segment The segment in which the ROI starts
+         * @param startRow The start row
+         * @param startCol The start column
+         */
         public ROILocation(Location location, int sensor, int segment, int startRow, int startCol) {
             this.location = location;
             this.sensor = sensor;
@@ -180,8 +226,16 @@ public class Guider {
         }
     }
 
+    /**
+     * A listener for guider events
+     */
     public static interface GuiderListener {
 
+        /**
+         * Guider is started
+         * @param state The meta-data at start time
+         * @param series The meta-data corresponding to the series of postage stamps
+         */
         void start(StateMetaData state, SeriesMetaData series);
 
         void stop(StateMetaData state);
@@ -189,13 +243,27 @@ public class Guider {
         void pause(StateMetaData state);
 
         void resume(StateMetaData state);
+        
+        /**
+         * Called each time there is a single postage stamp
+         * @param state The current state, including the timestamp of the stamp
+         * @param stamp The data corresponding to the stamp (in what format??)
+         */
 
         void stamp(StateMetaData state, ByteBuffer stamp);
 
+        /**
+         * Called each time there is a new postage stamp
+         * @param state The current state, including the timestamp of the stamp 
+         * @param rawStamp The data corresponding the the raw postage stamp.
+         */
         void rawStamp(StateMetaData state, ByteBuffer rawStamp);
 
     }
 
+    /** 
+     * Meta-data common to a series of ROI readouts
+     */
     public static class SeriesMetaData {
 
         private final ROICommon common;
@@ -219,6 +287,9 @@ public class Guider {
 
     }
 
+    /**
+     * Meta-data corresponding to the instantaneous state of the guider
+     */
     public static class StateMetaData {
 
         public enum Type {

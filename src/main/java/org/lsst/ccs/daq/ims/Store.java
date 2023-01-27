@@ -102,6 +102,11 @@ public class Store implements AutoCloseable {
         }
     }
 
+    /**
+     * Gets an instance of the Guider interface associated with this Store.
+     * @return The Guider
+     * @throws DAQException 
+     */
     public Guider getGuider() throws DAQException {
         synchronized (this) {
             if (guider == null) {
@@ -463,6 +468,14 @@ public class Store implements AutoCloseable {
 
     void pauseGuider(long guider) throws DAQException {
         impl.pauseGuider(guider);
+    }
+    
+    void sleepGuider(long guider) throws DAQException {
+        impl.sleepGuider(guider);
+    }
+
+    void wakeGuider(long guider) throws DAQException {
+        impl.wakeGuider(guider);
     }
 
     void startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int binning, int[] roiData) throws DAQException {

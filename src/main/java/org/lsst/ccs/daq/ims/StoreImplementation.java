@@ -86,6 +86,10 @@ interface StoreImplementation {
 
     void resumeGuider(long guider) throws DAQException;
 
+    void sleepGuider(long guider) throws DAQException;
+
+    void wakeGuider(long guider) throws DAQException;
+
     public long attachGuiderSubscriber(String partition, int[] locations) throws DAQException;
 
     public void detachGuiderSubscriber(long subscriber) throws DAQException;
@@ -93,4 +97,6 @@ interface StoreImplementation {
     public void waitForGuider(long subscriber, Guider guider) throws DAQException;
 
     public GuiderConfig guiderConfig(long guider) throws DAQException;
+
+
 }

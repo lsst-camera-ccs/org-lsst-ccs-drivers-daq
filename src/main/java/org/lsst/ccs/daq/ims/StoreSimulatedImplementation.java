@@ -238,6 +238,17 @@ class StoreSimulatedImplementation implements StoreImplementation {
     @Override
     public void resumeGuider(long guider) {
     }
+    
+    @Override
+    public void sleepGuider(long guider) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    @Override
+    public void wakeGuider(long guider) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
 
     @Override
     public void waitForGuider(long subscriber, Guider guider) throws DAQException {
