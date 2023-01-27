@@ -52,9 +52,9 @@ jobject createRoiLocation(JNIEnv* env, const GDS::RoiLocation& location) {
 }
 
 jobject createGuiderConfig(JNIEnv* env, const GDS::Status& status, const GDS::Series& series, const GDS::RoiCommon& common, const GDS::RoiLocation* location, int nLocations) {
-    jobject list = env->NewObject(JCarrayListClass, JCarrayListConstructor);
+    jobject list = createList(env);
     for (int i=0; i<nLocations; i++) {
-        env->CallVoidMethod(list, JClistAddMethodID, createRoiLocation(env, location[i]));
+        addObjectToList(env, list, createRoiLocation(env, location[i]));
     }
     return env->NewObject(JCguiderConfigClass, JCguiderConfigConstructor, createRoiCommon(env, common), list);
 }
@@ -67,10 +67,12 @@ jobject createSensorLocation(JNIEnv* env, const GDS::Location& location) {
 }
 
 jobject createSensorLocations(JNIEnv* env, const GDS::LocationSet& locations) {
-    jobject list = env->NewObject(JCarrayListClass, JCarrayListConstructor);
-    //for (auto loc : locations) {
-        //env->CallVoidMethod(list, JClistAddMethodID, createSensorLocation(env, locatio));
-    //}
+    jobject list = createList(env);
+    GDS::LocationSet remaining = locations;
+    GDS::Location loc;
+    while(remaining.remove(loc)) {
+       addObjectToList(env, list, createSensorLocation(env, loc));
+    }
     return list;
 }
 
@@ -147,7 +149,7 @@ uint8_t* MyGuiderSubscriber::allocate(unsigned size) {
 void MyGuiderSubscriber::wait(JNIEnv *env, jobject callback) {
     this->env = env;
     this->callback = callback;
-    GDS::Subscriber::wait();
+    GDS::Decoder::wait();
 }
 void Guider_OnLoad(JNIEnv* env) {
 
@@ -257,9 +259,9 @@ void Guider_OnLoad(JNIEnv* env) {
     if (env->ExceptionCheck()) {
         return;
     }
-    JCguiderSensorLocationClass = (jclass) env->NewGlobalRef(guiderSeriesClass);
+    JCguiderSensorLocationClass = (jclass) env->NewGlobalRef(guiderSensorLocationClass);
 
-    JCguiderSensorLocationConstructor = env->GetMethodID(guiderSeriesClass, "<init>", "(BBI)V");
+    JCguiderSensorLocationConstructor = env->GetMethodID(guiderSensorLocationClass, "<init>", "(BBI)V");
     if (env->ExceptionCheck()) {
         return;
     }

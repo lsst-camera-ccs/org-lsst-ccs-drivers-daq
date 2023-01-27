@@ -12,11 +12,12 @@
  **************************************************************/
 extern jobject createVersion(JNIEnv*, DVI::Version);
 extern jobject createBitSet(JNIEnv* env, DAQ::LocationSet elements);
+extern jobject createList(JNIEnv* env);
 extern void addObjectToList(JNIEnv* env, jobject list, jobject item);
 extern jobject createImageMetaData(JNIEnv*, IMS::Image&);
 
-static jclass JClistClass;
-static jmethodID JClistAddMethodID;
-static jclass JCarrayListClass;
-static jmethodID JCarrayListConstructor;
+//static jclass JClistClass;
+//static jmethodID JClistAddMethodID;
+//static jclass JCarrayListClass;
+//static jmethodID JCarrayListConstructor;
 #endif

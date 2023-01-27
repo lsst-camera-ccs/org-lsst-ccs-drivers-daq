@@ -52,6 +52,10 @@ static jclass JCexClass;
 static jmethodID JCexConstructor;
 static jmethodID JCexConstructor2;
 static jclass JCintArrayClass;
+static jclass JClistClass;
+static jmethodID JClistAddMethodID;
+static jclass JCarrayListClass;
+static jmethodID JCarrayListConstructor;
 
 jstring decodeException(JNIEnv* env, jint error) {
    const char* decoded = IMS::Exception::decode(error);
@@ -142,6 +146,10 @@ jobject createSourceMetaData(JNIEnv* env, Source& source) {
     jintArray registerValues = env->NewIntArray(size);
     env->SetIntArrayRegion(registerValues, 0, size, register_values);
     return env->NewObject(JCsourceMetaDataClass, JCsourceMetaDataConstructor, sensor, lane, platform, version_, firmware, serialNumber, source.size(), bay, board, registerValues);
+}
+
+jobject createList(JNIEnv* env) {
+    return env->NewObject(JCarrayListClass, JCarrayListConstructor);
 }
 
 void addObjectToList(JNIEnv* env, jobject list, jobject item) {
