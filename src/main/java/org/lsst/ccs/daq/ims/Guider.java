@@ -1,6 +1,7 @@
 package org.lsst.ccs.daq.ims;
 
 import java.nio.ByteBuffer;
+import java.time.Instant;
 import java.util.List;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -313,14 +314,14 @@ public class Guider {
 
     public static class Status {
 
-        private final long timestamp;
+        private final Instant timestamp;
         private final int  status;
         private final int  sequence;
         private final StateMetaData.State in;
         private final StateMetaData.State out;
 
-        private Status(long timestamp, int status, int sequence, int inState, int outState) {
-            this.timestamp = timestamp;
+        private Status(long timestampNanos, int status, int sequence, int inState, int outState) {
+            this.timestamp = Instant.ofEpochSecond(timestampNanos / 1_000_000_000, timestampNanos % 1_000_000_000);
             this.status = status;
             this.sequence = sequence;
             this.in = StateMetaData.State.values()[inState];
@@ -349,15 +350,15 @@ public class Guider {
         private final State state;
         private final Status status;
         private final long sequence;
-        private final long timestamp;
+        private final Instant timestamp;
         private final Location location;
         private final int sensor;
 
-        private StateMetaData(int type, int status, int sequence, long timestamp, byte bay, byte board, int sensor) {
+        private StateMetaData(int type, int status, int sequence, long timestampNanos, byte bay, byte board, int sensor) {
             this.state = State.values()[type];
             this.status = Status.values()[status];
             this.sequence = sequence;
-            this.timestamp = timestamp;
+            this.timestamp = Instant.ofEpochSecond(timestampNanos / 1_000_000_000, timestampNanos % 1_000_000_000);
             this.location = new Location(bay, board);
             this.sensor = sensor;
         }
