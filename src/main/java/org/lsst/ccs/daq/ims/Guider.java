@@ -3,6 +3,7 @@ package org.lsst.ccs.daq.ims;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Arrays;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lsst.ccs.utilities.location.Location;
@@ -81,6 +82,10 @@ public class Guider {
         return store.guiderConfig(guider);
     }
 
+    public SeriesMetaData series() throws DAQException {
+        return store.guiderSeries(guider);
+    }
+    
     public void addGuiderListener(GuiderListener listener) {
 
     }
@@ -163,6 +168,22 @@ public class Guider {
         public String toString() {
             return "ROICommon{" + "nRows=" + nRows + ", nCols=" + nCols + ", integrationTimeMilliSeconds=" + integrationTimeMilliSeconds + ", binning=" + binning + '}';
         }
+    }
+    
+    public static class SensorLocation {
+        private final Location rebLocation;
+        private final int sensor;
+
+        public SensorLocation(Location rebLocation, int sensor) {
+            this.rebLocation = rebLocation;
+            this.sensor = sensor;
+        }
+
+        @Override
+        public String toString() {
+            return "SensorLocation{" + "rebLocation=" + rebLocation + ", sensor=" + sensor + '}';
+        }
+        
     }
 
     /**
@@ -336,9 +357,29 @@ public class Guider {
         public String toString() {
             return "GuiderConfig{" + "common=" + common + ", locations=" + locations + '}';
         }
-        
-        
-
     }
 
+    public static class Series {
+
+        private final long begin;
+        private final int sequence;
+        private final int stamps;
+        private final Set<SensorLocation> configured;
+        private final Set<SensorLocation> remaining;
+
+        private Series(long begin, int sequence, int stamps, Set<SensorLocation> configured, Set<SensorLocation> remaining) {
+            this.begin = begin;
+            this.sequence = sequence;
+            this.stamps = stamps;
+            this.configured = configured;
+            this.remaining = remaining;
+        }
+
+        @Override
+        public String toString() {
+            return "Series{" + "begin=" + begin + ", sequence=" + sequence + ", stamps=" + stamps + ", configured=" + configured + ", remaining=" + remaining + '}';
+        }
+
+    }
+    
 }

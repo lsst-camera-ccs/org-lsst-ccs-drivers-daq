@@ -268,4 +268,9 @@ class StoreSimulatedImplementation implements StoreImplementation {
         return null;
     }
 
+    @Override
+    public Guider.SeriesMetaData guiderSeries(long guider) throws DAQException {
+        return null;
+    }
+
 }

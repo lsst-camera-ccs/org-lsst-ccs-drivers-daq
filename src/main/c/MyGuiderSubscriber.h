@@ -12,6 +12,7 @@
 #include "gds/Status.hh"
 
 extern jobject createGuiderConfig(JNIEnv* env, const GDS::Status& status, const GDS::Series& series, const GDS::RoiCommon& common, const GDS::RoiLocation* location, int nLocations);
+extern jobject createGuiderSeries(JNIEnv* env, const GDS::Status& status, const GDS::Series& series);
 
 void Guider_OnLoad(JNIEnv*);
 

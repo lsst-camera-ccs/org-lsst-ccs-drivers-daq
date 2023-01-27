@@ -153,4 +153,7 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native Guider.GuiderConfig guiderConfig(long guider) throws DAQException;
+
+    @Override
+    public synchronized native Guider.SeriesMetaData guiderSeries(long guider) throws DAQException;
 }

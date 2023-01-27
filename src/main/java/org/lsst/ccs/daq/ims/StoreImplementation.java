@@ -98,5 +98,7 @@ interface StoreImplementation {
 
     public GuiderConfig guiderConfig(long guider) throws DAQException;
 
+    public Guider.SeriesMetaData guiderSeries(long guider) throws DAQException;
+
 
 }

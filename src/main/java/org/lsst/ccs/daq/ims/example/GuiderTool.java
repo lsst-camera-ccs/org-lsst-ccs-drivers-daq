@@ -79,10 +79,16 @@ public class GuiderTool {
     }
     
     
-    @Command(name = "config", description = "get the guider config")
+    @Command(name = "config", description = "Get the guider config")
     public Guider.GuiderConfig config() throws DAQException {
         checkStore();
         return guider.config();
+    }
+
+    @Command(name = "series", description = "Get the guider series")
+    public Guider.SeriesMetaData series() throws DAQException {
+        checkStore();
+        return guider.series();
     }
     
     @Command(name = "start", description = "Start the guider")
