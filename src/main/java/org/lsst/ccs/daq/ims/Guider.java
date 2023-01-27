@@ -3,7 +3,6 @@ package org.lsst.ccs.daq.ims;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Arrays;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lsst.ccs.utilities.location.Location;
@@ -112,7 +111,7 @@ public class Guider {
     }
 
     void rawStampCallback(StateMetaData state, ByteBuffer rawStamp) {
-        LOG.log(Level.INFO, "stamp {0} {1}", new Object[]{state, rawStamp.remaining()});
+        LOG.log(Level.INFO, "rawStamp {0} {1}", new Object[]{state, rawStamp.remaining()});
     }
 
     void stampCallback(StateMetaData state, ByteBuffer stamp) {
@@ -174,6 +173,10 @@ public class Guider {
         private final Location rebLocation;
         private final int sensor;
 
+        public SensorLocation(byte bay, byte board, int sensor) {
+            this(new Location(bay, board), sensor);
+        }
+        
         public SensorLocation(Location rebLocation, int sensor) {
             this.rebLocation = rebLocation;
             this.sensor = sensor;
@@ -364,10 +367,10 @@ public class Guider {
         private final long begin;
         private final int sequence;
         private final int stamps;
-        private final Set<SensorLocation> configured;
-        private final Set<SensorLocation> remaining;
+        private final List<SensorLocation> configured;
+        private final List<SensorLocation> remaining;
 
-        private Series(long begin, int sequence, int stamps, Set<SensorLocation> configured, Set<SensorLocation> remaining) {
+        private Series(long begin, int sequence, int stamps, List<SensorLocation> configured, List<SensorLocation> remaining) {
             this.begin = begin;
             this.sequence = sequence;
             this.stamps = stamps;

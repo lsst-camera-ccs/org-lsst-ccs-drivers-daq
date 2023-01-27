@@ -3,6 +3,7 @@
 
 #include <jni.h>
 
+#include "gds/Decoder.hh"
 #include "gds/Subscriber.hh"
 #include "gds/LocationSet.hh"
 #include "gds/SeriesMetadata.hh"
@@ -16,7 +17,7 @@ extern jobject createGuiderSeries(JNIEnv* env, const GDS::Status& status, const 
 
 void Guider_OnLoad(JNIEnv*);
 
-class MyGuiderSubscriber : public GDS::Subscriber {
+class MyGuiderSubscriber : public GDS::Decoder {
 public:
     MyGuiderSubscriber(const char* partition, const GDS::LocationSet& locs);
 public:
