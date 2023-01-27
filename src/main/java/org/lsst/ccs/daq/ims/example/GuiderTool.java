@@ -49,33 +49,33 @@ public class GuiderTool {
     }
 
     @Command(name = "stop", description = "Stop the guider")
-    public void stop() throws DAQException {
+    public Guider.Status stop() throws DAQException {
         checkStore();
-        guider.stop();
+        return guider.stop();
     }
 
     @Command(name = "pause", description = "Pause the guider")
-    public void pause() throws DAQException {
+    public Guider.Status pause() throws DAQException {
         checkStore();
-        guider.pause();
+        return guider.pause();
     }
 
     @Command(name = "resume", description = "Resume the guider")
-    public void resume() throws DAQException {
+    public Guider.Status resume() throws DAQException {
         checkStore();
-        guider.resume();
+        return guider.resume();
     }
 
     @Command(name = "sleep", description = "Sleep the guider")
-    public void sleep() throws DAQException {
+    public Guider.Status sleep() throws DAQException {
         checkStore();
-        guider.sleep();
+        return guider.sleep();
     }
     
     @Command(name = "wake", description = "Wake the guider")
-    public void wake() throws DAQException {
+    public Guider.Status wake() throws DAQException {
         checkStore();
-        guider.wake();
+        return guider.wake();
     }
     
     
@@ -86,7 +86,7 @@ public class GuiderTool {
     }
 
     @Command(name = "series", description = "Get the guider series")
-    public Guider.SeriesMetaData series() throws DAQException {
+    public Guider.Series series() throws DAQException {
         checkStore();
         return guider.series();
     }

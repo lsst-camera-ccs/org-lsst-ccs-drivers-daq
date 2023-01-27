@@ -30,7 +30,7 @@ public class Guider {
      * @param locations
      * @throws DAQException 
      */
-    public void start(ROICommon common, List<ROILocation> locations) throws DAQException {
+    public Status start(ROICommon common, List<ROILocation> locations) throws DAQException {
         final int nLocs = locations.size();
         int[] roiData = new int[nLocs * 5];
         for (int i = 0; i < nLocs; i++) {
@@ -43,7 +43,7 @@ public class Guider {
             roiData[j + 4] = location.startCol;
         }
         System.out.println(Arrays.toString(roiData));
-        store.startGuider(guider, common.nRows, common.nCols, common.integrationTimeMilliSeconds, common.binning, roiData);
+        return store.startGuider(guider, common.nRows, common.nCols, common.integrationTimeMilliSeconds, common.binning, roiData);
     }
 
     public void listen(Location location, int sensor) throws DAQException {
@@ -57,31 +57,31 @@ public class Guider {
         }
     }
 
-    public void stop() throws DAQException {
-        store.stopGuider(guider);
+    public Status stop() throws DAQException {
+        return store.stopGuider(guider);
     }
 
-    public void pause() throws DAQException {
-        store.pauseGuider(guider);
+    public Status pause() throws DAQException {
+        return store.pauseGuider(guider);
     }
 
-    public void resume() throws DAQException {
-        store.resumeGuider(guider);
+    public Status resume() throws DAQException {
+        return store.resumeGuider(guider);
     }
 
-    public void sleep() throws DAQException {
-        store.sleepGuider(guider);
+    public Status sleep() throws DAQException {
+        return store.sleepGuider(guider);
     }
 
-    public void wake() throws DAQException {
-        store.wakeGuider(guider);
+    public Status wake() throws DAQException {
+        return store.wakeGuider(guider);
     }
     
     public GuiderConfig config() throws DAQException {
         return store.guiderConfig(guider);
     }
 
-    public SeriesMetaData series() throws DAQException {
+    public Series series() throws DAQException {
         return store.guiderSeries(guider);
     }
     
@@ -311,19 +311,42 @@ public class Guider {
 
     }
 
+    public static class Status {
+
+        private final long timestamp;
+        private final int  status;
+        private final int  sequence;
+        private final StateMetaData.State in;
+        private final StateMetaData.State out;
+
+        private Status(long timestamp, int status, int sequence, int inState, int outState) {
+            this.timestamp = timestamp;
+            this.status = status;
+            this.sequence = sequence;
+            this.in = StateMetaData.State.values()[inState];
+            this.out = StateMetaData.State.values()[outState];
+        }
+
+        @Override
+        public String toString() {
+            return "Status{" + "timestamp=" + timestamp + ", status=" + status + ", sequence=" + sequence + ", in=" + in + ", out=" + out + '}';
+        }
+    }
+    
+    
     /**
      * Meta-data corresponding to the instantaneous state of the guider
      */
     public static class StateMetaData {
 
-        public enum Type {
+        public enum State {
             STAMP, START, STOP, PAUSE, RESUME
         };
 
         public enum Status {
             SUCCESS, bdiError
         };
-        private final Type type;
+        private final State state;
         private final Status status;
         private final long sequence;
         private final long timestamp;
@@ -331,7 +354,7 @@ public class Guider {
         private final int sensor;
 
         private StateMetaData(int type, int status, int sequence, long timestamp, byte bay, byte board, int sensor) {
-            this.type = Type.values()[type];
+            this.state = State.values()[type];
             this.status = Status.values()[status];
             this.sequence = sequence;
             this.timestamp = timestamp;
@@ -341,7 +364,7 @@ public class Guider {
 
         @Override
         public String toString() {
-            return "StateMetaData{" + "type=" + type + ", status=" + status + ", sequence=" + sequence + ", timestamp=" + timestamp + ", location=" + location + ", sensor=" + sensor + '}';
+            return "StateMetaData{" + "type=" + state + ", status=" + status + ", sequence=" + sequence + ", timestamp=" + timestamp + ", location=" + location + ", sensor=" + sensor + '}';
         }
 
     }
@@ -364,13 +387,15 @@ public class Guider {
 
     public static class Series {
 
+        private final Status status;
         private final long begin;
         private final int sequence;
         private final int stamps;
         private final List<SensorLocation> configured;
         private final List<SensorLocation> remaining;
 
-        private Series(long begin, int sequence, int stamps, List<SensorLocation> configured, List<SensorLocation> remaining) {
+        private Series(Status status, long begin, int sequence, int stamps, List<SensorLocation> configured, List<SensorLocation> remaining) {
+            this.status = status;
             this.begin = begin;
             this.sequence = sequence;
             this.stamps = stamps;
@@ -380,7 +405,7 @@ public class Guider {
 
         @Override
         public String toString() {
-            return "Series{" + "begin=" + begin + ", sequence=" + sequence + ", stamps=" + stamps + ", configured=" + configured + ", remaining=" + remaining + '}';
+            return "Series{" + "status=" + status + ", begin=" + begin + ", sequence=" + sequence + ", stamps=" + stamps + ", configured=" + configured + ", remaining=" + remaining + '}';
         }
 
     }

@@ -57,10 +57,10 @@ class StoreSimulatedImplementation implements StoreImplementation {
 
     @Override
     public int[][] readRegisters(long client, BitSet bitset, int[] addresses) throws DAQException {
-        int[][] result = new int[4*25][addresses.length];
+        int[][] result = new int[4 * 25][addresses.length];
         LocationSet locations = new LocationSet(bitset);
         for (Location l : locations) {
-            for (int i=0; i<addresses.length; i++) {
+            for (int i = 0; i < addresses.length; i++) {
                 result[l.index()][i] = storeSimulation.readRegister(l, addresses[i]);
             }
         }
@@ -71,7 +71,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     public void writeRegisters(long client, BitSet bitset, int[] addresses, int[] values) throws DAQException {
         LocationSet locations = new LocationSet(bitset);
         for (Location l : locations) {
-            for (int i=0; i<addresses.length; i++) {
+            for (int i = 0; i < addresses.length; i++) {
                 storeSimulation.writeRegister(l, addresses[i], values[i]);
             }
         }
@@ -224,31 +224,34 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public void startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData) {
+    public Guider.Status startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData) {
+        return null;
     }
 
     @Override
-    public void stopGuider(long guider) {
+    public Guider.Status stopGuider(long guider) {
+        return null;
     }
 
     @Override
-    public void pauseGuider(long guider) {
+    public Guider.Status pauseGuider(long guider) {
+        return null;
     }
 
     @Override
-    public void resumeGuider(long guider) {
-    }
-    
-    @Override
-    public void sleepGuider(long guider) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    public Guider.Status resumeGuider(long guider) {
+        return null;
     }
 
     @Override
-    public void wakeGuider(long guider) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    public Guider.Status sleepGuider(long guider) {
+        return null;
     }
 
+    @Override
+    public Guider.Status wakeGuider(long guider) {
+        return null;
+    }
 
     @Override
     public void waitForGuider(long subscriber, Guider guider) throws DAQException {
@@ -269,7 +272,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Guider.SeriesMetaData guiderSeries(long guider) throws DAQException {
+    public Guider.Series guiderSeries(long guider) throws DAQException {
         return null;
     }
 

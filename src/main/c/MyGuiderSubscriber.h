@@ -14,6 +14,7 @@
 
 extern jobject createGuiderConfig(JNIEnv* env, const GDS::Status& status, const GDS::Series& series, const GDS::RoiCommon& common, const GDS::RoiLocation* location, int nLocations);
 extern jobject createGuiderSeries(JNIEnv* env, const GDS::Status& status, const GDS::Series& series);
+extern jobject createGuiderStatus(JNIEnv* env, const GDS::Status& status);
 
 void Guider_OnLoad(JNIEnv*);
 

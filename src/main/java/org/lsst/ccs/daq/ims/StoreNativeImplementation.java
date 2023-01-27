@@ -125,22 +125,22 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native void detachGuider(long guider) throws DAQException;
 
     @Override
-    public synchronized native void startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData) throws DAQException;
+    public synchronized native Guider.Status startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData) throws DAQException;
 
     @Override
-    public synchronized native void stopGuider(long guider) throws DAQException;
+    public synchronized native Guider.Status stopGuider(long guider) throws DAQException;
 
     @Override
-    public synchronized native void pauseGuider(long guider) throws DAQException;
+    public synchronized native Guider.Status pauseGuider(long guider) throws DAQException;
 
     @Override
-    public synchronized native void resumeGuider(long guider) throws DAQException;
+    public synchronized native Guider.Status resumeGuider(long guider) throws DAQException;
 
     @Override
-    public synchronized native void sleepGuider(long guider) throws DAQException;
+    public synchronized native Guider.Status sleepGuider(long guider) throws DAQException;
 
     @Override
-    public synchronized native void wakeGuider(long guider) throws DAQException;
+    public synchronized native Guider.Status wakeGuider(long guider) throws DAQException;
     
     @Override
     public native void waitForGuider(long subscriber, Guider guider) throws DAQException;
@@ -155,5 +155,5 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native Guider.GuiderConfig guiderConfig(long guider) throws DAQException;
 
     @Override
-    public synchronized native Guider.SeriesMetaData guiderSeries(long guider) throws DAQException;
+    public synchronized native Guider.Series guiderSeries(long guider) throws DAQException;
 }

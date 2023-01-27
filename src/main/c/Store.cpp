@@ -390,7 +390,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitF
     subscriber->wait(env, callback);
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider
 (JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jint binning, jintArray roiData) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
@@ -409,10 +409,13 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_start
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Guider start failed, status %d", error);
         throwDAQException(env, x, error);
+        return NULL;
+    } else {
+        return createGuiderStatus(env, status);
     }
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_stopGuider
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_stopGuider
 (JNIEnv* env, jobject obj, jlong guider_) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
@@ -421,10 +424,13 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_stopG
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Guider stop failed, status %d", error);
         throwDAQException(env, x, error);
+        return NULL; 
+    } else {
+        return createGuiderStatus(env, status);
     }
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_pauseGuider
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_pauseGuider
 (JNIEnv* env, jobject obj, jlong guider_) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
@@ -433,10 +439,13 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_pause
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Guider pause failed, status %d", error);
         throwDAQException(env, x, error);
+        return NULL; 
+    } else {
+        return createGuiderStatus(env, status);
     }
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_resumeGuider
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_resumeGuider
 (JNIEnv* env, jobject obj, jlong guider_) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
@@ -445,10 +454,13 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_resum
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Guider resume failed, status %d", error);
         throwDAQException(env, x, error);
+        return NULL;
+    } else {
+        return createGuiderStatus(env, status);
     }
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_sleepGuider
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_sleepGuider
 (JNIEnv* env, jobject obj, jlong guider_) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
@@ -457,10 +469,13 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_sleep
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Guider sleep failed, status %d", error);
         throwDAQException(env, x, error);
+        return NULL;
+    } else {
+        return createGuiderStatus(env, status);
     }
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_wakeGuider
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_wakeGuider
 (JNIEnv* env, jobject obj, jlong guider_) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
@@ -469,6 +484,9 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_wakeG
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Guider wake failed, status %d", error);
         throwDAQException(env, x, error);
+        return NULL;
+    } else {
+        return createGuiderStatus(env, status);
     }
 }
 

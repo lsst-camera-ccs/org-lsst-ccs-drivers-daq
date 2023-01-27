@@ -458,28 +458,28 @@ public class Store implements AutoCloseable {
         impl.detachGuider(guider);
     }
     
-    void stopGuider(long guider) throws DAQException {
-        impl.stopGuider(guider);
+    Guider.Status stopGuider(long guider) throws DAQException {
+        return impl.stopGuider(guider);
     }
 
-    void resumeGuider(long guider) throws DAQException {
-        impl.resumeGuider(guider);
+    Guider.Status  resumeGuider(long guider) throws DAQException {
+        return impl.resumeGuider(guider);
     }
 
-    void pauseGuider(long guider) throws DAQException {
-        impl.pauseGuider(guider);
+    Guider.Status  pauseGuider(long guider) throws DAQException {
+        return impl.pauseGuider(guider);
     }
     
-    void sleepGuider(long guider) throws DAQException {
-        impl.sleepGuider(guider);
+    Guider.Status  sleepGuider(long guider) throws DAQException {
+        return impl.sleepGuider(guider);
     }
 
-    void wakeGuider(long guider) throws DAQException {
-        impl.wakeGuider(guider);
+    Guider.Status  wakeGuider(long guider) throws DAQException {
+        return impl.wakeGuider(guider);
     }
 
-    void startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int binning, int[] roiData) throws DAQException {
-        impl.startGuider(guider, nRows, nCols, integrationTimeMilliSeconds, binning, roiData);
+    Guider.Status  startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int binning, int[] roiData) throws DAQException {
+        return impl.startGuider(guider, nRows, nCols, integrationTimeMilliSeconds, binning, roiData);
     }
 
     long attachGuiderSubscriber(String partition, int[] locations) throws DAQException {
@@ -498,7 +498,7 @@ public class Store implements AutoCloseable {
         return impl.guiderConfig(guider);
     }
 
-    Guider.SeriesMetaData guiderSeries(long guider) throws DAQException {
+    Guider.Series guiderSeries(long guider) throws DAQException {
         return impl.guiderSeries(guider);
     }
 }

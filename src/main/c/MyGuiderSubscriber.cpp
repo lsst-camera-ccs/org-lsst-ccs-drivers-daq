@@ -26,9 +26,20 @@ static jclass JCguiderSeriesClass;
 static jmethodID JCguiderSeriesConstructor;
 static jclass JCguiderSensorLocationClass;
 static jmethodID JCguiderSensorLocationConstructor;
+static jclass JCguiderStatusClass;
+static jmethodID JCguiderStatusConstructor;
 
 MyGuiderSubscriber::MyGuiderSubscriber(const char* partition, const GDS::LocationSet& locs) :
     GDS::Decoder(partition, locs) {
+}
+
+jobject createGuiderStatus(JNIEnv* env, const GDS::Status& status) {
+   jlong time = status.timestamp();
+   jint state = status.status();
+   jint sequence = status.sequence();
+   jint in = status.state_in();
+   jint out = status.state_out();  
+   return env->NewObject(JCguiderStatusClass, JCguiderStatusConstructor, time, state, sequence, in, out);    
 }
 
 jobject createRoiCommon(JNIEnv* env, const GDS::RoiCommon& location) {
@@ -77,13 +88,14 @@ jobject createSensorLocations(JNIEnv* env, const GDS::LocationSet& locations) {
 }
 
 jobject createGuiderSeries(JNIEnv* env, const GDS::Status& status, const GDS::Series& series) {
+    jobject jStatus = createGuiderStatus(env, status);
     jlong timestamp = series.begin();
     jint sequence = series.sequence();
     jint stamps = series.stamps();
     jobject configured = createSensorLocations(env, series.configured());
     jobject remaining = createSensorLocations(env, series.remaining());
   
-    return env->NewObject(JCguiderSeriesClass, JCguiderSeriesConstructor, timestamp, sequence, stamps, configured, remaining);
+    return env->NewObject(JCguiderSeriesClass, JCguiderSeriesConstructor, jStatus, timestamp, sequence, stamps, configured, remaining);
 }
 
 jobject createStateMetadata(JNIEnv* env, const GDS::StateMetadata& state) {
@@ -250,7 +262,7 @@ void Guider_OnLoad(JNIEnv* env) {
     }
     JCguiderSeriesClass = (jclass) env->NewGlobalRef(guiderSeriesClass);
 
-    JCguiderSeriesConstructor = env->GetMethodID(guiderSeriesClass, "<init>", "(JIILjava/util/List;Ljava/util/List;)V");
+    JCguiderSeriesConstructor = env->GetMethodID(guiderSeriesClass, "<init>", "(Lorg/lsst/ccs/daq/ims/Guider$Status;JIILjava/util/List;Ljava/util/List;)V");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -266,7 +278,16 @@ void Guider_OnLoad(JNIEnv* env) {
         return;
     }
 
+    jclass guiderStatusClass = env->FindClass("org/lsst/ccs/daq/ims/Guider$Status");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+    JCguiderStatusClass = (jclass) env->NewGlobalRef(guiderStatusClass);
+
+    JCguiderStatusConstructor = env->GetMethodID(guiderStatusClass, "<init>", "(JIIII)V");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+
     return;
 }
-
-
