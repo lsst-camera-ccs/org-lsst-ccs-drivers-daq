@@ -64,10 +64,10 @@ jobject createRoiLocation(JNIEnv* env, const GDS::RoiLocation& location) {
 
 jobject createGuiderConfig(JNIEnv* env, const GDS::Status& status, const GDS::Series& series, const GDS::RoiCommon& common, const GDS::RoiLocation* location, int nLocations) {
     jobject list = createList(env);
-    for (int i=0; i<nLocations; i++) {
-        addObjectToList(env, list, createRoiLocation(env, location[i]));
-    }
-    return env->NewObject(JCguiderConfigClass, JCguiderConfigConstructor, createRoiCommon(env, common), list);
+    //for (int i=0; i<nLocations; i++) {
+    //    addObjectToList(env, list, createRoiLocation(env, location[i]));
+    //}
+    return env->NewObject(JCguiderConfigClass, JCguiderConfigConstructor, createGuiderStatus(env, status), createRoiCommon(env, common), list);
 }
 
 jobject createSensorLocation(JNIEnv* env, const GDS::Location& location) {
@@ -245,13 +245,13 @@ void Guider_OnLoad(JNIEnv* env) {
         return;
     }
 
-    jclass guiderConfigClass = env->FindClass("org/lsst/ccs/daq/ims/Guider$GuiderConfig");
+    jclass guiderConfigClass = env->FindClass("org/lsst/ccs/daq/ims/Guider$Config");
     if (env->ExceptionCheck()) {
         return;
     }
     JCguiderConfigClass = (jclass) env->NewGlobalRef(guiderConfigClass);
 
-    JCguiderConfigConstructor = env->GetMethodID(JCguiderConfigClass, "<init>", "(Lorg/lsst/ccs/daq/ims/Guider$ROICommon;Ljava/util/List;)V");
+    JCguiderConfigConstructor = env->GetMethodID(JCguiderConfigClass, "<init>", "(Lorg/lsst/ccs/daq/ims/Guider$Status;Lorg/lsst/ccs/daq/ims/Guider$ROICommon;Ljava/util/List;)V");
     if (env->ExceptionCheck()) {
         return;
     }

@@ -267,7 +267,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Guider.GuiderConfig guiderConfig(long guider) throws DAQException {
+    public Guider.Config guiderConfig(long guider) throws DAQException {
         return null;
     }
 

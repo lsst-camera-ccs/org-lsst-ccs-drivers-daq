@@ -2,7 +2,7 @@ package org.lsst.ccs.daq.ims;
 
 import java.util.BitSet;
 import java.util.List;
-import org.lsst.ccs.daq.ims.Guider.GuiderConfig;
+import org.lsst.ccs.daq.ims.Guider.Config;
 import org.lsst.ccs.utilities.location.Location;
 
 /**
@@ -96,7 +96,7 @@ interface StoreImplementation {
 
     public void waitForGuider(long subscriber, Guider guider) throws DAQException;
 
-    public GuiderConfig guiderConfig(long guider) throws DAQException;
+    public Config guiderConfig(long guider) throws DAQException;
 
     public Guider.Series guiderSeries(long guider) throws DAQException;
 

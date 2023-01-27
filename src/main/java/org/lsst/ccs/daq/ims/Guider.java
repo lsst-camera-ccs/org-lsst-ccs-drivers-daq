@@ -78,7 +78,7 @@ public class Guider {
         return store.wakeGuider(guider);
     }
     
-    public GuiderConfig config() throws DAQException {
+    public Config config() throws DAQException {
         return store.guiderConfig(guider);
     }
 
@@ -370,19 +370,21 @@ public class Guider {
 
     }
 
-    public static class GuiderConfig {
+    public static class Config {
 
+        private final Status status;
         private final ROICommon common;
         private final List<ROILocation> locations;
 
-        private GuiderConfig(ROICommon common, List<ROILocation> locations) {
+        private Config(Status status, ROICommon common, List<ROILocation> locations) {
+            this.status = status;
             this.common = common;
             this.locations = locations;
         }
 
         @Override
         public String toString() {
-            return "GuiderConfig{" + "common=" + common + ", locations=" + locations + '}';
+            return "Config{" + "status=" + status + ", common=" + common + ", locations=" + locations + '}';
         }
     }
 

@@ -80,7 +80,7 @@ public class GuiderTool {
     
     
     @Command(name = "config", description = "Get the guider config")
-    public Guider.GuiderConfig config() throws DAQException {
+    public Guider.Config config() throws DAQException {
         checkStore();
         return guider.config();
     }
