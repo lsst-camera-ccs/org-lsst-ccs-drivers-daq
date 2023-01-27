@@ -31,6 +31,7 @@ public class Guider {
      *
      * @param common
      * @param locations
+     * @return The status after the command completes
      * @throws DAQException
      */
     public Status start(ROICommon common, List<ROILocation> locations) throws DAQException {
@@ -39,8 +40,8 @@ public class Guider {
         for (int i = 0; i < nLocs; i++) {
             int j = i * 5;
             ROILocation location = locations.get(i);
-            roiData[j] = location.location.index();
-            roiData[j + 1] = location.sensor;
+            roiData[j] = location.location.rebLocation.index();
+            roiData[j + 1] = location.location.sensor;
             roiData[j + 2] = location.segment;
             roiData[j + 3] = location.startRow;
             roiData[j + 4] = location.startCol;
@@ -199,8 +200,7 @@ public class Guider {
      */
     public static class ROILocation {
 
-        private final Location location;
-        private final int sensor;
+        private final SensorLocation location;
         private final int segment;
         private final int startRow;
         private final int startCol;
@@ -216,21 +216,19 @@ public class Guider {
          * @param startCol The start column
          */
         public ROILocation(byte bay, byte board, int sensor, int segment, int startRow, int startCol) {
-            this(new Location(bay, board), sensor, segment, startRow, startCol);
+            this(new SensorLocation(bay, board, sensor), segment, startRow, startCol);
         }
 
         /**
          * Create an ROI for a single CCD
          *
-         * @param location The REB location
-         * @param sensor The sensor
+         * @param location The Sensor location
          * @param segment The segment in which the ROI starts
          * @param startRow The start row
          * @param startCol The start column
          */
-        public ROILocation(Location location, int sensor, int segment, int startRow, int startCol) {
+        public ROILocation(SensorLocation location, int segment, int startRow, int startCol) {
             this.location = location;
-            this.sensor = sensor;
             this.segment = segment;
             this.startRow = startRow;
             this.startCol = startCol;
@@ -244,16 +242,17 @@ public class Guider {
             return startCol;
         }
 
-        public Location getLocation() {
+        public SensorLocation getLocation() {
             return location;
-        }
-
-        public int getSensor() {
-            return sensor;
         }
 
         public int getSegment() {
             return segment;
+        }
+
+        @Override
+        public String toString() {
+            return "ROILocation{" + "location=" + location + ", segment=" + segment + ", startRow=" + startRow + ", startCol=" + startCol + '}';
         }
     }
 

@@ -497,16 +497,18 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_gu
     GDS::Series series;
     GDS::RoiCommon roiCommon;
     GDS::RoiLocation locbuf[sizeof(GDS::RoiLocation)*GDS::LocationSet::SIZE];
-    unsigned nlocsbuf = GDS::LocationSet::SIZE;
+    unsigned nlocsbuf;
     
     int error = guider->config(status, series, roiCommon, locbuf, nlocsbuf);
     if (error) {
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Guider config failed, status %d", error);
         throwDAQException(env, x, error);
+        return NULL;
+    }  else {
+        printf("Locations (%d)\n", nlocsbuf);
+        return createGuiderConfig(env, status, series, roiCommon, locbuf, nlocsbuf);
     }
-
-    return createGuiderConfig(env, status, series, roiCommon, locbuf, nlocsbuf);
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_guiderSeries

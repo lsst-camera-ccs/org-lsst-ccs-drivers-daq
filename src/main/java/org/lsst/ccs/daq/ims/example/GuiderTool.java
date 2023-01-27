@@ -10,6 +10,7 @@ import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.daq.ims.Guider;
 import org.lsst.ccs.daq.ims.Guider.ROICommon;
 import org.lsst.ccs.daq.ims.Guider.ROILocation;
+import org.lsst.ccs.daq.ims.Guider.SensorLocation;
 import org.lsst.ccs.daq.ims.Store;
 import org.lsst.ccs.daq.ims.Version;
 import org.lsst.ccs.utilities.location.Location;
@@ -96,7 +97,8 @@ public class GuiderTool {
         checkStore();
         List<ROILocation> locations = new ArrayList<>();
         Location R00 = Location.of("R00/RebG");
-        locations.add(new ROILocation(R00, 0, 4, 100, 100));
+        SensorLocation sensorLocation = new SensorLocation(R00, 0);
+        locations.add(new ROILocation(sensorLocation, 4, 100, 100));
         ROICommon roi = new ROICommon(50, 50, 100, 1);
         guider.start(roi, locations);
     }

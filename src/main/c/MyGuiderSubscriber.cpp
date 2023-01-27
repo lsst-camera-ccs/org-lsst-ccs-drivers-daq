@@ -64,9 +64,9 @@ jobject createRoiLocation(JNIEnv* env, const GDS::RoiLocation& location) {
 
 jobject createGuiderConfig(JNIEnv* env, const GDS::Status& status, const GDS::Series& series, const GDS::RoiCommon& common, const GDS::RoiLocation* location, int nLocations) {
     jobject list = createList(env);
-    //for (int i=0; i<nLocations; i++) {
-    //    addObjectToList(env, list, createRoiLocation(env, location[i]));
-    //}
+    for (int i=0; i<nLocations; i++) {
+        addObjectToList(env, list, createRoiLocation(env, location[i]));
+    }
     return env->NewObject(JCguiderConfigClass, JCguiderConfigConstructor, createGuiderSeries(env, status, series), createRoiCommon(env, common), list);
 }
 
