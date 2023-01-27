@@ -389,15 +389,15 @@ public class Guider {
     public static class Series {
 
         private final Status status;
-        private final long begin;
+        private final Instant begin;
         private final int sequence;
         private final int stamps;
         private final List<SensorLocation> configured;
         private final List<SensorLocation> remaining;
 
-        private Series(Status status, long begin, int sequence, int stamps, List<SensorLocation> configured, List<SensorLocation> remaining) {
+        private Series(Status status, long timestampNanos, int sequence, int stamps, List<SensorLocation> configured, List<SensorLocation> remaining) {
             this.status = status;
-            this.begin = begin;
+            this.begin = Instant.ofEpochSecond(timestampNanos / 1_000_000_000, timestampNanos % 1_000_000_000);
             this.sequence = sequence;
             this.stamps = stamps;
             this.configured = configured;
