@@ -129,7 +129,9 @@ public class GuiderTool {
     public void fitsWrite() throws DAQException {
         
         FitsHeadersSpecificationsBuilder headerSpecBuilder = new FitsHeadersSpecificationsBuilder();
-        headerSpecBuilder.addSpecFile("guider-primary.spec");
+        headerSpecBuilder.addSpecFile("guider-primary.spec", "primary");
+        headerSpecBuilder.addSpecFile("guider-stamp.spec", "stamp");
+
         Map<String, HeaderSpecification> headerSpecifications = headerSpecBuilder.getHeaderSpecifications();
         
         checkStore();

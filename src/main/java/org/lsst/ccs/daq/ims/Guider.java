@@ -13,8 +13,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import nom.tam.fits.BasicHDU;
-import nom.tam.fits.Fits;
 import nom.tam.fits.FitsException;
+import nom.tam.fits.Header;
+import nom.tam.util.BufferedFile;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter.FileNamer;
 import org.lsst.ccs.imagenaming.ImageName;
 import org.lsst.ccs.utilities.image.FitsCheckSum;
@@ -536,7 +537,8 @@ public class Guider {
         private final String partition;
         private final FileNamer fileNamer;
         private final Map<String, HeaderSpecification> headerSpecifications;
-        private final Map<SensorLocation, Fits> fitsFiles = new HashMap<>();
+        private final Map<SensorLocation, BufferedFile> fitsFiles = new HashMap<>();
+        private final Map<SensorLocation, Map<String, Object>> locationProps = new HashMap<>();
 
         public FitsWriter(ImageName imageName, String partition, FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
             this.imageName = imageName;
@@ -564,7 +566,7 @@ public class Guider {
             props.put("FileCreationTime", CCSTimeStamp.currentTime());
             props.put("RaftBay", rebLocation.getRaftName());
             props.put("RebSlot", rebLocation.getBoardName());
-            props.put("Partition", partition);
+            props.put("DAQPartition", partition);
             props.put("IntegrationTime", common.getIntegrationTimeMilliSeconds());
             props.put("ROISegment", String.format("Segment%02d", roiLocation.getSegment()));
             props.put("ROICols", common.getnCols());
@@ -581,14 +583,15 @@ public class Guider {
 
             try {
                 // Open the file and write the primary header
-                Fits ff = new Fits(computedFileName);
+                BufferedFile bf = new BufferedFile(computedFileName, "rw");
                 BasicHDU primary = BasicHDU.getDummyHDU();
                 MetaDataSet metaDataSet = new MetaDataSet();
                 metaDataSet.addMetaDataMap("primary", props);
                 HeaderWriter.addMetaDataToHeader(computedFileName, primary, headerSpecifications.get("primary"), metaDataSet);
                 FitsCheckSum.setChecksum(primary);
-                ff.addHDU(primary);
-                fitsFiles.put(state.getSensorLocation(), ff);
+                primary.write(bf);
+                fitsFiles.put(state.getSensorLocation(), bf);
+                locationProps.put(state.getSensorLocation(), props);
             } catch (FitsException | IOException ex) {
                 LOG.log(Level.WARNING, "Error writing FITS primary header", ex);
             }
@@ -597,9 +600,10 @@ public class Guider {
         @Override
         public void stop(StateMetaData state) {
             try {
-                Fits fits = fitsFiles.remove(state.getSensorLocation());
-                if (fits != null) {
-                    fits.close();
+                BufferedFile bf = fitsFiles.remove(state.getSensorLocation());
+                locationProps.remove(state.getSensorLocation());
+                if (bf != null) {
+                    bf.close();
                 }
             } catch (IOException ex) {
                 LOG.log(Level.WARNING, "Error closing FITS file", ex);
@@ -616,7 +620,29 @@ public class Guider {
 
         @Override
         public void stamp(StateMetaData state, ByteBuffer stamp) {
-            // Append a new HDU to the file
+            try {
+                BufferedFile bf = fitsFiles.get(state.getSensorLocation());
+                Map<String, Object> primaryProps = locationProps.get(state.getSensorLocation());
+
+                Map<String, Object> props = new HashMap<>();
+                props.put("StampTime", state.getTimestamp());
+
+                BasicHDU imageHDU = BasicHDU.getDummyHDU();
+                Header header = imageHDU.getHeader();
+                header.setXtension("IMAGE");
+                header.setBitpix(32);
+                header.setNaxes(2);
+                header.setNaxis(1, (int) primaryProps.get("ROIRows"));
+                header.setNaxis(2, (int) primaryProps.get("ROICols"));
+
+                MetaDataSet metaDataSet = new MetaDataSet();
+                metaDataSet.addMetaDataMap("stamp", props);
+                HeaderWriter.addMetaDataToHeader(null, imageHDU, headerSpecifications.get("stamp"), metaDataSet);
+                FitsCheckSum.setChecksum(imageHDU);
+                header.write(bf);
+            } catch (FitsException | IOException ex) {
+                LOG.log(Level.WARNING, "Error writing FITS primary header", ex);
+            }
         }
 
         @Override
