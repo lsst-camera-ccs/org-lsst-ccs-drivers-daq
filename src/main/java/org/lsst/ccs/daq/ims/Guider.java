@@ -1,12 +1,28 @@
 package org.lsst.ccs.daq.ims;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.List;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import nom.tam.fits.BasicHDU;
+import nom.tam.fits.Fits;
+import nom.tam.fits.FitsException;
+import org.lsst.ccs.daq.ims.channel.FitsIntWriter.FileNamer;
+import org.lsst.ccs.imagenaming.ImageName;
+import org.lsst.ccs.utilities.image.FitsCheckSum;
+import org.lsst.ccs.utilities.image.HeaderSpecification;
+import org.lsst.ccs.utilities.image.HeaderWriter;
+import org.lsst.ccs.utilities.image.MetaDataSet;
 import org.lsst.ccs.utilities.location.Location;
+import org.lsst.ccs.utilities.taitime.CCSTimeStamp;
 
 /**
  * An interface to the DAQ guider.
@@ -20,6 +36,7 @@ public class Guider {
 
     private final Store store;
     private final long guider;
+    private final List<GuiderListener> listeners = new CopyOnWriteArrayList<>();
 
     Guider(Store store, long guider) {
         this.store = store;
@@ -90,36 +107,54 @@ public class Guider {
     }
 
     public void addGuiderListener(GuiderListener listener) {
+        listeners.add(listener);
 
     }
 
     public void removeGuiderListener(GuiderListener listener) {
-
+        listeners.remove(listener);
     }
 
     void startCallback(StateMetaData state, SeriesMetaData series) {
         LOG.log(Level.INFO, "start {0} {1}", new Object[]{state, series});
+        for (GuiderListener listener : listeners) {
+            listener.start(state, series);
+        }
     }
 
     void stopCallback(StateMetaData state) {
         LOG.log(Level.INFO, "stop {0}", state);
+        for (GuiderListener listener : listeners) {
+            listener.stop(state);
+        }
     }
 
     void pauseCallback(StateMetaData state) {
         LOG.log(Level.INFO, "pause {0}", state);
+        for (GuiderListener listener : listeners) {
+            listener.pause(state);
+        }
     }
 
     void resumeCallback(StateMetaData state) {
         LOG.log(Level.INFO, "resume {0}", state);
-
+        for (GuiderListener listener : listeners) {
+            listener.resume(state);
+        }
     }
 
     void rawStampCallback(StateMetaData state, ByteBuffer rawStamp) {
         LOG.log(Level.INFO, "rawStamp {0} {1}", new Object[]{state, rawStamp.remaining()});
+        for (GuiderListener listener : listeners) {
+            listener.rawStamp(state, rawStamp);
+        }
     }
 
     void stampCallback(StateMetaData state, ByteBuffer stamp) {
         LOG.log(Level.INFO, "stamp {0} {1}", new Object[]{state, stamp.remaining()});
+        for (GuiderListener listener : listeners) {
+            listener.stamp(state, stamp);
+        }
     }
 
     void detach() throws DAQException {
@@ -188,9 +223,43 @@ public class Guider {
             this.sensor = sensor;
         }
 
+        public Location getRebLocation() {
+            return rebLocation;
+        }
+
+        public int getSensor() {
+            return sensor;
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 83 * hash + Objects.hashCode(this.rebLocation);
+            hash = 83 * hash + this.sensor;
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final SensorLocation other = (SensorLocation) obj;
+            if (this.sensor != other.sensor) {
+                return false;
+            }
+            return Objects.equals(this.rebLocation, other.rebLocation);
+        }
+
         @Override
         public String toString() {
-            return "SensorLocation{" + "rebLocation=" + rebLocation + ", sensor=" + sensor + '}';
+            return rebLocation.toString() + rebLocation.getSensorName(sensor);
         }
 
     }
@@ -295,7 +364,7 @@ public class Guider {
     }
 
     /**
-     * Meta-data common to a series of ROI readouts
+     * Meta-data common to a series of readouts from a single ROI
      */
     public static class SeriesMetaData {
 
@@ -311,6 +380,26 @@ public class Guider {
             this.common = common;
             this.location = location;
             this.version = version;
+        }
+
+        public ROICommon getCommon() {
+            return common;
+        }
+
+        public ROILocation getLocation() {
+            return location;
+        }
+
+        public Version getVersion() {
+            return version;
+        }
+
+        public int getFirmware() {
+            return firmware;
+        }
+
+        public long getSerialNumber() {
+            return serialNumber;
         }
 
         @Override
@@ -362,23 +451,40 @@ public class Guider {
         private final Status status;
         private final long sequence;
         private final Instant timestamp;
-        private final Location location;
-        private final int sensor;
+        private final SensorLocation sensorLocation;
 
         private StateMetaData(int type, int status, int sequence, long timestampNanos, byte bay, byte board, int sensor) {
             this.state = State.values()[type];
             this.status = Status.values()[status];
             this.sequence = sequence;
             this.timestamp = Instant.ofEpochSecond(timestampNanos / 1_000_000_000, timestampNanos % 1_000_000_000);
-            this.location = new Location(bay, board);
-            this.sensor = sensor;
+            this.sensorLocation = new SensorLocation(new Location(bay, board), sensor);
+        }
+
+        public State getState() {
+            return state;
+        }
+
+        public Status getStatus() {
+            return status;
+        }
+
+        public long getSequence() {
+            return sequence;
+        }
+
+        public Instant getTimestamp() {
+            return timestamp;
+        }
+
+        public SensorLocation getSensorLocation() {
+            return sensorLocation;
         }
 
         @Override
         public String toString() {
-            return "StateMetaData{" + "type=" + state + ", status=" + status + ", sequence=" + sequence + ", timestamp=" + timestamp + ", location=" + location + ", sensor=" + sensor + '}';
+            return "StateMetaData{" + "state=" + state + ", status=" + status + ", sequence=" + sequence + ", timestamp=" + timestamp + ", sensorLocation=" + sensorLocation + '}';
         }
-
     }
 
     public static class Config {
@@ -420,6 +526,102 @@ public class Guider {
         @Override
         public String toString() {
             return "Series{" + "status=" + status + ", begin=" + begin + ", sequence=" + sequence + ", stamps=" + stamps + ", configured=" + configured + ", remaining=" + remaining + '}';
+        }
+
+    }
+
+    public static class FitsWriter implements GuiderListener {
+
+        private final ImageName imageName;
+        private final String partition;
+        private final FileNamer fileNamer;
+        private final Map<String, HeaderSpecification> headerSpecifications;
+        private final Map<SensorLocation, Fits> fitsFiles = new HashMap<>();
+
+        public FitsWriter(ImageName imageName, String partition, FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
+            this.imageName = imageName;
+            this.partition = partition;
+            this.fileNamer = fileNamer;
+            this.headerSpecifications = headerSpecifications;
+        }
+
+        @Override
+        public void start(StateMetaData state, SeriesMetaData series) {
+            // Start must be issued after the FitsWriter is installed as a listener
+            // Note, this will be called once for each ROI
+            Map<String, Object> props = new HashMap<>();
+            props.put("ImageName", imageName.toString());
+            props.put("ImageDate", imageName.getDateString());
+            props.put("ImageNumber", imageName.getNumberString());
+            props.put("ImageController", imageName.getController().getCode());
+            props.put("ImageSource", imageName.getSource().getCode());
+
+            ROILocation roiLocation = series.getLocation();
+            SensorLocation sensorLocation = roiLocation.getLocation();
+            Location rebLocation = sensorLocation.getRebLocation();
+            ROICommon common = series.getCommon();
+
+            props.put("FileCreationTime", CCSTimeStamp.currentTime());
+            props.put("RaftBay", rebLocation.getRaftName());
+            props.put("RebSlot", rebLocation.getBoardName());
+            props.put("Partition", partition);
+            props.put("IntegrationTime", common.getIntegrationTimeMilliSeconds());
+            props.put("ROISegment", String.format("Segment%02d", roiLocation.getSegment()));
+            props.put("ROICols", common.getnCols());
+            props.put("ROIRows", common.getnRows());
+            props.put("Firmware", String.format("%x", series.getFirmware()));
+            props.put("CCDControllerSerial", String.format("%x", series.getSerialNumber() & 0xFFFFFFFFL));
+            props.put("DAQVersion", series.getVersion().toString());
+
+            props.put("StartTime", state.getTimestamp());
+            props.put("DAQSequence", state.getSequence());
+
+            props.put("CCDSlot", rebLocation.getSensorName(sensorLocation.getSensor()));
+            File computedFileName = fileNamer.computeFileName(props);
+
+            try {
+                // Open the file and write the primary header
+                Fits ff = new Fits(computedFileName);
+                BasicHDU primary = BasicHDU.getDummyHDU();
+                MetaDataSet metaDataSet = new MetaDataSet();
+                metaDataSet.addMetaDataMap("primary", props);
+                HeaderWriter.addMetaDataToHeader(computedFileName, primary, headerSpecifications.get("primary"), metaDataSet);
+                FitsCheckSum.setChecksum(primary);
+                ff.addHDU(primary);
+                fitsFiles.put(state.getSensorLocation(), ff);
+            } catch (FitsException | IOException ex) {
+                LOG.log(Level.WARNING, "Error writing FITS primary header", ex);
+            }
+        }
+
+        @Override
+        public void stop(StateMetaData state) {
+            try {
+                Fits fits = fitsFiles.remove(state.getSensorLocation());
+                if (fits != null) {
+                    fits.close();
+                }
+            } catch (IOException ex) {
+                LOG.log(Level.WARNING, "Error closing FITS file", ex);
+            }
+        }
+
+        @Override
+        public void pause(StateMetaData state) {
+        }
+
+        @Override
+        public void resume(StateMetaData state) {
+        }
+
+        @Override
+        public void stamp(StateMetaData state, ByteBuffer stamp) {
+            // Append a new HDU to the file
+        }
+
+        @Override
+        public void rawStamp(StateMetaData state, ByteBuffer rawStamp) {
+            // Ignored for now, probably forever
         }
 
     }

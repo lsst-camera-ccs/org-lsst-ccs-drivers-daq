@@ -365,17 +365,18 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachGuiderSubscriber
 (JNIEnv* env, jobject obj, jstring partition, jintArray locations) {   
-    GDS::LocationSet locs;
-    jint* values = env->GetIntArrayElements(locations, 0);
-    int nlocs = env->GetArrayLength(locations);
-    for (int j=0; j<nlocs; j+=2) {
-        GDS::Location loc(DAQ::Location(values[j]), values[j+1]);
-        locs.insert(loc);
-    }
+    GDS::LocationSet locs(GDS::Set::ANY);
+
+    //jint* values = env->GetIntArrayElements(locations, 0);
+    //int nlocs = env->GetArrayLength(locations);
+    //for (int j=0; j<nlocs; j+=2) {
+    //    GDS::Location loc(DAQ::Location(values[j]), values[j+1]);
+    //    locs.insert(loc);
+    //}
     const char *partition_name = env->GetStringUTFChars(partition, 0);
     MyGuiderSubscriber* subscriber = new MyGuiderSubscriber(partition_name, locs);
     env->ReleaseStringUTFChars(partition, partition_name);
-    env->ReleaseIntArrayElements(locations, values, JNI_ABORT);
+    //env->ReleaseIntArrayElements(locations, values, JNI_ABORT);
     return (jlong) subscriber;
 }
 
@@ -400,8 +401,13 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
     int nlocs = env->GetArrayLength(roiData)/5;
     for (int i=0; i<nlocs; i++) {
        int j = i*5;
-       locs[0] = GDS::RoiLocation(GDS::Location(DAQ::Location(values[j]), values[j+1]), values[j+2], values[j+3], values[j+4]);
-       locs[0].dump();
+       uint8_t index = values[j];
+       uint8_t sensor = values[j+1];
+       uint16_t segment = values[j+2];
+       uint16_t startRow = values[j+3];
+       uint16_t startCol = values[j+4];
+       locs[i] = GDS::RoiLocation(GDS::Location(DAQ::Location(index), sensor), segment, startRow, startCol);
+       locs[i].dump();
     }
     int error = guider->start(common, locs, nlocs, status);
     env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
@@ -506,7 +512,6 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_gu
         throwDAQException(env, x, error);
         return NULL;
     }  else {
-        printf("Locations (%d)\n", nlocsbuf);
         return createGuiderConfig(env, status, series, roiCommon, locbuf, nlocsbuf);
     }
 }

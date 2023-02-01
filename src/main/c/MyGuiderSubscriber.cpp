@@ -58,8 +58,10 @@ jobject createRoiLocation(JNIEnv* env, const GDS::RoiLocation& location) {
     jint segment = location.segment();
     jint startRow = location.startrow();
     jint startCol = location.startcol();
+    jbyte bay = source.bay();
+    jbyte board = source.board();
 
-    return env->NewObject(JCguiderRoiLocationClass, JCguiderRoiLocationConstructor, source.bay(), source.board(), sensor, segment, startRow, startCol);
+    return env->NewObject(JCguiderRoiLocationClass, JCguiderRoiLocationConstructor, bay, board, sensor, segment, startRow, startCol);
 }
 
 jobject createGuiderConfig(JNIEnv* env, const GDS::Status& status, const GDS::Series& series, const GDS::RoiCommon& common, const GDS::RoiLocation* location, int nLocations) {
@@ -73,8 +75,10 @@ jobject createGuiderConfig(JNIEnv* env, const GDS::Status& status, const GDS::Se
 jobject createSensorLocation(JNIEnv* env, const GDS::Location& location) {
     const DAQ::Location source = location.source();
     jint sensor = location.sensor();
+    jbyte bay = source.bay();
+    jbyte board = source.board();
 
-    return env->NewObject(JCguiderSensorLocationClass, JCguiderSensorLocationConstructor, source.bay(), source.board(), sensor);
+    return env->NewObject(JCguiderSensorLocationClass, JCguiderSensorLocationConstructor, bay, board, sensor);
 }
 
 jobject createSensorLocations(JNIEnv* env, const GDS::LocationSet& locations) {
@@ -130,6 +134,8 @@ jobject MyGuiderSubscriber::createByteBuffer(JNIEnv* env, const GDS::Stamp& stam
 }
 
 void MyGuiderSubscriber::start(const GDS::StateMetadata& state, const GDS::SeriesMetadata& series) {
+    state.dump();
+    series.dump();
     env->CallVoidMethod(callback, JCguiderStartCallbackMethod, createStateMetadata(env, state), createSeriesMetadata(env, series));
 }
 
