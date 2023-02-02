@@ -364,19 +364,18 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachGuiderSubscriber
-(JNIEnv* env, jobject obj, jstring partition, jintArray locations) {   
-    GDS::LocationSet locs(GDS::Set::ANY);
-
-    //jint* values = env->GetIntArrayElements(locations, 0);
-    //int nlocs = env->GetArrayLength(locations);
-    //for (int j=0; j<nlocs; j+=2) {
-    //    GDS::Location loc(DAQ::Location(values[j]), values[j+1]);
-    //    locs.insert(loc);
-    //}
+(JNIEnv* env, jobject obj, jstring partition, jboolean bigEndian, jintArray locations) {   
+    jint* values = env->GetIntArrayElements(locations, 0);
+    int nlocs = env->GetArrayLength(locations);
+    GDS::LocationSet locs;
+    for (int j=0; j<nlocs; j+=2) {
+        GDS::Location loc(DAQ::Location(values[j]), values[j+1]);
+        locs.insert(loc);
+    }
     const char *partition_name = env->GetStringUTFChars(partition, 0);
-    MyGuiderSubscriber* subscriber = new MyGuiderSubscriber(partition_name, locs);
+    MyGuiderSubscriber* subscriber = new MyGuiderSubscriber(partition_name, bigEndian, locs);
     env->ReleaseStringUTFChars(partition, partition_name);
-    //env->ReleaseIntArrayElements(locations, values, JNI_ABORT);
+    env->ReleaseIntArrayElements(locations, values, JNI_ABORT);
     return (jlong) subscriber;
 }
 
@@ -392,7 +391,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitF
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider
-(JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jint binning, jintArray roiData) {
+(JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jstring id, jintArray roiData) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
     GDS::RoiCommon common(rows, cols, integration);
@@ -409,7 +408,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
        locs[i] = GDS::RoiLocation(GDS::Location(DAQ::Location(index), sensor), segment, startRow, startCol);
        locs[i].dump();
     }
-    int error = guider->start(common, locs, nlocs, status);
+    const char *_id = env->GetStringUTFChars(id, 0);
+    int error = guider->start(common, locs, nlocs, _id, status);
+    env->ReleaseStringUTFChars(id, _id);
     env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
     if (error) {
         char x[MESSAGE_LENGTH];

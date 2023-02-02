@@ -5,7 +5,7 @@ DATE-OBS!    Date    ${FileCreationTime}           File creation time
 CCDSLOT!     String  ${CCDSlot}                    The CCD Slot
 RAFTBAY!     String  ${RaftBay}                    The RAFT Bay
 FIRMWARE!    String  ${Firmware}                   DAQ firmware version (Hex)
-#PLATFORM!    String  ${Platform}                   DAQ platform version
+PLATFORM!    String  ${Platform}                   DAQ platform version
 CONTNUM!     String  ${CCDControllerSerial|_NULL_} REB serial # (Hex)
 DAQVERS!     String  ${DAQVersion}                 DAQ version
 DAQPART!     String  ${DAQPartition}               DAQ partition

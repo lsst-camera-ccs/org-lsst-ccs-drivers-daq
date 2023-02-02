@@ -1,7 +1,9 @@
 package org.lsst.ccs.daq.ims.example;
 
 import java.io.File;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -16,7 +18,6 @@ import org.lsst.ccs.daq.ims.Guider.SensorLocation;
 import org.lsst.ccs.daq.ims.Store;
 import org.lsst.ccs.daq.ims.Version;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
-import org.lsst.ccs.imagenaming.ImageName;
 import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
 import org.lsst.ccs.utilities.image.HeaderSpecification;
 import org.lsst.ccs.utilities.location.Location;
@@ -78,14 +79,13 @@ public class GuiderTool {
         checkStore();
         return guider.sleep();
     }
-    
+
     @Command(name = "wake", description = "Wake the guider")
     public Guider.Status wake() throws DAQException {
         checkStore();
         return guider.wake();
     }
-    
-    
+
     @Command(name = "config", description = "Get the guider config")
     public Guider.Config config() throws DAQException {
         checkStore();
@@ -97,7 +97,7 @@ public class GuiderTool {
         checkStore();
         return guider.series();
     }
-    
+
     @Command(name = "start", description = "Start the guider")
     public Guider.Status start() throws DAQException {
         checkStore();
@@ -107,40 +107,64 @@ public class GuiderTool {
         SensorLocation sensorLocation1 = new SensorLocation(R00, 1);
         locations.add(new ROILocation(sensorLocation0, 4, 100, 100));
         locations.add(new ROILocation(sensorLocation1, 5, 200, 200));
-        ROICommon roi = new ROICommon(50, 50, 100, 1);
-        return guider.start(roi, locations);
+        ROICommon roi = new ROICommon(50, 50, 100);
+        return guider.start(roi, "MC_C_20230101_000000", locations);
     }
 
-    @Command(name = "listen", description = "Listen for guider events")
-    public void listen() throws DAQException {
-        checkStore();
-        Thread t = new Thread(() -> {
-            try {
-                Location R00 = Location.of("R00/RebG");
-                guider.listen(R00, 0);
-            } catch (DAQException x) {
-                LOG.log(Level.SEVERE, "Error in listener", x);
-            }
-        });
-        t.start();
-    }
-
+//    @Command(name = "listen", description = "Listen for guider events")
+//    public void listen() throws DAQException {
+//        checkStore();
+//        Thread t = new Thread(() -> {
+//            try {
+//                Location R00 = Location.of("R00/RebG");
+//                guider.listen(R00, 0);
+//            } catch (DAQException x) {
+//                LOG.log(Level.SEVERE, "Error in listener", x);
+//            }
+//        });
+//        t.start();
+//    }
+//
     @Command(name = "fits", description = "Write a FITS file")
     public void fitsWrite() throws DAQException {
-        
+
         FitsHeadersSpecificationsBuilder headerSpecBuilder = new FitsHeadersSpecificationsBuilder();
         headerSpecBuilder.addSpecFile("guider-primary.spec", "primary");
         headerSpecBuilder.addSpecFile("guider-stamp.spec", "stamp");
 
         Map<String, HeaderSpecification> headerSpecifications = headerSpecBuilder.getHeaderSpecifications();
-        
+
         checkStore();
-        ImageName imageName = new ImageName("MC_C_20230101_000001");
         FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(new File("."), String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
 
-        Guider.FitsWriter writer = new Guider.FitsWriter(imageName, store.getPartition(), namer, headerSpecifications);
-        guider.addGuiderListener(writer);
-        listen();
+        Location R00 = Location.of("R00/RebG");
+        SensorLocation sensorLocation0 = new SensorLocation(R00, 0);
+        SensorLocation sensorLocation1 = new SensorLocation(R00, 1);
+        Guider.FitsWriter writer0 = new Guider.FitsWriter(store.getPartition(), sensorLocation0, namer, headerSpecifications);
+        Guider.FitsWriter writer1 = new Guider.FitsWriter(store.getPartition(), sensorLocation1, namer, headerSpecifications);
+
+        Guider.Subscriber subscribe0 = guider.subscribe(Collections.singleton(sensorLocation0), ByteOrder.BIG_ENDIAN, writer0);
+        Thread t0 = new Thread(() -> {
+            for (;;) {
+                try {
+                    subscribe0.waitForGuider();
+                } catch (DAQException x) {
+                    LOG.log(Level.SEVERE, "DAQ Exception", x);
+                }
+            }
+        });
+        t0.start();
+        Guider.Subscriber subscribe1 = guider.subscribe(Collections.singleton(sensorLocation1), ByteOrder.BIG_ENDIAN, writer1);//        Thread t = new Thread(() -> {
+        Thread t1 = new Thread(() -> {
+            for (;;) {
+                try {
+                    subscribe1.waitForGuider();
+                } catch (DAQException x) {
+                    LOG.log(Level.SEVERE, "DAQ Exception", x);
+                }
+            }
+        });
+        t1.start();
     }
     
     @Command(name = "version", description = "Get version info")

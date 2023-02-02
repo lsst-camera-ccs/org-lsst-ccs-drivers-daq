@@ -224,7 +224,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Guider.Status startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData) {
+    public Guider.Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) {
         return null;
     }
 
@@ -254,11 +254,11 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public void waitForGuider(long subscriber, Guider guider) throws DAQException {
+    public void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException {
     }
 
     @Override
-    public long attachGuiderSubscriber(String partition, int[] locations) throws DAQException {
+    public long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException {
         return 999;
     }
 

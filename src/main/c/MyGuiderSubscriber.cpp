@@ -5,13 +5,13 @@
 
 using namespace GDS;
 
-static jclass JCguiderClass;
-static jmethodID JCguiderStartCallbackMethod;
-static jmethodID JCguiderStopCallbackMethod;
-static jmethodID JCguiderPauseCallbackMethod;
-static jmethodID JCguiderResumeCallbackMethod;
-static jmethodID JCguiderRawStampCallbackMethod;
-static jmethodID JCguiderStampCallbackMethod;
+static jclass JCsubscriberClass;
+static jmethodID JCsubscriberStartCallbackMethod;
+static jmethodID JCsubscriberStopCallbackMethod;
+static jmethodID JCsubscriberPauseCallbackMethod;
+static jmethodID JCsubscriberResumeCallbackMethod;
+static jmethodID JCsubscriberRawStampCallbackMethod;
+static jmethodID JCsubscriberStampCallbackMethod;
 static jclass JCguiderStateMetadataClass;
 static jmethodID JCguiderStateMetadataConstructor;
 static jclass JCguiderSeriesMetadataClass;
@@ -29,8 +29,8 @@ static jmethodID JCguiderSensorLocationConstructor;
 static jclass JCguiderStatusClass;
 static jmethodID JCguiderStatusConstructor;
 
-MyGuiderSubscriber::MyGuiderSubscriber(const char* partition, const GDS::LocationSet& locs) :
-    GDS::Decoder(partition, locs, true) {
+MyGuiderSubscriber::MyGuiderSubscriber(const char* partition, bool bigEndian, const GDS::LocationSet& locs) :
+    GDS::Decoder(partition, locs, bigEndian) {
 }
 
 jobject createGuiderStatus(JNIEnv* env, const GDS::Status& status) {
@@ -46,9 +46,8 @@ jobject createRoiCommon(JNIEnv* env, const GDS::RoiCommon& location) {
     jint nrows = location.nrows();
     jint ncols = location.ncols();
     jint integration = location.integration();
-    jint binning = 1;
 
-    return env->NewObject(JCguiderRoiCommonClass, JCguiderRoiCommonConstructor, nrows, ncols, integration, binning);
+    return env->NewObject(JCguiderRoiCommonClass, JCguiderRoiCommonConstructor, nrows, ncols, integration);
 }
 
 jobject createRoiLocation(JNIEnv* env, const GDS::RoiLocation& location) {
@@ -119,8 +118,10 @@ jobject createSeriesMetadata(JNIEnv* env, const GDS::SeriesMetadata& series) {
     const DVI::Version version =  series.software();
     jint firmware = series.firmware();
     jlong serialNumber = series.serial_number();
+    jstring id = env->NewStringUTF(series.id());
+    jstring platform = env->NewStringUTF(series.platform());
 
-    return env->NewObject(JCguiderSeriesMetadataClass, JCguiderSeriesMetadataConstructor, firmware, serialNumber, createRoiCommon(env, common), createRoiLocation(env, location), createVersion(env, version));
+    return env->NewObject(JCguiderSeriesMetadataClass, JCguiderSeriesMetadataConstructor, firmware, serialNumber, id, platform, createRoiCommon(env, common), createRoiLocation(env, location), createVersion(env, version));
 }
 
 jobject MyGuiderSubscriber::createByteBuffer(JNIEnv* env, const GDS::RawStamp& stamp) {
@@ -136,27 +137,27 @@ jobject MyGuiderSubscriber::createByteBuffer(JNIEnv* env, const GDS::Stamp& stam
 void MyGuiderSubscriber::start(const GDS::StateMetadata& state, const GDS::SeriesMetadata& series) {
     state.dump();
     series.dump();
-    env->CallVoidMethod(callback, JCguiderStartCallbackMethod, createStateMetadata(env, state), createSeriesMetadata(env, series));
+    env->CallVoidMethod(callback, JCsubscriberStartCallbackMethod, createStateMetadata(env, state), createSeriesMetadata(env, series));
 }
 
 void MyGuiderSubscriber::resume(const GDS::StateMetadata& state) {
-    env->CallVoidMethod(callback, JCguiderResumeCallbackMethod, createStateMetadata(env, state));
+    env->CallVoidMethod(callback, JCsubscriberResumeCallbackMethod, createStateMetadata(env, state));
 }
 
 void MyGuiderSubscriber::pause(const GDS::StateMetadata& state) {
-    env->CallVoidMethod(callback, JCguiderPauseCallbackMethod, createStateMetadata(env, state));
+    env->CallVoidMethod(callback, JCsubscriberPauseCallbackMethod, createStateMetadata(env, state));
 }
 
 void MyGuiderSubscriber::stop(const GDS::StateMetadata& state) {
-    env->CallVoidMethod(callback, JCguiderStopCallbackMethod, createStateMetadata(env, state));
+    env->CallVoidMethod(callback, JCsubscriberStopCallbackMethod, createStateMetadata(env, state));
 }
 
 void MyGuiderSubscriber::raw_stamp(const GDS::StateMetadata& state, const GDS::RawStamp& stamp) {
-    env->CallVoidMethod(callback, JCguiderRawStampCallbackMethod, createStateMetadata(env, state), createByteBuffer(env, stamp));
+    env->CallVoidMethod(callback, JCsubscriberRawStampCallbackMethod, createStateMetadata(env, state), createByteBuffer(env, stamp));
 }
 
 void MyGuiderSubscriber::stamp(const GDS::StateMetadata& state, const GDS::Stamp& stamp) {
-    env->CallVoidMethod(callback, JCguiderStampCallbackMethod, createStateMetadata(env, state), createByteBuffer(env, stamp));
+    env->CallVoidMethod(callback, JCsubscriberStampCallbackMethod, createStateMetadata(env, state), createByteBuffer(env, stamp));
 }
 
 uint8_t* MyGuiderSubscriber::allocate(unsigned size) {
@@ -171,38 +172,38 @@ void MyGuiderSubscriber::wait(JNIEnv *env, jobject callback) {
 }
 void Guider_OnLoad(JNIEnv* env) {
 
-    jclass guiderClass = env->FindClass("org/lsst/ccs/daq/ims/Guider");
+    jclass subscriberClass = env->FindClass("org/lsst/ccs/daq/ims/Guider$Subscriber");
     if (env->ExceptionCheck()) {
         return;
     }
-    JCguiderClass = (jclass) env->NewGlobalRef(guiderClass);
+    JCsubscriberClass = (jclass) env->NewGlobalRef(subscriberClass);
 
-    JCguiderStartCallbackMethod = env->GetMethodID(JCguiderClass, "startCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;Lorg/lsst/ccs/daq/ims/Guider$SeriesMetaData;)V");
-    if (env->ExceptionCheck()) {
-        return;
-    }
-
-    JCguiderStopCallbackMethod = env->GetMethodID(JCguiderClass, "stopCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;)V");
+    JCsubscriberStartCallbackMethod = env->GetMethodID(JCsubscriberClass, "startCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;Lorg/lsst/ccs/daq/ims/Guider$SeriesMetaData;)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    JCguiderPauseCallbackMethod = env->GetMethodID(JCguiderClass, "pauseCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;)V");
+    JCsubscriberStopCallbackMethod = env->GetMethodID(JCsubscriberClass, "stopCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    JCguiderResumeCallbackMethod = env->GetMethodID(JCguiderClass, "resumeCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;)V");
+    JCsubscriberPauseCallbackMethod = env->GetMethodID(JCsubscriberClass, "pauseCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    JCguiderRawStampCallbackMethod = env->GetMethodID(JCguiderClass, "rawStampCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;Ljava/nio/ByteBuffer;)V");
+    JCsubscriberResumeCallbackMethod = env->GetMethodID(JCsubscriberClass, "resumeCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    JCguiderStampCallbackMethod = env->GetMethodID(JCguiderClass, "stampCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;Ljava/nio/ByteBuffer;)V");
+    JCsubscriberRawStampCallbackMethod = env->GetMethodID(JCsubscriberClass, "rawStampCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;Ljava/nio/ByteBuffer;)V");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+
+    JCsubscriberStampCallbackMethod = env->GetMethodID(JCsubscriberClass, "stampCallback", "(Lorg/lsst/ccs/daq/ims/Guider$StateMetaData;Ljava/nio/ByteBuffer;)V");
     if (env->ExceptionCheck()) {
         return;
     }
@@ -224,7 +225,7 @@ void Guider_OnLoad(JNIEnv* env) {
     }
     JCguiderSeriesMetadataClass = (jclass) env->NewGlobalRef(guiderSeriesMetadataClass);
 
-    JCguiderSeriesMetadataConstructor = env->GetMethodID(JCguiderSeriesMetadataClass, "<init>", "(IJLorg/lsst/ccs/daq/ims/Guider$ROICommon;Lorg/lsst/ccs/daq/ims/Guider$ROILocation;Lorg/lsst/ccs/daq/ims/Version;)V");
+    JCguiderSeriesMetadataConstructor = env->GetMethodID(JCguiderSeriesMetadataClass, "<init>", "(IJLjava/lang/String;Ljava/lang/String;Lorg/lsst/ccs/daq/ims/Guider$ROICommon;Lorg/lsst/ccs/daq/ims/Guider$ROILocation;Lorg/lsst/ccs/daq/ims/Version;)V");
     if (env->ExceptionCheck()) {
         return;
     }

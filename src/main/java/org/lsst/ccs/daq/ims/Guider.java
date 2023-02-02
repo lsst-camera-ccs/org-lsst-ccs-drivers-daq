@@ -3,17 +3,20 @@ package org.lsst.ccs.daq.ims;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.time.Instant;
 import java.util.List;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.FitsException;
+import nom.tam.fits.FitsFactory;
+import nom.tam.fits.FitsUtil;
 import nom.tam.fits.Header;
 import nom.tam.util.BufferedFile;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter.FileNamer;
@@ -37,7 +40,6 @@ public class Guider {
 
     private final Store store;
     private final long guider;
-    private final List<GuiderListener> listeners = new CopyOnWriteArrayList<>();
 
     Guider(Store store, long guider) {
         this.store = store;
@@ -47,12 +49,14 @@ public class Guider {
     /**
      * Start the guider, using the specified ROI locations
      *
-     * @param common
-     * @param locations
+     * @param common The common settings for this start command
+     * @param id The id of this sequence of guider images. From CCS this will
+     * normally be the OBSID.
+     * @param locations The set of ROIs to start
      * @return The status after the command completes
      * @throws DAQException
      */
-    public Status start(ROICommon common, List<ROILocation> locations) throws DAQException {
+    public Status start(ROICommon common, String id, List<ROILocation> locations) throws DAQException {
         final int nLocs = locations.size();
         int[] roiData = new int[nLocs * 5];
         for (int i = 0; i < nLocs; i++) {
@@ -65,18 +69,11 @@ public class Guider {
             roiData[j + 4] = location.startCol;
         }
         System.out.println(Arrays.toString(roiData));
-        return store.startGuider(guider, common.nRows, common.nCols, common.integrationTimeMilliSeconds, common.binning, roiData);
+        return store.startGuider(guider, common.nRows, common.nCols, common.integrationTimeMilliSeconds, id, roiData);
     }
 
-    public void listen(Location location, int sensor) throws DAQException {
-        long subscriber = store.attachGuiderSubscriber(store.getPartition(), new int[]{location.index(), sensor});
-        try {
-            for (;;) {
-                store.waitForGuider(subscriber, this);
-            }
-        } finally {
-            store.detachGuiderSubscriber(subscriber);
-        }
+    public Subscriber subscribe(Set<SensorLocation> locations, ByteOrder byteOrder, GuiderListener listener) throws DAQException {
+        return new Subscriber(store, locations, byteOrder, listener);
     }
 
     public Status stop() throws DAQException {
@@ -107,59 +104,91 @@ public class Guider {
         return store.guiderSeries(guider);
     }
 
-    public void addGuiderListener(GuiderListener listener) {
-        listeners.add(listener);
-
-    }
-
-    public void removeGuiderListener(GuiderListener listener) {
-        listeners.remove(listener);
-    }
-
-    void startCallback(StateMetaData state, SeriesMetaData series) {
-        LOG.log(Level.INFO, "start {0} {1}", new Object[]{state, series});
-        for (GuiderListener listener : listeners) {
-            listener.start(state, series);
-        }
-    }
-
-    void stopCallback(StateMetaData state) {
-        LOG.log(Level.INFO, "stop {0}", state);
-        for (GuiderListener listener : listeners) {
-            listener.stop(state);
-        }
-    }
-
-    void pauseCallback(StateMetaData state) {
-        LOG.log(Level.INFO, "pause {0}", state);
-        for (GuiderListener listener : listeners) {
-            listener.pause(state);
-        }
-    }
-
-    void resumeCallback(StateMetaData state) {
-        LOG.log(Level.INFO, "resume {0}", state);
-        for (GuiderListener listener : listeners) {
-            listener.resume(state);
-        }
-    }
-
-    void rawStampCallback(StateMetaData state, ByteBuffer rawStamp) {
-        LOG.log(Level.INFO, "rawStamp {0} {1}", new Object[]{state, rawStamp.remaining()});
-        for (GuiderListener listener : listeners) {
-            listener.rawStamp(state, rawStamp);
-        }
-    }
-
-    void stampCallback(StateMetaData state, ByteBuffer stamp) {
-        LOG.log(Level.INFO, "stamp {0} {1}", new Object[]{state, stamp.remaining()});
-        for (GuiderListener listener : listeners) {
-            listener.stamp(state, stamp);
-        }
-    }
-
     void detach() throws DAQException {
         store.detachGuider(this.guider);
+    }
+
+    public static class Subscriber implements AutoCloseable {
+
+        private final long subscriber;
+        private final Store store;
+        private final GuiderListener listener;
+
+        private Subscriber(Store store, Set<SensorLocation> locations, ByteOrder byteOrder, GuiderListener listener) throws DAQException {
+            this.store = store;
+            this.listener = listener;
+            boolean bigEndian = byteOrder == ByteOrder.BIG_ENDIAN;
+            int[] locs = new int[locations.size() * 2];
+            int index = 0;
+            for (SensorLocation sl : locations) {
+                locs[index++] = sl.getRebLocation().index();
+                locs[index++] = sl.getSensor();
+            }
+            this.subscriber = store.attachGuiderSubscriber(store.getPartition(), bigEndian, locs);
+        }
+
+        public void waitForGuider() throws DAQException {
+            store.waitForGuider(subscriber, this);
+        }
+
+        private void startCallback(StateMetaData state, SeriesMetaData series) {
+            LOG.log(Level.INFO, "start {0} {1}", new Object[]{state, series});
+            try {
+                listener.start(state, series);
+            } catch (Exception x) {
+                LOG.log(Level.WARNING, "start callback failed", x);
+            }
+        }
+
+        void stopCallback(StateMetaData state) {
+            LOG.log(Level.INFO, "stop {0}", state);
+            try {
+                listener.stop(state);
+            } catch (Exception x) {
+                LOG.log(Level.WARNING, "stop callback failed", x);
+            }
+
+        }
+
+        void pauseCallback(StateMetaData state) {
+            LOG.log(Level.INFO, "pause {0}", state);
+            try {
+                listener.pause(state);
+            } catch (Exception x) {
+                LOG.log(Level.WARNING, "pause callback failed", x);
+            }
+        }
+
+        void resumeCallback(StateMetaData state) {
+            try {
+                LOG.log(Level.INFO, "resume {0}", state);
+            } catch (Exception x) {
+                LOG.log(Level.WARNING, "resume callback failed", x);
+            }
+        }
+
+        void rawStampCallback(StateMetaData state, ByteBuffer rawStamp) {
+            LOG.log(Level.INFO, "rawStamp {0} {1}", new Object[]{state, rawStamp.remaining()});
+            try {
+                listener.rawStamp(state, rawStamp);
+            } catch (Exception x) {
+                LOG.log(Level.WARNING, "rawStamp callback failed", x);
+            }
+        }
+
+        void stampCallback(StateMetaData state, ByteBuffer stamp) {
+            LOG.log(Level.INFO, "stamp {0} {1}", new Object[]{state, stamp.remaining()});
+            try {
+                listener.stamp(state, stamp);
+            } catch (Exception x) {
+                LOG.log(Level.WARNING, "stamp callback failed", x);
+            }
+        }
+
+        @Override
+        public void close() throws DAQException {
+            store.detachGuiderSubscriber(subscriber);
+        }
     }
 
     /**
@@ -170,7 +199,6 @@ public class Guider {
         private final int nRows;
         private final int nCols;
         private final int integrationTimeMilliSeconds;
-        private final int binning;
 
         /**
          * Create an instance of ROICommand
@@ -179,13 +207,11 @@ public class Guider {
          * @param nCols The number of columns
          * @param integrationTimeMilliSeconds The integration time in
          * milliseconds
-         * @param binning Binning (no longer supported, must be 1)
          */
-        public ROICommon(int nRows, int nCols, int integrationTimeMilliSeconds, int binning) {
+        public ROICommon(int nRows, int nCols, int integrationTimeMilliSeconds) {
             this.nRows = nRows;
             this.nCols = nCols;
             this.integrationTimeMilliSeconds = integrationTimeMilliSeconds;
-            this.binning = binning;
         }
 
         public int getnRows() {
@@ -200,13 +226,9 @@ public class Guider {
             return integrationTimeMilliSeconds;
         }
 
-        public int getBinning() {
-            return binning;
-        }
-
         @Override
         public String toString() {
-            return "ROICommon{" + "nRows=" + nRows + ", nCols=" + nCols + ", integrationTimeMilliSeconds=" + integrationTimeMilliSeconds + ", binning=" + binning + '}';
+            return "ROICommon{" + "nRows=" + nRows + ", nCols=" + nCols + ", integrationTimeMilliSeconds=" + integrationTimeMilliSeconds + '}';
         }
     }
 
@@ -337,14 +359,15 @@ public class Guider {
          * @param state The meta-data at start time
          * @param series The meta-data corresponding to the series of postage
          * stamps
+         * @throws java.lang.Exception
          */
-        void start(StateMetaData state, SeriesMetaData series);
+        void start(StateMetaData state, SeriesMetaData series) throws Exception;
 
-        void stop(StateMetaData state);
+        void stop(StateMetaData state) throws Exception;
 
-        void pause(StateMetaData state);
+        void pause(StateMetaData state) throws Exception;
 
-        void resume(StateMetaData state);
+        void resume(StateMetaData state) throws Exception;
 
         /**
          * Called each time there is a single postage stamp
@@ -352,7 +375,7 @@ public class Guider {
          * @param state The current state, including the timestamp of the stamp
          * @param stamp The data corresponding to the stamp (in what format??)
          */
-        void stamp(StateMetaData state, ByteBuffer stamp);
+        void stamp(StateMetaData state, ByteBuffer stamp) throws Exception;
 
         /**
          * Called each time there is a new postage stamp
@@ -360,7 +383,7 @@ public class Guider {
          * @param state The current state, including the timestamp of the stamp
          * @param rawStamp The data corresponding the the raw postage stamp.
          */
-        void rawStamp(StateMetaData state, ByteBuffer rawStamp);
+        void rawStamp(StateMetaData state, ByteBuffer rawStamp) throws Exception;
 
     }
 
@@ -374,13 +397,17 @@ public class Guider {
         private final Version version;
         private final int firmware;
         private final long serialNumber;
+        private final String id;
+        private final String platform;
 
-        private SeriesMetaData(int firmware, long serialNumber, ROICommon common, ROILocation location, Version version) {
+        private SeriesMetaData(int firmware, long serialNumber, String id, String platform, ROICommon common, ROILocation location, Version version) {
             this.firmware = firmware;
             this.serialNumber = serialNumber;
             this.common = common;
             this.location = location;
             this.version = version;
+            this.id = id;
+            this.platform = platform;
         }
 
         public ROICommon getCommon() {
@@ -403,9 +430,17 @@ public class Guider {
             return serialNumber;
         }
 
+        public String getId() {
+            return id;
+        }
+
+        public String getPlatform() {
+            return platform;
+        }
+
         @Override
         public String toString() {
-            return "SeriesMetaData{" + "common=" + common + ", location=" + location + ", version=" + version + ", firmware=" + firmware + ", serialNumber=" + serialNumber + '}';
+            return "SeriesMetaData{" + "common=" + common + ", location=" + location + ", version=" + version + ", firmware=" + firmware + ", serialNumber=" + serialNumber + ", id=" + id + ", platform=" + platform + '}';
         }
 
     }
@@ -533,25 +568,26 @@ public class Guider {
 
     public static class FitsWriter implements GuiderListener {
 
-        private final ImageName imageName;
         private final String partition;
         private final FileNamer fileNamer;
         private final Map<String, HeaderSpecification> headerSpecifications;
-        private final Map<SensorLocation, BufferedFile> fitsFiles = new HashMap<>();
-        private final Map<SensorLocation, Map<String, Object>> locationProps = new HashMap<>();
+        private BufferedFile bufferedFile;
+        private Map<String, Object> properties;
+        private final SensorLocation sensorLocation;
 
-        public FitsWriter(ImageName imageName, String partition, FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
-            this.imageName = imageName;
+        public FitsWriter(String partition, SensorLocation location, FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
             this.partition = partition;
             this.fileNamer = fileNamer;
             this.headerSpecifications = headerSpecifications;
+            this.sensorLocation = location;
         }
 
         @Override
-        public void start(StateMetaData state, SeriesMetaData series) {
+        public void start(StateMetaData state, SeriesMetaData series) throws IOException, FitsException {
             // Start must be issued after the FitsWriter is installed as a listener
-            // Note, this will be called once for each ROI
             Map<String, Object> props = new HashMap<>();
+            // ToDo: Handle non standard id
+            ImageName imageName = new ImageName(series.getId());
             props.put("ImageName", imageName.toString());
             props.put("ImageDate", imageName.getDateString());
             props.put("ImageNumber", imageName.getNumberString());
@@ -574,6 +610,7 @@ public class Guider {
             props.put("Firmware", String.format("%x", series.getFirmware()));
             props.put("CCDControllerSerial", String.format("%x", series.getSerialNumber() & 0xFFFFFFFFL));
             props.put("DAQVersion", series.getVersion().toString());
+            props.put("Platform", series.getPlatform());
 
             props.put("StartTime", state.getTimestamp());
             props.put("DAQSequence", state.getSequence());
@@ -581,29 +618,24 @@ public class Guider {
             props.put("CCDSlot", rebLocation.getSensorName(sensorLocation.getSensor()));
             File computedFileName = fileNamer.computeFileName(props);
 
-            try {
-                // Open the file and write the primary header
-                BufferedFile bf = new BufferedFile(computedFileName, "rw");
-                BasicHDU primary = BasicHDU.getDummyHDU();
-                MetaDataSet metaDataSet = new MetaDataSet();
-                metaDataSet.addMetaDataMap("primary", props);
-                HeaderWriter.addMetaDataToHeader(computedFileName, primary, headerSpecifications.get("primary"), metaDataSet);
-                FitsCheckSum.setChecksum(primary);
-                primary.write(bf);
-                fitsFiles.put(state.getSensorLocation(), bf);
-                locationProps.put(state.getSensorLocation(), props);
-            } catch (FitsException | IOException ex) {
-                LOG.log(Level.WARNING, "Error writing FITS primary header", ex);
-            }
+            // Open the file and write the primary header
+            BufferedFile bf = new BufferedFile(computedFileName, "rw");
+            BasicHDU primary = BasicHDU.getDummyHDU();
+            MetaDataSet metaDataSet = new MetaDataSet();
+            metaDataSet.addMetaDataMap("primary", props);
+            HeaderWriter.addMetaDataToHeader(computedFileName, primary, headerSpecifications.get("primary"), metaDataSet);
+            FitsCheckSum.setChecksum(primary);
+            primary.write(bf);
+            this.bufferedFile = bf;
+            this.properties = props;
         }
 
         @Override
         public void stop(StateMetaData state) {
             try {
-                BufferedFile bf = fitsFiles.remove(state.getSensorLocation());
-                locationProps.remove(state.getSensorLocation());
-                if (bf != null) {
-                    bf.close();
+                if (bufferedFile != null) {
+                    bufferedFile.close();
+                    bufferedFile = null;
                 }
             } catch (IOException ex) {
                 LOG.log(Level.WARNING, "Error closing FITS file", ex);
@@ -619,30 +651,29 @@ public class Guider {
         }
 
         @Override
-        public void stamp(StateMetaData state, ByteBuffer stamp) {
-            try {
-                BufferedFile bf = fitsFiles.get(state.getSensorLocation());
-                Map<String, Object> primaryProps = locationProps.get(state.getSensorLocation());
+        public void stamp(StateMetaData state, ByteBuffer stamp) throws FitsException, IOException {
+            Map<String, Object> props = new HashMap<>();
+            props.put("StampTime", state.getTimestamp());
 
-                Map<String, Object> props = new HashMap<>();
-                props.put("StampTime", state.getTimestamp());
+            int[][] intDummyData = new int[1][1];
+            BasicHDU imageHDU = FitsFactory.hduFactory(intDummyData);
+            Header header = imageHDU.getHeader();
+            header.setXtension("IMAGE");
+            header.setBitpix(32);
+            header.setNaxes(2);
+            header.setNaxis(1, (int) properties.get("ROIRows"));
+            header.setNaxis(2, (int) properties.get("ROICols"));
 
-                BasicHDU imageHDU = BasicHDU.getDummyHDU();
-                Header header = imageHDU.getHeader();
-                header.setXtension("IMAGE");
-                header.setBitpix(32);
-                header.setNaxes(2);
-                header.setNaxis(1, (int) primaryProps.get("ROIRows"));
-                header.setNaxis(2, (int) primaryProps.get("ROICols"));
-
-                MetaDataSet metaDataSet = new MetaDataSet();
-                metaDataSet.addMetaDataMap("stamp", props);
-                HeaderWriter.addMetaDataToHeader(null, imageHDU, headerSpecifications.get("stamp"), metaDataSet);
-                FitsCheckSum.setChecksum(imageHDU);
-                header.write(bf);
-            } catch (FitsException | IOException ex) {
-                LOG.log(Level.WARNING, "Error writing FITS primary header", ex);
-            }
+            MetaDataSet metaDataSet = new MetaDataSet();
+            metaDataSet.addMetaDataMap("stamp", props);
+            HeaderWriter.addMetaDataToHeader(null, imageHDU, headerSpecifications.get("stamp"), metaDataSet);
+            FitsCheckSum.setChecksum(imageHDU);
+            //long computeChecksum = FitsCheckSum.computeChecksum(stamp);
+            //FitsCheckSum.updateDataSum(header, computeChecksum);
+            long imageSize = stamp.remaining();
+            header.write(bufferedFile);
+            bufferedFile.getChannel().write(stamp);
+            FitsUtil.pad(bufferedFile, imageSize);
         }
 
         @Override

@@ -478,20 +478,20 @@ public class Store implements AutoCloseable {
         return impl.wakeGuider(guider);
     }
 
-    Guider.Status  startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int binning, int[] roiData) throws DAQException {
-        return impl.startGuider(guider, nRows, nCols, integrationTimeMilliSeconds, binning, roiData);
+    Guider.Status  startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, String id, int[] roiData) throws DAQException {
+        return impl.startGuider(guider, nRows, nCols, integrationTimeMilliSeconds, id, roiData);
     }
 
-    long attachGuiderSubscriber(String partition, int[] locations) throws DAQException {
-        return impl.attachGuiderSubscriber(partition, locations);
+    long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException {
+        return impl.attachGuiderSubscriber(partition, bigEndian, locations);
     }
 
     void detachGuiderSubscriber(long subscriber) throws DAQException {
         impl.detachGuiderSubscriber(subscriber);
     }
     
-    void waitForGuider(long subscriber, Guider guider) throws DAQException {
-        impl.waitForGuider(subscriber, guider);
+    void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException {
+        impl.waitForGuider(subscriber, callback);
     }
 
     Guider.Config guiderConfig(long guider) throws DAQException {

@@ -125,7 +125,7 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native void detachGuider(long guider) throws DAQException;
 
     @Override
-    public synchronized native Guider.Status startGuider(long guider, int rows, int cols, int integration, int binning, int[] roiData) throws DAQException;
+    public synchronized native Guider.Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) throws DAQException;
 
     @Override
     public synchronized native Guider.Status stopGuider(long guider) throws DAQException;
@@ -143,10 +143,10 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native Guider.Status wakeGuider(long guider) throws DAQException;
     
     @Override
-    public native void waitForGuider(long subscriber, Guider guider) throws DAQException;
+    public native void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException;
 
     @Override
-    public synchronized native long attachGuiderSubscriber(String partition, int[] locations) throws DAQException;
+    public synchronized native long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException;
 
     @Override
     public synchronized native void detachGuiderSubscriber(long subscriber) throws DAQException;

@@ -20,7 +20,7 @@ void Guider_OnLoad(JNIEnv*);
 
 class MyGuiderSubscriber : public GDS::Decoder {
 public:
-    MyGuiderSubscriber(const char* partition, const GDS::LocationSet& locs);
+    MyGuiderSubscriber(const char* partition, bool bigEndian, const GDS::LocationSet& locs);
 public:
     ~MyGuiderSubscriber() {}
 public:
