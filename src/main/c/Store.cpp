@@ -395,7 +395,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
 (JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jint binning, jintArray roiData) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
-    GDS::RoiCommon common(rows, cols, integration, binning);
+    GDS::RoiCommon common(rows, cols, integration);
     GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];
     jint* values = env->GetIntArrayElements(roiData, 0);
     int nlocs = env->GetArrayLength(roiData)/5;

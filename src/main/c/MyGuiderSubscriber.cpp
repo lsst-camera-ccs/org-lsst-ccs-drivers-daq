@@ -30,7 +30,7 @@ static jclass JCguiderStatusClass;
 static jmethodID JCguiderStatusConstructor;
 
 MyGuiderSubscriber::MyGuiderSubscriber(const char* partition, const GDS::LocationSet& locs) :
-    GDS::Decoder(partition, locs) {
+    GDS::Decoder(partition, locs, true) {
 }
 
 jobject createGuiderStatus(JNIEnv* env, const GDS::Status& status) {
@@ -46,7 +46,7 @@ jobject createRoiCommon(JNIEnv* env, const GDS::RoiCommon& location) {
     jint nrows = location.nrows();
     jint ncols = location.ncols();
     jint integration = location.integration();
-    jint binning = location.binning();
+    jint binning = 1;
 
     return env->NewObject(JCguiderRoiCommonClass, JCguiderRoiCommonConstructor, nrows, ncols, integration, binning);
 }
