@@ -92,6 +92,9 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native BitSet getConfiguredSources(long store) throws DAQException;
 
     @Override
+    public synchronized native BitSet getConfiguredLocations(String partition) throws DAQException;
+    
+    @Override
     public native Version getClientVersion() throws DAQException;
     
     @Override

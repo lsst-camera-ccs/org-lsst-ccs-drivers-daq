@@ -190,6 +190,12 @@ public class Store implements AutoCloseable {
         BitSet locations = impl.getConfiguredSources(store);
         return new LocationSet(locations);
     }
+    
+    public LocationSet getConfiguredLocations() throws DAQException {
+        BitSet locations = impl.getConfiguredLocations(partition);
+        return new LocationSet(locations);
+    }
+
 
     /**
      * Add an image listener to this store. The image listener will be notified

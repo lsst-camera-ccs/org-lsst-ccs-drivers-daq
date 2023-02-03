@@ -108,7 +108,7 @@ public class GuiderTool {
         locations.add(new ROILocation(sensorLocation0, 4, 100, 100));
         locations.add(new ROILocation(sensorLocation1, 5, 200, 200));
         ROICommon roi = new ROICommon(50, 50, 100);
-        return guider.start(roi, "MC_C_20230101_000000", locations);
+        return guider.start(roi, "MC_C_20230101_000001", locations);
     }
 
 //    @Command(name = "listen", description = "Listen for guider events")
@@ -175,7 +175,7 @@ public class GuiderTool {
     @Command(name = "locations", description = "List configured locations")
     public LocationSet locations() throws DAQException {
         checkStore();
-        return store.getConfiguredSources();
+        return store.getConfiguredLocations();
     }
 
     private void checkStore() {

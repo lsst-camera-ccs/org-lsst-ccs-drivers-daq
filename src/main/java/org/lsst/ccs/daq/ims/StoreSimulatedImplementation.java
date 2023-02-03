@@ -184,6 +184,11 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
+    public BitSet getConfiguredLocations(String partition) throws DAQException {
+        return LocationSet.all().getBitSet();
+    }
+    
+    @Override
     public Version getClientVersion() throws DAQException {
         return release;
     }

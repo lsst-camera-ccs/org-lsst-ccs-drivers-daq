@@ -57,6 +57,8 @@ interface StoreImplementation {
     String decodeException(int rc);
 
     BitSet getConfiguredSources(long store) throws DAQException;
+    
+    BitSet getConfiguredLocations(String partition) throws DAQException;
 
     Version getClientVersion() throws DAQException;
 

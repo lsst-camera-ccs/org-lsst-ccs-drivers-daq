@@ -762,7 +762,16 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_ge
     Store* store_ = (Store*) store;
     CMS::Camera camera(*store_);
     const DAQ::LocationSet& locations = camera.sources();
-    return createBitSet(env, locations); 
+    return createBitSet(env, locations);
+}
+
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_getLocations
+  (JNIEnv *env, jobject obj, jstring partition) {
+    const char *partition_ = env->GetStringUTFChars(partition, 0);
+    RMS::Client client(partition_);
+    env->ReleaseStringUTFChars(partition, partition_);
+    const DAQ::LocationSet& locations = client.sources();
+    return createBitSet(env, locations);
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_getClientVersion

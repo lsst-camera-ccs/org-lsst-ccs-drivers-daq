@@ -236,7 +236,7 @@ void Guider_OnLoad(JNIEnv* env) {
     }
     JCguiderRoiCommonClass = (jclass) env->NewGlobalRef(guiderRoiCommonClass);
 
-    JCguiderRoiCommonConstructor = env->GetMethodID(JCguiderRoiCommonClass, "<init>", "(IIII)V");
+    JCguiderRoiCommonConstructor = env->GetMethodID(JCguiderRoiCommonClass, "<init>", "(III)V");
     if (env->ExceptionCheck()) {
         return;
     }
