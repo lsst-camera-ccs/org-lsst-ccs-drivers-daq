@@ -57,7 +57,7 @@ public class SensorLocation {
 
     @Override
     public String toString() {
-        return rebLocation.toString() + rebLocation.getSensorName(sensor);
+        return rebLocation.toString() + "/" + rebLocation.getSensorName(sensor);
     }
     
 }

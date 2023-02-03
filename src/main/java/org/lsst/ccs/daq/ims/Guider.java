@@ -96,6 +96,10 @@ public class Guider {
         store.detachGuider(this.guider);
     }
 
+    public String getPartition() {
+        return store.getPartition();
+    }
+
     public static class Subscriber implements AutoCloseable {
 
         private static final Logger LOG = Logger.getLogger(Subscriber.class.getName());
@@ -173,6 +177,10 @@ public class Guider {
             } catch (Exception x) {
                 LOG.log(Level.WARNING, "stamp callback failed", x);
             }
+        }
+        
+        public String getPartition() {
+            return store.getPartition();
         }
 
         @Override

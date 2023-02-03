@@ -911,10 +911,10 @@ JNIEXPORT jobjectArray JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementati
     MyHarvester harvester(numRegs);
     client_->access(locations_, instList, harvester);
     if (harvester.errorCount() > 0) {
-        char x[MESSAGE_LENGTH];
+        char x[2*MESSAGE_LENGTH];
         char encoded[MESSAGE_LENGTH];
         harvester.errors().encode(encoded);
-        snprintf(x, MESSAGE_LENGTH, "%d errors reading registers %s", harvester.errorCount(), encoded);
+        snprintf(x, 2*MESSAGE_LENGTH, "%d errors reading registers %s", harvester.errorCount(), encoded);
         throwDAQException(env, x);
     }
     jobjectArray result = env->NewObjectArray(locations_.SIZE, JCintArrayClass, NULL);

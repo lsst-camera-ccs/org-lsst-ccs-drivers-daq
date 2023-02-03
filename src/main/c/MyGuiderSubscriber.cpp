@@ -168,6 +168,7 @@ void MyGuiderSubscriber::wait(JNIEnv *env, jobject callback) {
     this->callback = callback;
     GDS::Decoder::wait();
 }
+
 void Guider_OnLoad(JNIEnv* env) {
 
     jclass subscriberClass = env->FindClass("org/lsst/ccs/daq/ims/Guider$Subscriber");
