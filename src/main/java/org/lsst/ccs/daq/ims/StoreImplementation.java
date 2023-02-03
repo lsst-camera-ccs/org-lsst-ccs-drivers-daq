@@ -2,7 +2,9 @@ package org.lsst.ccs.daq.ims;
 
 import java.util.BitSet;
 import java.util.List;
-import org.lsst.ccs.daq.ims.Guider.Config;
+import org.lsst.ccs.daq.guider.Config;
+import org.lsst.ccs.daq.guider.Series;
+import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.utilities.location.Location;
 
 /**
@@ -80,17 +82,17 @@ interface StoreImplementation {
 
     void detachGuider(long guider) throws DAQException;
         
-    Guider.Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) throws DAQException;
+    Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) throws DAQException;
 
-    Guider.Status stopGuider(long guider) throws DAQException;
+    Status stopGuider(long guider) throws DAQException;
 
-    Guider.Status pauseGuider(long guider) throws DAQException;
+    Status pauseGuider(long guider) throws DAQException;
 
-    Guider.Status resumeGuider(long guider) throws DAQException;
+    Status resumeGuider(long guider) throws DAQException;
 
-    Guider.Status sleepGuider(long guider) throws DAQException;
+    Status sleepGuider(long guider) throws DAQException;
 
-    Guider.Status wakeGuider(long guider) throws DAQException;
+    Status wakeGuider(long guider) throws DAQException;
 
     public long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException;
 
@@ -100,7 +102,7 @@ interface StoreImplementation {
 
     public Config guiderConfig(long guider) throws DAQException;
 
-    public Guider.Series guiderSeries(long guider) throws DAQException;
+    public Series guiderSeries(long guider) throws DAQException;
 
 
 }

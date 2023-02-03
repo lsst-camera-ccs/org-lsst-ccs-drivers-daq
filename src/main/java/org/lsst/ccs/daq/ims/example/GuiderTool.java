@@ -10,11 +10,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lsst.ccs.command.annotations.Argument;
 import org.lsst.ccs.command.annotations.Command;
+import org.lsst.ccs.daq.guider.Config;
+import org.lsst.ccs.daq.guider.FitsWriter;
 import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.daq.ims.Guider;
-import org.lsst.ccs.daq.ims.Guider.ROICommon;
-import org.lsst.ccs.daq.ims.Guider.ROILocation;
-import org.lsst.ccs.daq.ims.Guider.SensorLocation;
+import org.lsst.ccs.daq.guider.ROICommon;
+import org.lsst.ccs.daq.guider.ROILocation;
+import org.lsst.ccs.daq.guider.SensorLocation;
+import org.lsst.ccs.daq.guider.Series;
+import org.lsst.ccs.daq.guider.Status;
+import org.lsst.ccs.daq.ims.Guider.Subscriber;
 import org.lsst.ccs.daq.ims.Store;
 import org.lsst.ccs.daq.ims.Version;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
@@ -57,49 +62,49 @@ public class GuiderTool {
     }
 
     @Command(name = "stop", description = "Stop the guider")
-    public Guider.Status stop() throws DAQException {
+    public Status stop() throws DAQException {
         checkStore();
         return guider.stop();
     }
 
     @Command(name = "pause", description = "Pause the guider")
-    public Guider.Status pause() throws DAQException {
+    public Status pause() throws DAQException {
         checkStore();
         return guider.pause();
     }
 
     @Command(name = "resume", description = "Resume the guider")
-    public Guider.Status resume() throws DAQException {
+    public Status resume() throws DAQException {
         checkStore();
         return guider.resume();
     }
 
     @Command(name = "sleep", description = "Sleep the guider")
-    public Guider.Status sleep() throws DAQException {
+    public Status sleep() throws DAQException {
         checkStore();
         return guider.sleep();
     }
 
     @Command(name = "wake", description = "Wake the guider")
-    public Guider.Status wake() throws DAQException {
+    public Status wake() throws DAQException {
         checkStore();
         return guider.wake();
     }
 
     @Command(name = "config", description = "Get the guider config")
-    public Guider.Config config() throws DAQException {
+    public Config config() throws DAQException {
         checkStore();
         return guider.config();
     }
 
     @Command(name = "series", description = "Get the guider series")
-    public Guider.Series series() throws DAQException {
+    public Series series() throws DAQException {
         checkStore();
         return guider.series();
     }
 
     @Command(name = "start", description = "Start the guider")
-    public Guider.Status start() throws DAQException {
+    public Status start() throws DAQException {
         checkStore();
         List<ROILocation> locations = new ArrayList<>();
         Location R00 = Location.of("R00/RebG");
@@ -140,10 +145,10 @@ public class GuiderTool {
         Location R00 = Location.of("R00/RebG");
         SensorLocation sensorLocation0 = new SensorLocation(R00, 0);
         SensorLocation sensorLocation1 = new SensorLocation(R00, 1);
-        Guider.FitsWriter writer0 = new Guider.FitsWriter(store.getPartition(), sensorLocation0, namer, headerSpecifications);
-        Guider.FitsWriter writer1 = new Guider.FitsWriter(store.getPartition(), sensorLocation1, namer, headerSpecifications);
+        FitsWriter writer0 = new FitsWriter(store.getPartition(), sensorLocation0, namer, headerSpecifications);
+        FitsWriter writer1 = new FitsWriter(store.getPartition(), sensorLocation1, namer, headerSpecifications);
 
-        Guider.Subscriber subscribe0 = guider.subscribe(Collections.singleton(sensorLocation0), ByteOrder.BIG_ENDIAN, writer0);
+        Subscriber subscribe0 = guider.subscribe(Collections.singleton(sensorLocation0), ByteOrder.BIG_ENDIAN, writer0);
         Thread t0 = new Thread(() -> {
             for (;;) {
                 try {
@@ -154,7 +159,7 @@ public class GuiderTool {
             }
         });
         t0.start();
-        Guider.Subscriber subscribe1 = guider.subscribe(Collections.singleton(sensorLocation1), ByteOrder.BIG_ENDIAN, writer1);//        Thread t = new Thread(() -> {
+        Subscriber subscribe1 = guider.subscribe(Collections.singleton(sensorLocation1), ByteOrder.BIG_ENDIAN, writer1);//        Thread t = new Thread(() -> {
         Thread t1 = new Thread(() -> {
             for (;;) {
                 try {

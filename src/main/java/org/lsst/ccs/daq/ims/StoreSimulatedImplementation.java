@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+import org.lsst.ccs.daq.guider.Config;
+import org.lsst.ccs.daq.guider.Series;
+import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.Location.LocationType;
 import org.lsst.ccs.utilities.location.LocationSet;
@@ -229,32 +232,32 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Guider.Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) {
+    public Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) {
         return null;
     }
 
     @Override
-    public Guider.Status stopGuider(long guider) {
+    public Status stopGuider(long guider) {
         return null;
     }
 
     @Override
-    public Guider.Status pauseGuider(long guider) {
+    public Status pauseGuider(long guider) {
         return null;
     }
 
     @Override
-    public Guider.Status resumeGuider(long guider) {
+    public Status resumeGuider(long guider) {
         return null;
     }
 
     @Override
-    public Guider.Status sleepGuider(long guider) {
+    public Status sleepGuider(long guider) {
         return null;
     }
 
     @Override
-    public Guider.Status wakeGuider(long guider) {
+    public Status wakeGuider(long guider) {
         return null;
     }
 
@@ -272,12 +275,12 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Guider.Config guiderConfig(long guider) throws DAQException {
+    public Config guiderConfig(long guider) throws DAQException {
         return null;
     }
 
     @Override
-    public Guider.Series guiderSeries(long guider) throws DAQException {
+    public Series guiderSeries(long guider) throws DAQException {
         return null;
     }
 

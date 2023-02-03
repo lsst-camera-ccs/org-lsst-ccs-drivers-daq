@@ -12,6 +12,9 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.lsst.ccs.daq.guider.Config;
+import org.lsst.ccs.daq.guider.Series;
+import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
@@ -464,27 +467,27 @@ public class Store implements AutoCloseable {
         impl.detachGuider(guider);
     }
     
-    Guider.Status stopGuider(long guider) throws DAQException {
+    Status stopGuider(long guider) throws DAQException {
         return impl.stopGuider(guider);
     }
 
-    Guider.Status  resumeGuider(long guider) throws DAQException {
+    Status  resumeGuider(long guider) throws DAQException {
         return impl.resumeGuider(guider);
     }
 
-    Guider.Status  pauseGuider(long guider) throws DAQException {
+    Status  pauseGuider(long guider) throws DAQException {
         return impl.pauseGuider(guider);
     }
     
-    Guider.Status  sleepGuider(long guider) throws DAQException {
+    Status  sleepGuider(long guider) throws DAQException {
         return impl.sleepGuider(guider);
     }
 
-    Guider.Status  wakeGuider(long guider) throws DAQException {
+    Status  wakeGuider(long guider) throws DAQException {
         return impl.wakeGuider(guider);
     }
 
-    Guider.Status  startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, String id, int[] roiData) throws DAQException {
+    Status  startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, String id, int[] roiData) throws DAQException {
         return impl.startGuider(guider, nRows, nCols, integrationTimeMilliSeconds, id, roiData);
     }
 
@@ -500,11 +503,11 @@ public class Store implements AutoCloseable {
         impl.waitForGuider(subscriber, callback);
     }
 
-    Guider.Config guiderConfig(long guider) throws DAQException {
+    Config guiderConfig(long guider) throws DAQException {
         return impl.guiderConfig(guider);
     }
 
-    Guider.Series guiderSeries(long guider) throws DAQException {
+    Series guiderSeries(long guider) throws DAQException {
         return impl.guiderSeries(guider);
     }
 }
