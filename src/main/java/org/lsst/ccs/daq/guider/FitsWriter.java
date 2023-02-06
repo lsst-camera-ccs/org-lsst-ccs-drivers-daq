@@ -23,19 +23,23 @@ import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.taitime.CCSTimeStamp;
 
 /**
- *
+ * //TODO: Revisit lifecycle of FITS writer. It seems something should be created
+ * in start and last until stop, but this is not it.
  * @author tonyj
  */
 public class FitsWriter implements GuiderListener {
 
     private static final Logger LOG = Logger.getLogger(FitsWriter.class.getName());
     
-    final String partition;
-    final FitsIntWriter.FileNamer fileNamer;
-    final Map<String, HeaderSpecification> headerSpecifications;
-    BufferedFile bufferedFile;
-    Map<String, Object> properties;
-    final SensorLocation sensorLocation;
+    private final String partition;
+    private final FitsIntWriter.FileNamer fileNamer;
+    private final Map<String, HeaderSpecification> headerSpecifications;
+    private BufferedFile bufferedFile;
+    private Map<String, Object> properties;
+    private final SensorLocation sensorLocation;
+    private Object finalFileName;
+    private File temporaryFileName;
+    private ImageName imageName;
 
     public FitsWriter(String partition, SensorLocation location, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
         this.partition = partition;
@@ -49,7 +53,7 @@ public class FitsWriter implements GuiderListener {
         // Start must be issued after the FitsWriter is installed as a listener
         Map<String, Object> props = new HashMap<>();
         // ToDo: Handle non standard id
-        ImageName imageName = new ImageName(series.getId());
+        imageName = new ImageName(series.getId());
         props.put("ImageName", imageName.toString());
         props.put("ImageDate", imageName.getDateString());
         props.put("ImageNumber", imageName.getNumberString());
@@ -75,6 +79,8 @@ public class FitsWriter implements GuiderListener {
         props.put("DAQSequence", state.getSequence());
         props.put("CCDSlot", rebLocation.getSensorName(sensorLocation.getSensor()));
         File computedFileName = fileNamer.computeFileName(props);
+        finalFileName = props.get("OriginalFileName");
+        temporaryFileName = computedFileName;
         // Open the file and write the primary header
         BufferedFile bf = new BufferedFile(computedFileName, "rw");
         BasicHDU primary = BasicHDU.getDummyHDU();
@@ -134,6 +140,18 @@ public class FitsWriter implements GuiderListener {
     @Override
     public void rawStamp(StateMetaData state, ByteBuffer rawStamp) {
         // Ignored for now, probably forever
+    }
+
+    public File getFileName() {
+        return temporaryFileName;
+    }
+
+    public SensorLocation getSensorLocation() {
+        return sensorLocation;
+    }
+
+    public ImageName getImageName() {
+        return imageName;
     }
     
 }
