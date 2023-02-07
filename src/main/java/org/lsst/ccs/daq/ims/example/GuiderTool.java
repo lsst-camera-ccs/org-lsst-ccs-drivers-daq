@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 import org.lsst.ccs.command.annotations.Argument;
 import org.lsst.ccs.command.annotations.Command;
 import org.lsst.ccs.daq.guider.Config;
-import org.lsst.ccs.daq.guider.FitsWriter;
+import org.lsst.ccs.daq.guider.FitsWriterFactory;
 import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.daq.ims.Guider;
 import org.lsst.ccs.daq.guider.ROICommon;
@@ -145,8 +145,8 @@ public class GuiderTool {
         Location R00 = Location.of("R00/RebG");
         SensorLocation sensorLocation0 = new SensorLocation(R00, 0);
         SensorLocation sensorLocation1 = new SensorLocation(R00, 1);
-        FitsWriter writer0 = new FitsWriter(store.getPartition(), sensorLocation0, namer, headerSpecifications);
-        FitsWriter writer1 = new FitsWriter(store.getPartition(), sensorLocation1, namer, headerSpecifications);
+        FitsWriterFactory writer0 = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications);
+        FitsWriterFactory writer1 = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications);
 
         Subscriber subscribe0 = guider.subscribe(Collections.singleton(sensorLocation0), ByteOrder.BIG_ENDIAN, writer0);
         Thread t0 = new Thread(() -> {
