@@ -1,6 +1,8 @@
 package org.lsst.ccs.daq.guider;
 
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.lsst.ccs.utilities.location.Location;
 
 /**
@@ -8,7 +10,9 @@ import org.lsst.ccs.utilities.location.Location;
  * @author tonyj
  */
 public class SensorLocation {
-    
+
+    private final static Pattern SENSOR_PATTERN = Pattern.compile("R(\\d\\d)S(.)([012])");
+
     final Location rebLocation;
     final int sensor;
 
@@ -17,6 +21,10 @@ public class SensorLocation {
     }
 
     public SensorLocation(Location rebLocation, int sensor) {
+        int nCCDs = rebLocation.type() == Location.LocationType.SCIENCE ? 3 : 2;
+        if (sensor >= nCCDs) {
+            throw new IllegalArgumentException("Invalid sensor # "+sensor+" for "+rebLocation);
+        }
         this.rebLocation = rebLocation;
         this.sensor = sensor;
     }
@@ -55,9 +63,20 @@ public class SensorLocation {
         return Objects.equals(this.rebLocation, other.rebLocation);
     }
 
+    static SensorLocation of(String string) {
+        Matcher matcher = SENSOR_PATTERN.matcher(string);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("Invalid sensor location: " + string);
+        }
+        String reb = "R" + matcher.group(1) + "/Reb" + matcher.group(2);
+        Location rebLocation = Location.of(reb);
+        int sensor = Integer.parseInt(matcher.group(3));
+        return new SensorLocation(rebLocation, sensor);
+    }
+
     @Override
     public String toString() {
-        return rebLocation.toString() + "/" + rebLocation.getSensorName(sensor);
+        return rebLocation.getRaftName() + rebLocation.getSensorName(sensor);
     }
-    
+
 }

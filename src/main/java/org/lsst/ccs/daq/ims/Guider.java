@@ -16,6 +16,7 @@ import org.lsst.ccs.daq.guider.Series;
 import org.lsst.ccs.daq.guider.SeriesMetaData;
 import org.lsst.ccs.daq.guider.StateMetaData;
 import org.lsst.ccs.daq.guider.Status;
+import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
  * An interface to the DAQ guider.
@@ -57,7 +58,7 @@ public class Guider {
             roiData[j + 4] = location.getStartCol();
         }
         System.out.println(Arrays.toString(roiData));
-        return store.startGuider(guider, common.getnRows(), common.getnCols(), common.getIntegrationTimeMillis(), id, roiData);
+        return store.startGuider(guider, common.getRows(), common.getCols(), common.getIntegrationTimeMillis(), id, roiData);
     }
 
     public Subscriber subscribe(Set<SensorLocation> locations, ByteOrder byteOrder, GuiderListener listener) throws DAQException {
@@ -98,6 +99,10 @@ public class Guider {
 
     public String getPartition() {
         return store.getPartition();
+    }
+
+    public LocationSet getConfiguredLocations() throws DAQException {
+        return store.getConfiguredLocations();
     }
 
     public static class Subscriber implements AutoCloseable {

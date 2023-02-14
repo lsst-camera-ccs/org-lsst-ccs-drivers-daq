@@ -1,43 +1,47 @@
 package org.lsst.ccs.daq.guider;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * ROI parameters which are shared by all ROIs.
  */
 public class ROICommon {
 
-    final int nRows;
-    final int nCols;
-    final int integrationTimeMilliSeconds;
+    final int rows;
+    final int cols;
+    final int integrationTimeMillis;
 
     /**
      * Create an instance of ROICommand
      *
-     * @param nRows The number of rows
-     * @param nCols The number of columns
-     * @param integrationTimeMilliSeconds The integration time in
+     * @param rows The number of rows
+     * @param cols The number of columns
+     * @param integrationTimeMillis The integration time in
      * milliseconds
      */
-    public ROICommon(int nRows, int nCols, int integrationTimeMilliSeconds) {
-        this.nRows = nRows;
-        this.nCols = nCols;
-        this.integrationTimeMilliSeconds = integrationTimeMilliSeconds;
+    @JsonCreator
+    public ROICommon(@JsonProperty("rows") int rows, @JsonProperty("cols") int cols, @JsonProperty("integrationTimeMillis") int integrationTimeMillis) {
+        this.rows = rows;
+        this.cols = cols;
+        this.integrationTimeMillis = integrationTimeMillis;
     }
 
-    public int getnRows() {
-        return nRows;
+    public int getRows() {
+        return rows;
     }
 
-    public int getnCols() {
-        return nCols;
+    public int getCols() {
+        return cols;
     }
 
     public int getIntegrationTimeMillis() {
-        return integrationTimeMilliSeconds;
+        return integrationTimeMillis;
     }
 
     @Override
     public String toString() {
-        return "ROICommon{" + "nRows=" + nRows + ", nCols=" + nCols + ", integrationTimeMilliSeconds=" + integrationTimeMilliSeconds + '}';
+        return "ROICommon{" + "rows=" + rows + ", cols=" + cols + ", integrationTimeMillis=" + integrationTimeMillis + '}';
     }
     
 }

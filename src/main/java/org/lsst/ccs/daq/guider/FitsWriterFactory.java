@@ -31,7 +31,7 @@ public class FitsWriterFactory implements GuiderListener {
     private final String partition;
     private final FitsIntWriter.FileNamer fileNamer;
     private final Map<String, HeaderSpecification> headerSpecifications;
-    private FitsWriter currentFitsFitsWriter;
+    private FitsWriter currentFitsFileWriter;
 
     public FitsWriterFactory(String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
         this.partition = partition;
@@ -45,14 +45,14 @@ public class FitsWriterFactory implements GuiderListener {
 
     @Override
     public void start(StateMetaData state, SeriesMetaData series) throws IOException, FitsException {
-        currentFitsFitsWriter = createFitsFileWriter(state, series, partition, fileNamer, headerSpecifications);
+        currentFitsFileWriter = createFitsFileWriter(state, series, partition, fileNamer, headerSpecifications);
     }
 
     @Override
     public void stop(StateMetaData state) throws IOException, FitsException {
-        if (currentFitsFitsWriter != null) {
-            currentFitsFitsWriter = null;
-            currentFitsFitsWriter.close();
+        if (currentFitsFileWriter != null) {
+            currentFitsFileWriter.close();
+            currentFitsFileWriter = null;
         }
 
     }
@@ -67,8 +67,8 @@ public class FitsWriterFactory implements GuiderListener {
 
     @Override
     public void stamp(StateMetaData state, ByteBuffer stamp) throws FitsException, IOException {
-        if (currentFitsFitsWriter != null) {
-            currentFitsFitsWriter.stamp(state, stamp);
+        if (currentFitsFileWriter != null) {
+            currentFitsFileWriter.stamp(state, stamp);
         }
     }
 
@@ -105,8 +105,8 @@ public class FitsWriterFactory implements GuiderListener {
             props.put("DAQPartition", partition);
             props.put("IntegrationTime", common.getIntegrationTimeMillis());
             props.put("ROISegment", String.format("Segment%02d", roiLocation.getSegment()));
-            props.put("ROICols", common.getnCols());
-            props.put("ROIRows", common.getnRows());
+            props.put("ROICols", common.getCols());
+            props.put("ROIRows", common.getRows());
             props.put("Firmware", String.format("%x", series.getFirmware()));
             props.put("CCDControllerSerial", String.format("%x", series.getSerialNumber() & 0xFFFFFFFFL));
             props.put("DAQVersion", series.getVersion().toString());

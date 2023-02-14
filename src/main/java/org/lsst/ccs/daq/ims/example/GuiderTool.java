@@ -2,9 +2,7 @@ package org.lsst.ccs.daq.ims.example;
 
 import java.io.File;
 import java.nio.ByteOrder;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -14,8 +12,7 @@ import org.lsst.ccs.daq.guider.Config;
 import org.lsst.ccs.daq.guider.FitsWriterFactory;
 import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.daq.ims.Guider;
-import org.lsst.ccs.daq.guider.ROICommon;
-import org.lsst.ccs.daq.guider.ROILocation;
+import org.lsst.ccs.daq.guider.ROISpec;
 import org.lsst.ccs.daq.guider.SensorLocation;
 import org.lsst.ccs.daq.guider.Series;
 import org.lsst.ccs.daq.guider.Status;
@@ -104,32 +101,13 @@ public class GuiderTool {
     }
 
     @Command(name = "start", description = "Start the guider")
-    public Status start() throws DAQException {
+    public Status start(String roiSpec) throws DAQException {
         checkStore();
-        List<ROILocation> locations = new ArrayList<>();
-        Location R00 = Location.of("R00/RebG");
-        SensorLocation sensorLocation0 = new SensorLocation(R00, 0);
-        SensorLocation sensorLocation1 = new SensorLocation(R00, 1);
-        locations.add(new ROILocation(sensorLocation0, 4, 100, 100));
-        locations.add(new ROILocation(sensorLocation1, 5, 200, 200));
-        ROICommon roi = new ROICommon(50, 50, 100);
-        return guider.start(roi, "MC_C_20230101_000001", locations);
+        ROISpec spec = ROISpec.parse(roiSpec);
+        spec.sanityCheck(guider.getConfiguredLocations());
+        return guider.start(spec.getCommon(), "MC_C_20230101_000001", spec.getLocations());
     }
 
-//    @Command(name = "listen", description = "Listen for guider events")
-//    public void listen() throws DAQException {
-//        checkStore();
-//        Thread t = new Thread(() -> {
-//            try {
-//                Location R00 = Location.of("R00/RebG");
-//                guider.listen(R00, 0);
-//            } catch (DAQException x) {
-//                LOG.log(Level.SEVERE, "Error in listener", x);
-//            }
-//        });
-//        t.start();
-//    }
-//
     @Command(name = "fits", description = "Write a FITS file")
     public void fitsWrite() throws DAQException {
 
@@ -180,7 +158,7 @@ public class GuiderTool {
     @Command(name = "locations", description = "List configured locations")
     public LocationSet locations() throws DAQException {
         checkStore();
-        return store.getConfiguredLocations();
+        return guider.getConfiguredLocations();
     }
 
     private void checkStore() {

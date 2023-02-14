@@ -194,7 +194,7 @@ public class Store implements AutoCloseable {
         return new LocationSet(locations);
     }
     
-    public LocationSet getConfiguredLocations() throws DAQException {
+    LocationSet getConfiguredLocations() throws DAQException {
         BitSet locations = impl.getConfiguredLocations(partition);
         return new LocationSet(locations);
     }
