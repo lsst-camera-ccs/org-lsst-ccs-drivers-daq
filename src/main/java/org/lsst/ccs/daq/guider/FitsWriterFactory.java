@@ -40,7 +40,7 @@ public class FitsWriterFactory implements GuiderListener {
     }
 
     protected FitsWriter createFitsFileWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) throws IOException, FitsException {
-        return new FitsWriter(state, series, partition, fileNamer, headerSpecifications);
+        return new FitsWriter(state, series, partition, fileNamer, headerSpecifications, null);
     }
 
     @Override
@@ -86,7 +86,7 @@ public class FitsWriterFactory implements GuiderListener {
         private final Object finalFileName;
         private final File temporaryFileName;
 
-        public FitsWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) throws IOException, FitsException {
+        public FitsWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, MetaDataSet extraMetaData) throws IOException, FitsException {
             Map<String, Object> props = new HashMap<>();
             // ToDo: Handle non standard id
             imageName = new ImageName(series.getId());
@@ -123,6 +123,8 @@ public class FitsWriterFactory implements GuiderListener {
             BasicHDU primary = BasicHDU.getDummyHDU();
             MetaDataSet metaDataSet = new MetaDataSet();
             metaDataSet.addMetaDataMap("primary", props);
+            metaDataSet.addMetaDataSet(extraMetaData);
+            
             HeaderWriter.addMetaDataToHeader(computedFileName, primary, headerSpecifications.get("primary"), metaDataSet);
             FitsCheckSum.setChecksum(primary);
             primary.write(bf);
