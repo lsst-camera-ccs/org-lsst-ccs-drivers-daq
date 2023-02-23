@@ -101,11 +101,11 @@ public class GuiderTool {
     }
 
     @Command(name = "start", description = "Start the guider")
-    public Status start(String roiSpec) throws DAQException {
+    public Status start(String imageName, String roiSpec) throws DAQException {
         checkStore();
         ROISpec spec = ROISpec.parse(roiSpec);
         spec.sanityCheck(guider.getConfiguredLocations());
-        return guider.start(spec.getCommon(), "MC_C_20230101_000001", spec.getLocations());
+        return guider.start(spec.getCommon(), imageName, spec.getLocations());
     }
 
     @Command(name = "fits", description = "Write a FITS file")

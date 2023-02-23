@@ -7,16 +7,21 @@ import java.util.LinkedHashSet;
  * @author tonyj
  */
 public class SensorLocationSet extends LinkedHashSet<SensorLocation> {
-    
+
     public SensorLocationSet() {
     }
 
-    public SensorLocationSet(String sensorLocations) {
+    private SensorLocationSet(String sensorLocations) {
         if (sensorLocations != null && !sensorLocations.isEmpty()) {
             locationsFromCommaDelimitedString(sensorLocations);
         }
     }
 
+    public static SensorLocationSet of(String string) {
+        return new SensorLocationSet(string);
+    }
+    
+    
     private void locationsFromCommaDelimitedString(String sensorLocations) {
         String[] ll = sensorLocations.split(",");
         for (String lll : ll) {
@@ -25,4 +30,5 @@ public class SensorLocationSet extends LinkedHashSet<SensorLocation> {
             this.add(sl);
         }
     }
+
 }

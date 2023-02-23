@@ -82,19 +82,27 @@ public class FitsWriterFactory implements GuiderListener {
         private final BufferedFile bufferedFile;
         private final Map<String, Object> properties;
         private final Map<String, HeaderSpecification> headerSpecifications;
-        private final ImageName imageName;
+        private final String seriesId;
         private final Object finalFileName;
         private final File temporaryFileName;
 
         public FitsWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, MetaDataSet extraMetaData) throws IOException, FitsException {
+            this.seriesId = series.getId();
             Map<String, Object> props = new HashMap<>();
-            // ToDo: Handle non standard id
-            imageName = new ImageName(series.getId());
-            props.put("ImageName", imageName.toString());
-            props.put("ImageDate", imageName.getDateString());
-            props.put("ImageNumber", imageName.getNumberString());
-            props.put("ImageController", imageName.getController().getCode());
-            props.put("ImageSource", imageName.getSource().getCode());
+            try { 
+                ImageName imageName = new ImageName(series.getId());
+                props.put("ImageName", imageName.toString());
+                props.put("ImageDate", imageName.getDateString());
+                props.put("ImageNumber", imageName.getNumberString());
+                props.put("ImageController", imageName.getController().getCode());
+                props.put("ImageSource", imageName.getSource().getCode());
+            } catch (IllegalArgumentException x) {
+                props.put("ImageName", series.getId());
+                props.put("ImageDate", "20230101");
+                props.put("ImageNumber", 1);
+                props.put("ImageController", "MC");
+                props.put("ImageSource", "C");                
+            }
             ROILocation roiLocation = series.getLocation();
             SensorLocation sensorLocation = roiLocation.getLocation();
             Location rebLocation = sensorLocation.getRebLocation();
@@ -160,8 +168,8 @@ public class FitsWriterFactory implements GuiderListener {
             FitsUtil.pad(bufferedFile, imageSize);
         }
 
-        public ImageName getImageName() {
-            return imageName;
+        public String getImageName() {
+            return seriesId;
         }
 
         public File getFileName() {
