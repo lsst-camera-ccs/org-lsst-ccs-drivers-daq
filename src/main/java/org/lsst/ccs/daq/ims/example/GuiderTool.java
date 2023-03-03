@@ -35,7 +35,9 @@ public class GuiderTool {
 
     private Store store;
     private Guider guider;
-
+    private Subscriber subscribe0;
+    private Subscriber subscribe1;
+    
     public GuiderTool() {
     }
 
@@ -108,7 +110,7 @@ public class GuiderTool {
         return guider.start(spec.getCommon(), imageName, spec.getLocations());
     }
 
-    @Command(name = "fits", description = "Write a FITS file")
+    @Command(name = "fits", description = "Subscribe to notifications to write a FITS file")
     public void fitsWrite() throws DAQException {
 
         FitsHeadersSpecificationsBuilder headerSpecBuilder = new FitsHeadersSpecificationsBuilder();
@@ -126,7 +128,7 @@ public class GuiderTool {
         FitsWriterFactory writer0 = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications);
         FitsWriterFactory writer1 = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications);
 
-        Subscriber subscribe0 = guider.subscribe(Collections.singleton(sensorLocation0), ByteOrder.BIG_ENDIAN, writer0);
+        subscribe0 = guider.subscribe(Collections.singleton(sensorLocation0), ByteOrder.BIG_ENDIAN, writer0);
         Thread t0 = new Thread(() -> {
             for (;;) {
                 try {
@@ -137,7 +139,7 @@ public class GuiderTool {
             }
         });
         t0.start();
-        Subscriber subscribe1 = guider.subscribe(Collections.singleton(sensorLocation1), ByteOrder.BIG_ENDIAN, writer1);//        Thread t = new Thread(() -> {
+        subscribe1 = guider.subscribe(Collections.singleton(sensorLocation1), ByteOrder.BIG_ENDIAN, writer1); //        Thread t = new Thread(() -> {
         Thread t1 = new Thread(() -> {
             for (;;) {
                 try {
@@ -148,6 +150,12 @@ public class GuiderTool {
             }
         });
         t1.start();
+    }
+    
+    @Command(name="Unsubscribe", description = "Unsubscribe ") 
+    public void unsubscribe() throws DAQException {
+        if (subscribe0 != null) subscribe0.close();
+        if (subscribe1 != null) subscribe1.close();
     }
     
     @Command(name = "version", description = "Get version info")

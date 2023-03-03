@@ -109,7 +109,7 @@ public class Guider {
 
         private static final Logger LOG = Logger.getLogger(Subscriber.class.getName());
 
-        private final long subscriber;
+        private long subscriber;
         private final Store store;
         private final GuiderListener listener;
 
@@ -127,7 +127,12 @@ public class Guider {
         }
 
         public void waitForGuider() throws DAQException {
-            store.waitForGuider(subscriber, this);
+            long sub = this.subscriber;
+            if (sub != 0) {
+                store.waitForGuider(sub, this);
+            } else {
+                throw new DAQException("Subscriber already closed");
+            }
         }
 
         private void startCallback(StateMetaData state, SeriesMetaData series) {
@@ -183,14 +188,18 @@ public class Guider {
                 LOG.log(Level.WARNING, "stamp callback failed", x);
             }
         }
-        
+
         public String getPartition() {
             return store.getPartition();
         }
 
         @Override
         public void close() throws DAQException {
-            store.detachGuiderSubscriber(subscriber);
+            long sub = this.subscriber;
+            if (sub != 0) {
+                this.subscriber = 0;
+                store.detachGuiderSubscriber(sub);
+            }
         }
 
     }
