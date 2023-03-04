@@ -30,6 +30,7 @@ public:
   void stop(const GDS::StateMetadata& state);
   void raw_stamp(const GDS::StateMetadata& state, const GDS::RawStamp& stamp);
   void wait(JNIEnv *env, jobject callback);
+  void abort(JNIEnv *env);
   void stamp(const GDS::StateMetadata& state, const GDS::Stamp& stamp);
   uint8_t* allocate(unsigned size);
 private:

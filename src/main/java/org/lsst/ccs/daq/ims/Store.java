@@ -502,6 +502,10 @@ public class Store implements AutoCloseable {
     void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException {
         impl.waitForGuider(subscriber, callback);
     }
+    
+    void abortWaitForGuider(long subscriber) throws DAQException {
+        impl.abortWaitForGuider(subscriber);
+    }
 
     Config guiderConfig(long guider) throws DAQException {
         return impl.guiderConfig(guider);
@@ -510,4 +514,6 @@ public class Store implements AutoCloseable {
     Series guiderSeries(long guider) throws DAQException {
         return impl.guiderSeries(guider);
     }
+
+
 }

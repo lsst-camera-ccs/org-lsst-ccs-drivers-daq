@@ -390,6 +390,12 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitF
     subscriber->wait(env, callback);
 }
 
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_abortWaitForGuider
+(JNIEnv *env, jobject obj, jlong subscriber_) {
+    MyGuiderSubscriber* subscriber =  (MyGuiderSubscriber*) subscriber_;
+    subscriber->abort(env);
+}
+
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider
 (JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jstring id, jintArray roiData) {
     GDS::Client*  guider = (GDS::Client*) guider_;

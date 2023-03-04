@@ -264,6 +264,10 @@ class StoreSimulatedImplementation implements StoreImplementation {
     @Override
     public void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException {
     }
+    
+    @Override
+    public void abortWaitForGuider(long subscriber) throws DAQException {
+    }
 
     @Override
     public long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException {
@@ -283,5 +287,4 @@ class StoreSimulatedImplementation implements StoreImplementation {
     public Series guiderSeries(long guider) throws DAQException {
         return null;
     }
-
 }

@@ -109,7 +109,7 @@ public class Guider {
 
         private static final Logger LOG = Logger.getLogger(Subscriber.class.getName());
 
-        private long subscriber;
+        private volatile long subscriber;
         private final Store store;
         private final GuiderListener listener;
 
@@ -198,6 +198,7 @@ public class Guider {
             long sub = this.subscriber;
             if (sub != 0) {
                 this.subscriber = 0;
+                store.abortWaitForGuider(subscriber);
                 store.detachGuiderSubscriber(sub);
             }
         }

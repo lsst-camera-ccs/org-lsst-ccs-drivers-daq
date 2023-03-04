@@ -152,7 +152,7 @@ public class GuiderTool {
         t1.start();
     }
     
-    @Command(name="Unsubscribe", description = "Unsubscribe ") 
+    @Command(name="unsubscribe", description = "Unsubscribe ") 
     public void unsubscribe() throws DAQException {
         if (subscribe0 != null) subscribe0.close();
         if (subscribe1 != null) subscribe1.close();

@@ -150,6 +150,9 @@ class StoreNativeImplementation implements StoreImplementation {
     
     @Override
     public native void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException;
+       
+    @Override
+    public native void abortWaitForGuider(long subscriber) throws DAQException;
 
     @Override
     public synchronized native long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException;
