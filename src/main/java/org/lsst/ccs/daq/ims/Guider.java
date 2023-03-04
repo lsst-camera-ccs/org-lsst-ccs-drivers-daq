@@ -110,6 +110,7 @@ public class Guider {
         private static final Logger LOG = Logger.getLogger(Subscriber.class.getName());
 
         private volatile long subscriber;
+        private volatile Thread waitThread;
         private final Store store;
         private final GuiderListener listener;
 
@@ -129,6 +130,7 @@ public class Guider {
         public void waitForGuider() throws DAQException {
             long sub = this.subscriber;
             if (sub != 0) {
+                waitThread = Thread.currentThread();
                 store.waitForGuider(sub, this);
             } else {
                 throw new DAQException("Subscriber already closed");
@@ -198,7 +200,12 @@ public class Guider {
             long sub = this.subscriber;
             if (sub != 0) {
                 this.subscriber = 0;
-                store.abortWaitForGuider(subscriber);
+                store.abortWaitForGuider(sub);
+                try {
+                    waitThread.join();
+                } catch (InterruptedException ex) {
+                    throw new DAQException("Unexpected interrupt");
+                }
                 store.detachGuiderSubscriber(sub);
             }
         }
