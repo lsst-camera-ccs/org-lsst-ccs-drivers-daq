@@ -1,9 +1,0 @@
-
-#include "ArchiveHeader.hh"
-
-using namespace GDS;
-
-static const uint16_t HEADERFLAG = 1<<15;
-
-Example::ArchiveHeader() :
-  _version(
