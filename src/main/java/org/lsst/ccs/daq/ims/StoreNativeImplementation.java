@@ -2,9 +2,10 @@ package org.lsst.ccs.daq.ims;
 
 import java.util.BitSet;
 import java.util.List;
-import java.util.Map;
+import org.lsst.ccs.daq.guider.Config;
+import org.lsst.ccs.daq.guider.Series;
+import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.utilities.location.Location.LocationType;
-import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
  * The native implementation of the store. This implementation required the DAQ
@@ -94,6 +95,9 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native BitSet getConfiguredSources(long store) throws DAQException;
 
     @Override
+    public synchronized native BitSet getConfiguredLocations(String partition) throws DAQException;
+    
+    @Override
     public native Version getClientVersion() throws DAQException;
     
     @Override
@@ -119,4 +123,50 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException;
+
+    @Override
+    public synchronized native long attachGuider(String partition) throws DAQException;
+
+    @Override
+    public synchronized native void detachGuider(long guider) throws DAQException;
+
+    @Override
+    public synchronized native Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) throws DAQException;
+    
+    
+    @Override
+    public synchronized native void validateGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int[] roiData) throws DAQException;
+
+    @Override
+    public synchronized native Status stopGuider(long guider) throws DAQException;
+
+    @Override
+    public synchronized native Status pauseGuider(long guider) throws DAQException;
+
+    @Override
+    public synchronized native Status resumeGuider(long guider) throws DAQException;
+
+    @Override
+    public synchronized native Status sleepGuider(long guider) throws DAQException;
+
+    @Override
+    public synchronized native Status wakeGuider(long guider) throws DAQException;
+    
+    @Override
+    public native void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException;
+       
+    @Override
+    public native void abortWaitForGuider(long subscriber) throws DAQException;
+
+    @Override
+    public synchronized native long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException;
+
+    @Override
+    public synchronized native void detachGuiderSubscriber(long subscriber) throws DAQException;
+
+    @Override
+    public synchronized native Config guiderConfig(long guider) throws DAQException;
+
+    @Override
+    public synchronized native Series guiderSeries(long guider) throws DAQException;
 }

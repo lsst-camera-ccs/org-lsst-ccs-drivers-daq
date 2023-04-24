@@ -20,7 +20,7 @@ import nom.tam.util.BufferedFile;
 import org.lsst.ccs.utilities.location.Location.LocationType;
 
 /**
- *
+ * Open a set of FITS files as a single DAQ source.
  * @author tonyj
  */
 public class FitsIntReader implements ReadableIntChannel {
@@ -32,6 +32,14 @@ public class FitsIntReader implements ReadableIntChannel {
     private final Compress18BitChannel input;
     private final List<Segment> segments;
 
+    /**
+     * 
+     * @param sourceType The type of source to read (WAVEFRONT, GUIDER, SCIENCE)
+     * @param auxtel Whether there are auxtel files or not
+     * @param files The set of files to read.
+     * @throws IOException
+     * @throws TruncatedFileException 
+     */
     public FitsIntReader(LocationType sourceType, boolean auxtel, File... files) throws IOException, TruncatedFileException {
         ReadoutConfig config = new ReadoutConfig(sourceType, auxtel);
         List<String> segmentNames = Arrays.asList(config.getDataSegmentNames());

@@ -12,6 +12,7 @@ public class Camera {
     private final Store store;
     private final long camera;
     public final static int OPCODE_STEP = 31;
+    public final static int OPCODE_STOP = 30;
     
     Camera(Store store, long camera) {
         this.store = store;

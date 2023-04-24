@@ -2,8 +2,10 @@ package org.lsst.ccs.daq.ims;
 
 import java.util.BitSet;
 import java.util.List;
+import org.lsst.ccs.daq.guider.Config;
+import org.lsst.ccs.daq.guider.Series;
+import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.utilities.location.Location;
-import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
  * An interface implemented by both the native and simulated
@@ -57,6 +59,8 @@ interface StoreImplementation {
     String decodeException(int rc);
 
     BitSet getConfiguredSources(long store) throws DAQException;
+    
+    BitSet getConfiguredLocations(String partition) throws DAQException;
 
     Version getClientVersion() throws DAQException;
 
@@ -73,4 +77,34 @@ interface StoreImplementation {
     int[][] readRegisters(long client, BitSet locations, int[] addresses) throws DAQException;
 
     void writeRegisters(long client, BitSet locations, int[] addresses, int[] values) throws DAQException;
+
+    long attachGuider(String partition) throws DAQException;
+
+    void detachGuider(long guider) throws DAQException;
+        
+    Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) throws DAQException;
+
+    void validateGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int[] roiData) throws DAQException;
+    
+    Status stopGuider(long guider) throws DAQException;
+
+    Status pauseGuider(long guider) throws DAQException;
+
+    Status resumeGuider(long guider) throws DAQException;
+
+    Status sleepGuider(long guider) throws DAQException;
+
+    Status wakeGuider(long guider) throws DAQException;
+
+    public long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException;
+
+    public void detachGuiderSubscriber(long subscriber) throws DAQException;
+
+    public void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException;
+    
+    public void abortWaitForGuider(long subscriber) throws DAQException;   
+
+    public Config guiderConfig(long guider) throws DAQException;
+
+    public Series guiderSeries(long guider) throws DAQException;
 }

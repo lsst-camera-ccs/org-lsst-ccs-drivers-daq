@@ -416,7 +416,7 @@ public class CommandTool {
                         obsIds.put(matcher.group(1), id);
                     }
                     Location location = Location.of(matcher.group(2) + "/" + matcher.group(3));
-                    // Look for corresponding .mera file
+                    // Look for corresponding .meta file
                     Path meta = file.resolveSibling(file.getFileName().toString().replace(".raw", ".meta"));
                     if (Files.exists(meta)) {
                         id.add(location, file, meta);

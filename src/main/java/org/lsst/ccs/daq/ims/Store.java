@@ -12,6 +12,9 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.lsst.ccs.daq.guider.Config;
+import org.lsst.ccs.daq.guider.Series;
+import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
@@ -25,6 +28,7 @@ public class Store implements AutoCloseable {
     private Camera camera;
     private Emulator emulator;
     private RegisterClient client;
+    private Guider guider;
     private final Catalog catalog;
     private final String partition;
     private final long store;
@@ -36,7 +40,8 @@ public class Store implements AutoCloseable {
     private static final int SOURCE_TIMEOUT_MICROS = Integer.getInteger("org.lsst.ccs.daq.ims.SourceTimeout", 10_000_000);
     private final static StoreImplementation impl;
     private final ExecutorService executor;
-
+    private Future<?> waitForImageTask;
+    
     static {
         // FIXME: This requires a System (not bootstrap) property be set.
         String runMode = System.getProperty("org.lsst.ccs.run.mode");
@@ -46,7 +51,7 @@ public class Store implements AutoCloseable {
         impl = "simulation".equals(runMode)
                 ? new StoreSimulatedImplementation() : new StoreNativeImplementation();
     }
-    private Future<?> waitForImageTask;
+
 
     /**
      * Connects to a DAQ store. Uses the default executor for polling thread.
@@ -99,6 +104,23 @@ public class Store implements AutoCloseable {
             return camera;
         }
     }
+
+    /**
+     * Gets an instance of the Guider interface associated with this Store.
+     * @return The Guider
+     * @throws DAQException 
+     */
+    public Guider getGuider() throws DAQException {
+        synchronized (this) {
+            if (guider == null) {
+                long guider_ = impl.attachGuider(partition);
+                this.guider = new Guider(this, guider_);
+            }
+            return guider;
+        }
+    }
+
+
     /**
      * Gets the emulator associated with this store. This can be used to manage
      * playlists.
@@ -171,6 +193,12 @@ public class Store implements AutoCloseable {
         BitSet locations = impl.getConfiguredSources(store);
         return new LocationSet(locations);
     }
+    
+    LocationSet getConfiguredLocations() throws DAQException {
+        BitSet locations = impl.getConfiguredLocations(partition);
+        return new LocationSet(locations);
+    }
+
 
     /**
      * Add an image listener to this store. The image listener will be notified
@@ -333,6 +361,9 @@ public class Store implements AutoCloseable {
         if (camera != null) {
             camera.detach();
         }
+        if (guider != null) {
+            guider.detach();
+        }
         if (client != null) {
             client.detach();
         }
@@ -431,4 +462,62 @@ public class Store implements AutoCloseable {
     long getStore() {
         return store;
     }
+
+    void detachGuider(long guider) throws DAQException {
+        impl.detachGuider(guider);
+    }
+    
+    Status stopGuider(long guider) throws DAQException {
+        return impl.stopGuider(guider);
+    }
+
+    Status  resumeGuider(long guider) throws DAQException {
+        return impl.resumeGuider(guider);
+    }
+
+    Status  pauseGuider(long guider) throws DAQException {
+        return impl.pauseGuider(guider);
+    }
+    
+    Status  sleepGuider(long guider) throws DAQException {
+        return impl.sleepGuider(guider);
+    }
+
+    Status  wakeGuider(long guider) throws DAQException {
+        return impl.wakeGuider(guider);
+    }
+
+    Status  startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, String id, int[] roiData) throws DAQException {
+        return impl.startGuider(guider, nRows, nCols, integrationTimeMilliSeconds, id, roiData);
+    }
+    
+    void validateGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int[] roiData) throws DAQException {
+        impl.validateGuider(guider, nRows, nCols, integrationTimeMilliSeconds, roiData);
+    }
+
+    long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException {
+        return impl.attachGuiderSubscriber(partition, bigEndian, locations);
+    }
+
+    void detachGuiderSubscriber(long subscriber) throws DAQException {
+        impl.detachGuiderSubscriber(subscriber);
+    }
+    
+    void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException {
+        impl.waitForGuider(subscriber, callback);
+    }
+    
+    void abortWaitForGuider(long subscriber) throws DAQException {
+        impl.abortWaitForGuider(subscriber);
+    }
+
+    Config guiderConfig(long guider) throws DAQException {
+        return impl.guiderConfig(guider);
+    }
+
+    Series guiderSeries(long guider) throws DAQException {
+        return impl.guiderSeries(guider);
+    }
+
+
 }

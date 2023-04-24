@@ -8,6 +8,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+import org.lsst.ccs.daq.guider.Config;
+import org.lsst.ccs.daq.guider.Series;
+import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.Location.LocationType;
 import org.lsst.ccs.utilities.location.LocationSet;
@@ -57,10 +60,10 @@ class StoreSimulatedImplementation implements StoreImplementation {
 
     @Override
     public int[][] readRegisters(long client, BitSet bitset, int[] addresses) throws DAQException {
-        int[][] result = new int[4*25][addresses.length];
+        int[][] result = new int[4 * 25][addresses.length];
         LocationSet locations = new LocationSet(bitset);
         for (Location l : locations) {
-            for (int i=0; i<addresses.length; i++) {
+            for (int i = 0; i < addresses.length; i++) {
                 result[l.index()][i] = storeSimulation.readRegister(l, addresses[i]);
             }
         }
@@ -71,7 +74,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     public void writeRegisters(long client, BitSet bitset, int[] addresses, int[] values) throws DAQException {
         LocationSet locations = new LocationSet(bitset);
         for (Location l : locations) {
-            for (int i=0; i<addresses.length; i++) {
+            for (int i = 0; i < addresses.length; i++) {
                 storeSimulation.writeRegister(l, addresses[i], values[i]);
             }
         }
@@ -184,6 +187,11 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
+    public BitSet getConfiguredLocations(String partition) throws DAQException {
+        return LocationSet.all().getBitSet();
+    }
+    
+    @Override
     public Version getClientVersion() throws DAQException {
         return release;
     }
@@ -214,4 +222,73 @@ class StoreSimulatedImplementation implements StoreImplementation {
         return instant.getEpochSecond() * 1_000_000_000 + instant.getNano();
     }
 
+    @Override
+    public long attachGuider(String partition) throws DAQException {
+        return 999;
+    }
+
+    @Override
+    public void detachGuider(long guider) throws DAQException {
+    }
+
+    @Override
+    public Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) {
+        return null;
+    }
+    
+    @Override
+    public void validateGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int[] roiData) throws DAQException {
+    }
+
+    @Override
+    public Status stopGuider(long guider) {
+        return null;
+    }
+
+    @Override
+    public Status pauseGuider(long guider) {
+        return null;
+    }
+
+    @Override
+    public Status resumeGuider(long guider) {
+        return null;
+    }
+
+    @Override
+    public Status sleepGuider(long guider) {
+        return null;
+    }
+
+    @Override
+    public Status wakeGuider(long guider) {
+        return null;
+    }
+
+    @Override
+    public void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException {
+    }
+    
+    @Override
+    public void abortWaitForGuider(long subscriber) throws DAQException {
+    }
+
+    @Override
+    public long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException {
+        return 999;
+    }
+
+    @Override
+    public void detachGuiderSubscriber(long subscriber) throws DAQException {
+    }
+
+    @Override
+    public Config guiderConfig(long guider) throws DAQException {
+        return null;
+    }
+
+    @Override
+    public Series guiderSeries(long guider) throws DAQException {
+        return null;
+    }
 }
