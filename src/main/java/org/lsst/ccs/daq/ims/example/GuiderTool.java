@@ -110,6 +110,15 @@ public class GuiderTool {
         return guider.start(spec.getCommon(), imageName, spec.getLocations());
     }
 
+    @Command(name = "validate", description = "Validate the roi")
+    public void validate(String roiSpec) throws DAQException {
+        checkStore();
+        ROISpec spec = ROISpec.parse(roiSpec);
+        spec.sanityCheck(guider.getConfiguredLocations());
+        guider.validate(spec.getCommon(), spec.getLocations());
+    }
+
+    
     @Command(name = "fits", description = "Subscribe to notifications to write a FITS file")
     public void fitsWrite() throws DAQException {
 

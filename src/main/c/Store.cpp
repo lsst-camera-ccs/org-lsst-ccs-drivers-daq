@@ -429,6 +429,32 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
     }
 }
 
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_validateGuider
+(JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jintArray roiData) {
+    GDS::Client*  guider = (GDS::Client*) guider_;
+    GDS::Status status;
+    GDS::RoiCommon common(rows, cols, integration);
+    GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];
+    jint* values = env->GetIntArrayElements(roiData, 0);
+    int nlocs = env->GetArrayLength(roiData)/5;
+    for (int i=0; i<nlocs; i++) {
+       int j = i*5;
+       uint8_t index = values[j];
+       uint8_t sensor = values[j+1];
+       uint16_t segment = values[j+2];
+       uint16_t startRow = values[j+3];
+       uint16_t startCol = values[j+4];
+       locs[i] = GDS::RoiLocation(GDS::Location(DAQ::Location(index), sensor), segment, startRow, startCol);
+    }
+    try {
+       guider->validate(common, locs, nlocs);
+       env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
+    } catch (GDS::Exception& x) {
+       env->ThrowNew(JCexClass, x.what());
+    }
+
+}
+
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_stopGuider
 (JNIEnv* env, jobject obj, jlong guider_) {
     GDS::Client*  guider = (GDS::Client*) guider_;

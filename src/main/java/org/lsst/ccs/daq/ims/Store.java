@@ -490,6 +490,10 @@ public class Store implements AutoCloseable {
     Status  startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, String id, int[] roiData) throws DAQException {
         return impl.startGuider(guider, nRows, nCols, integrationTimeMilliSeconds, id, roiData);
     }
+    
+    void validateGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int[] roiData) throws DAQException {
+        impl.validateGuider(guider, nRows, nCols, integrationTimeMilliSeconds, roiData);
+    }
 
     long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException {
         return impl.attachGuiderSubscriber(partition, bigEndian, locations);

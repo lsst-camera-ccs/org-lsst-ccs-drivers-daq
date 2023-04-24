@@ -84,6 +84,8 @@ interface StoreImplementation {
         
     Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) throws DAQException;
 
+    void validateGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int[] roiData) throws DAQException;
+    
     Status stopGuider(long guider) throws DAQException;
 
     Status pauseGuider(long guider) throws DAQException;
@@ -105,6 +107,4 @@ interface StoreImplementation {
     public Config guiderConfig(long guider) throws DAQException;
 
     public Series guiderSeries(long guider) throws DAQException;
-
-
 }

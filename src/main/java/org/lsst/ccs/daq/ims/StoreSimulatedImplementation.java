@@ -235,6 +235,10 @@ class StoreSimulatedImplementation implements StoreImplementation {
     public Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) {
         return null;
     }
+    
+    @Override
+    public void validateGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int[] roiData) throws DAQException {
+    }
 
     @Override
     public Status stopGuider(long guider) {

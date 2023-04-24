@@ -3,7 +3,6 @@ package org.lsst.ccs.daq.ims;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
-import java.util.Arrays;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -57,10 +56,25 @@ public class Guider {
             roiData[j + 3] = location.getStartRow();
             roiData[j + 4] = location.getStartCol();
         }
-        System.out.println(Arrays.toString(roiData));
         return store.startGuider(guider, common.getRows(), common.getCols(), common.getIntegrationTimeMillis(), id, roiData);
     }
 
+    public void validate(ROICommon common, List<ROILocation> locations) throws DAQException {
+        final int nLocs = locations.size();
+        int[] roiData = new int[nLocs * 5];
+        for (int i = 0; i < nLocs; i++) {
+            int j = i * 5;
+            ROILocation location = locations.get(i);
+            SensorLocation sensorLocation = location.getLocation();
+            roiData[j] = sensorLocation.getRebLocation().index();
+            roiData[j + 1] = sensorLocation.getSensor();
+            roiData[j + 2] = location.getSegment();
+            roiData[j + 3] = location.getStartRow();
+            roiData[j + 4] = location.getStartCol();
+        }
+        store.validateGuider(guider, common.getRows(), common.getCols(), common.getIntegrationTimeMillis(), roiData);        
+    }
+    
     public Subscriber subscribe(Set<SensorLocation> locations, ByteOrder byteOrder, GuiderListener listener) throws DAQException {
         return new Subscriber(store, locations, byteOrder, listener);
     }

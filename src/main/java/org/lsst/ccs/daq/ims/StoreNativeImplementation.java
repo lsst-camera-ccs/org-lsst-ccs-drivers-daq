@@ -132,6 +132,10 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) throws DAQException;
+    
+    
+    @Override
+    public synchronized native void validateGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int[] roiData) throws DAQException;
 
     @Override
     public synchronized native Status stopGuider(long guider) throws DAQException;
