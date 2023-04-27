@@ -221,18 +221,18 @@ public class Store implements AutoCloseable {
                         try {
                             stream1 = impl.attachStream(store, SOURCE_TIMEOUT_MICROS);
                             stream2 = impl.attachStream(store, SOURCE_TIMEOUT_MICROS);
-                            while (!Thread.currentThread().isInterrupted()) {
+                            while (!waitForImageTask.isCancelled()) {
                                 int rc = impl.waitForImage(Store.this, waitForImageStore, stream1, stream2, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
                                 if (rc != 0 && rc != 68) { // 68 appears to mean timeout
                                     LOG.log(Level.SEVERE, "Unexpected rc from waitForImage: {0}", rc);
                                 } else {
-                                    LOG.log(Level.INFO, "waitForImage timeout with rc {0}, continuing to wait", rc);
+                                    LOG.log(Level.FINE, "waitForImage timeout with rc {0}, continuing to wait", rc);
                                 }
                             }
                         } finally {
                             if (stream1 != 0) impl.detachStream(stream1);
                             if (stream2 != 0) impl.detachStream(stream2);
-                            impl.detachStore(store);
+                            impl.detachStore(waitForImageStore);
                         }
                     } catch (Throwable x) {
                         LOG.log(Level.SEVERE, x, () -> String.format("Thread %s exiting", Thread.currentThread().getName()));
