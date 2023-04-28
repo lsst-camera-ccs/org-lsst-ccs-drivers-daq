@@ -212,8 +212,10 @@ public class Store implements AutoCloseable {
         synchronized (this) {
             if (waitForImageTask == null || waitForImageTask.isCancelled() || waitForImageTask.isDone()) {
                 waitForImageTask = executor.submit(() -> {
+                    Thread thisThread = Thread.currentThread();
+                    String originalThreadName = thisThread.getName();
                     try {
-                        Thread.currentThread().setName("ImageStreamThread_" + partition);
+                        thisThread.setName("ImageStreamThread_" + partition);
                         LOG.log(Level.INFO, () -> String.format("DAQ image listener starting with timeouts %,dμs %,dμs", IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS));
                         long waitForImageStore = impl.attachStore(partition);
                         long stream1 = 0;
@@ -236,6 +238,8 @@ public class Store implements AutoCloseable {
                         }
                     } catch (Throwable x) {
                         LOG.log(Level.SEVERE, x, () -> String.format("Thread %s exiting", Thread.currentThread().getName()));
+                    } finally {
+                        thisThread.setName(originalThreadName);
                     }
                 });
 
@@ -357,9 +361,13 @@ public class Store implements AutoCloseable {
 
     @Override
     public void close() throws DAQException {
-        if (waitForImageTask != null && !waitForImageTask.isDone()) {
-            waitForImageTask.cancel(true);
+        synchronized (this) {
+            if (waitForImageTask != null && !waitForImageTask.isDone()) {
+                boolean success = waitForImageTask.cancel(true);
+                LOG.log(Level.FINE, "Store closed, waitForImageTask={0} {1}", new Object[]{success, waitForImageTask.isCancelled()});
+            }
         }
+        imageListeners.clear();
         if (camera != null) {
             camera.detach();
         }
