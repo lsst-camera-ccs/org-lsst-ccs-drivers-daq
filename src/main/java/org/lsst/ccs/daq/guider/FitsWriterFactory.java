@@ -33,6 +33,11 @@ public class FitsWriterFactory implements GuiderListener {
     private final Map<String, HeaderSpecification> headerSpecifications;
     private FitsWriter currentFitsFileWriter;
 
+    static {
+        FitsFactory.setUseHierarch(true);
+        FitsFactory.setLongStringsEnabled(true);
+    }
+
     public FitsWriterFactory(String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
         this.partition = partition;
         this.fileNamer = fileNamer;
@@ -91,7 +96,7 @@ public class FitsWriterFactory implements GuiderListener {
         public FitsWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, MetaDataSet extraMetaData) throws IOException, FitsException {
             this.seriesId = series.getId();
             Map<String, Object> props = new HashMap<>();
-            try { 
+            try {
                 ImageName imageName = new ImageName(series.getId());
                 props.put("ImageName", imageName.toString());
                 props.put("ImageDate", imageName.getDateString());
@@ -103,7 +108,7 @@ public class FitsWriterFactory implements GuiderListener {
                 props.put("ImageDate", "20230101");
                 props.put("ImageNumber", 1);
                 props.put("ImageController", "MC");
-                props.put("ImageSource", "C");                
+                props.put("ImageSource", "C");
             }
             ROILocation roiLocation = series.getLocation();
             SensorLocation sensorLocation = roiLocation.getLocation();
@@ -135,14 +140,14 @@ public class FitsWriterFactory implements GuiderListener {
             MetaDataSet metaDataSet = new MetaDataSet();
             metaDataSet.addMetaDataMap("primary", props);
             metaDataSet.addMetaDataSet(extraMetaData);
-            
+
             HeaderWriter.addMetaDataToHeader(computedFileName, primary, headerSpecifications.get("primary"), metaDataSet);
             FitsCheckSum.setChecksum(primary);
             primary.write(bf);
             this.bufferedFile = bf;
             this.properties = props;
         }
-        
+
         private void fixupStampCount() throws IOException, FitsException {
             Header header = primary.getHeader();
             HeaderCard stampsCard = header.findCard("N_STAMPS");
@@ -150,7 +155,7 @@ public class FitsWriterFactory implements GuiderListener {
             FitsCheckSum.setChecksum(primary);
             bufferedFile.seek(0);
             primary.write(bufferedFile);
-        }        
+        }
 
         @Override
         public void close() throws IOException, FitsException {

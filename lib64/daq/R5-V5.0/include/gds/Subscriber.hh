@@ -1,4 +1,3 @@
-
 #ifndef GDS_SUBSCRIBER
 #define GDS_SUBSCRIBER
 
