@@ -22,3 +22,10 @@ CAMCODE!     String  ${ImageSource}                The "code" for AuxTel | ComCa
 CONTRLLR!    String  ${ImageController}            The controller (e.g. O for OCS, C for CCS)
 DAYOBS!      String  ${ImageDate}                  The observation day as defined in the image name 
 SEQNUM!      Integer ${ImageNumber}                The sequence number from the image name
+#
+# Additional headers requested by DM (https://jira.slac.stanford.edu/browse/LSSTCCSDRIVER-437)
+N_STAMPS!    Integer ${StampCount}                 The number of stamps in file
+HIERARCH.HAS_ARCHIVE  Boolean false
+HIERARCH.HAS_MASK     Boolean false
+HIERARCH.HAS_VARIANCE Boolean false
+HIERARCH.STAMP_CLS    String lsst.meas.algorithms.Stamps
