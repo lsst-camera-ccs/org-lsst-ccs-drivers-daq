@@ -26,6 +26,6 @@ SEQNUM!      Integer ${ImageNumber}                The sequence number from the 
 # Additional headers requested by DM (https://jira.slac.stanford.edu/browse/LSSTCCSDRIVER-437)
 N_STAMPS!    Integer ${StampCount}                 The number of stamps in file
 HIERARCH.HAS_ARCHIVE  Boolean false
-HIERARCH.HAS_MASK     Boolean false
+HAS_MASK     Boolean false
 HIERARCH.HAS_VARIANCE Boolean false
-HIERARCH.STAMP_CLS    String lsst.meas.algorithms.Stamps
+STAMPCLS     String lsst.meas.algorithms.Stamps
