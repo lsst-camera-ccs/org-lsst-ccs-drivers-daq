@@ -3,7 +3,9 @@ package org.lsst.ccs.daq.guider;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.FitsException;
@@ -15,6 +17,7 @@ import nom.tam.util.BufferedFile;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
 import org.lsst.ccs.imagenaming.ImageName;
 import org.lsst.ccs.utilities.image.FitsCheckSum;
+import org.lsst.ccs.utilities.image.FitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.image.HeaderSpecification;
 import org.lsst.ccs.utilities.image.HeaderWriter;
 import org.lsst.ccs.utilities.image.MetaDataSet;
@@ -45,7 +48,7 @@ public class FitsWriterFactory implements GuiderListener {
     }
 
     protected FitsWriter createFitsFileWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) throws IOException, FitsException {
-        return new FitsWriter(state, series, partition, fileNamer, headerSpecifications, null);
+        return new FitsWriter(state, series, partition, fileNamer, headerSpecifications, Collections.emptyList());
     }
 
     @Override
@@ -93,7 +96,7 @@ public class FitsWriterFactory implements GuiderListener {
         private int stampCount = 0;
         private final BasicHDU<?> primary;
 
-        public FitsWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, MetaDataSet extraMetaData) throws IOException, FitsException {
+        public FitsWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, List<FitsHeaderMetadataProvider> metaDataProviders) throws IOException, FitsException {
             this.seriesId = series.getId();
             Map<String, Object> props = new HashMap<>();
             try {
@@ -139,8 +142,9 @@ public class FitsWriterFactory implements GuiderListener {
             primary = BasicHDU.getDummyHDU();
             MetaDataSet metaDataSet = new MetaDataSet();
             metaDataSet.addMetaDataMap("primary", props);
-            metaDataSet.addMetaDataSet(extraMetaData);
-
+            for (FitsHeaderMetadataProvider provider : metaDataProviders) {
+                metaDataSet.addMetaDataSet(provider.getPrimaryHeaderMetadata());
+            }            
             HeaderWriter.addMetaDataToHeader(computedFileName, primary, headerSpecifications.get("primary"), metaDataSet);
             FitsCheckSum.setChecksum(primary);
             primary.write(bf);
