@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
+import java.nio.file.Path;
 import org.lsst.ccs.utilities.location.Location;
 import java.util.ArrayList;
 import java.util.List;
@@ -425,8 +426,8 @@ public class Store implements AutoCloseable {
         return impl.findImage(store, imageName, folderName);
     }
 
-    long openSourceChannel(long id, Location location, Source.ChannelMode mode) throws DAQException {
-        return impl.openSourceChannel(store, id, location.index(), mode == Source.ChannelMode.WRITE);
+    DAQSourceChannelImplementation openSourceChannel(long id, Location location, Source.ChannelMode mode) throws DAQException {
+        return impl.openSourceChannelObject(store, id, location.index(), mode == Source.ChannelMode.WRITE);
     }
 
     SourceMetaData addSourceToImage(long id, Location location, int[] registerValues) throws DAQException {
@@ -471,6 +472,24 @@ public class Store implements AutoCloseable {
 
     long getStore() {
         return store;
+    }
+    
+    /**
+     * Simulate an image arriving in the 2-day store. This is implemented crudely since it is only designed to be
+     * used for AuxTel on the BTS.
+     * @param location
+     * @param meta
+     * @param registerList
+     * @param rawData
+     * @throws DAQException 
+     */
+    public void simulateTrigger(Location location, ImageMetaData meta, int[] registerList, Path rawData) throws DAQException {
+        if (impl instanceof StoreSimulatedImplementation) {
+            ((StoreSimulatedImplementation) impl).simulateTrigger(meta, location, registerList, rawData);
+        } else {
+            throw new UnsupportedOperationException("Only supported for simulated DAQ");
+        }
+        
     }
 
     void detachGuider(long guider) throws DAQException {

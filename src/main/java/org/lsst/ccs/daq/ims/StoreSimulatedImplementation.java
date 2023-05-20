@@ -1,5 +1,8 @@
 package org.lsst.ccs.daq.ims;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -28,6 +31,8 @@ class StoreSimulatedImplementation implements StoreImplementation {
     private final Version release = new Version("daq-simulation", toNanos(Instant.now()), false, 12345);
     private final SynchronousQueue<ImageMetaData> queue = new SynchronousQueue<>();
     private final Map<Location.LocationType, int[]> registerLists = new HashMap<>();
+    private Path rawData;
+    private SourceMetaData smd;
 
     @Override
     public long attachStore(String partition) throws DAQException {
@@ -127,7 +132,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
 
     @Override
     public SourceMetaData findSource(long store, long id, int location) throws DAQException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return smd;
     }
 
     @Override
@@ -141,8 +146,8 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public long openSourceChannel(long store, long id, int index, boolean write) throws DAQException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public DAQSourceChannelImplementation openSourceChannelObject(long store, long id, int index, boolean write) throws DAQException {
+        return new DAQSourceChannelSimulatedImplementation(rawData);
     }
 
     @Override
@@ -167,7 +172,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
                 return 68; // Timeout
             } else {
                 callback.imageCreatedCallback(meta);
-                TimeUnit.MICROSECONDS.sleep(sourceTimeoutMicros / 2);
+                TimeUnit.MILLISECONDS.sleep(2300);
                 callback.imageCompleteCallback(meta);
                 return 0;
             }
@@ -178,7 +183,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
 
     @Override
     public String decodeException(int rc) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return "Unknown exception "+rc;
     }
 
     @Override
@@ -220,6 +225,17 @@ class StoreSimulatedImplementation implements StoreImplementation {
 
     private long toNanos(Instant instant) {
         return instant.getEpochSecond() * 1_000_000_000 + instant.getNano();
+    }
+
+    void simulateTrigger(ImageMetaData meta, Location location, int[] registerList, Path rawData) throws DAQException {
+        try {
+            this.rawData = rawData;
+            this.smd = new SourceMetaData((byte) (location.type().ordinal()+1), (byte)0, "simulation", release, 0, 0, Files.size(rawData),  location.getBay(), location.getBoard(), registerList);
+            setRegisterList(0, 0, location.type(), registerList);
+            triggerImage(0, 0, meta);
+        } catch (IOException x) {
+            throw new DAQException("Blah");
+        }
     }
 
     @Override

@@ -33,7 +33,7 @@ $(OBJ)/MyGuiderSubscriber.o: MyGuiderSubscriber.cpp MyGuiderSubscriber.h
 	mkdir -p $(OBJ)
 	$(CC) -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -o $@ -c $<
 
-$(OBJ)/Channel.o: Channel.cpp Channel.h $(INC)/org_lsst_ccs_daq_ims_DAQSourceChannel.h
+$(OBJ)/Channel.o: Channel.cpp Channel.h $(INC)/org_lsst_ccs_daq_ims_DAQSourceChannelNativeImplementation.h
 	mkdir -p $(OBJ)
 	$(CC) -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -o $@ -c $<
 

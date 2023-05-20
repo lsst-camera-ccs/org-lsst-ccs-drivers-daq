@@ -74,6 +74,10 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native ImageMetaData findImage(long store, String imageName, String folderName) throws DAQException;
 
     @Override
+    public DAQSourceChannelImplementation openSourceChannelObject(long store, long id, int index, boolean write) throws DAQException {
+        return new DAQSourceChannelNativeImplementation(openSourceChannel(store, id, index, write));
+    }
+
     public synchronized native long openSourceChannel(long store, long id, int index, boolean write) throws DAQException;
 
     @Override
