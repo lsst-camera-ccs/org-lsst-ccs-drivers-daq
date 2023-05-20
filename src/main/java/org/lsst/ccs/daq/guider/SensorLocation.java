@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.guider;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -9,9 +10,10 @@ import org.lsst.ccs.utilities.location.Location;
  *
  * @author tonyj
  */
-public class SensorLocation {
+public class SensorLocation implements Serializable, Comparable<SensorLocation> {
 
     private final static Pattern SENSOR_PATTERN = Pattern.compile("R(\\d\\d)S(.)([012])");
+    private static final long serialVersionUID = 1;
 
     final Location rebLocation;
     final int sensor;
@@ -63,7 +65,7 @@ public class SensorLocation {
         return Objects.equals(this.rebLocation, other.rebLocation);
     }
 
-    static SensorLocation of(String string) {
+    public static SensorLocation of(String string) {
         Matcher matcher = SENSOR_PATTERN.matcher(string);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("Invalid sensor location: " + string);
@@ -77,6 +79,17 @@ public class SensorLocation {
     @Override
     public String toString() {
         return rebLocation.getRaftName() + rebLocation.getSensorName(sensor);
+    }
+
+    public String toString(String rebSensorSeparator) {
+        return rebLocation.getRaftName() + rebSensorSeparator + rebLocation.getSensorName(sensor);
+    }
+    
+    @Override
+    public int compareTo(SensorLocation other) {
+        int result = this.rebLocation.compareTo(other.rebLocation);
+        if (result == 0) result = this.sensor - other.sensor;
+        return result;
     }
 
 }
