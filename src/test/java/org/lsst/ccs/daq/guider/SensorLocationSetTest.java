@@ -25,8 +25,8 @@ public class SensorLocationSetTest {
         SensorLocationSet sls = SensorLocationSet.of(locations);
         assertEquals(2, sls.size());
         final Iterator<SensorLocation> iterator = sls.iterator();
-        assertEquals("R00SG1", iterator.next().toString());
         assertEquals("R00SG0", iterator.next().toString());
+        assertEquals("R00SG1", iterator.next().toString());
     }
 
     @Test

@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.utilities.location.LocationSet;
 
@@ -44,6 +45,10 @@ public class ROISpec {
 
     public List<ROILocation> getLocations() {
         return locations;
+    }
+    
+    public SensorLocationSet getSensorLocations() {
+        return locations.stream().map(ROILocation::getLocation).collect(Collectors.toCollection(SensorLocationSet::new));
     }
 
     public static ROISpec parse(String roiSpec) throws IllegalArgumentException {

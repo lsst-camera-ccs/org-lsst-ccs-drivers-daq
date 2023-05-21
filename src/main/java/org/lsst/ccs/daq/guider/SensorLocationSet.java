@@ -1,12 +1,12 @@
 package org.lsst.ccs.daq.guider;
 
-import java.util.LinkedHashSet;
+import java.util.TreeSet;
 
 /**
  *
  * @author tonyj
  */
-public class SensorLocationSet extends LinkedHashSet<SensorLocation> {
+public class SensorLocationSet extends TreeSet<SensorLocation> {
 
     public SensorLocationSet() {
     }
