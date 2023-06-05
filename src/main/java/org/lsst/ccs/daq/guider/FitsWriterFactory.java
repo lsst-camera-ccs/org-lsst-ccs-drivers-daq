@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.guider;
 
+import org.lsst.ccs.utilities.location.SensorLocation;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
