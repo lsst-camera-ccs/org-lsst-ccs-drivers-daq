@@ -278,7 +278,7 @@ void Guider_OnLoad(JNIEnv* env) {
         return;
     }
 
-    jclass guiderSensorLocationClass = env->FindClass("org/lsst/ccs/daq/guider/SensorLocation");
+    jclass guiderSensorLocationClass = env->FindClass("org/lsst/ccs/utilities/location/SensorLocation");
     if (env->ExceptionCheck()) {
         return;
     }
