@@ -1,20 +1,24 @@
 package org.lsst.ccs.daq.guider;
 
-import java.io.Closeable;
+import org.lsst.ccs.utilities.location.SensorLocation;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
 import nom.tam.fits.FitsUtil;
 import nom.tam.fits.Header;
+import nom.tam.fits.HeaderCard;
 import nom.tam.util.BufferedFile;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
 import org.lsst.ccs.imagenaming.ImageName;
 import org.lsst.ccs.utilities.image.FitsCheckSum;
+import org.lsst.ccs.utilities.image.FitsHeaderMetadataProvider;
 import org.lsst.ccs.utilities.image.HeaderSpecification;
 import org.lsst.ccs.utilities.image.HeaderWriter;
 import org.lsst.ccs.utilities.image.MetaDataSet;
@@ -33,6 +37,11 @@ public class FitsWriterFactory implements GuiderListener {
     private final Map<String, HeaderSpecification> headerSpecifications;
     private FitsWriter currentFitsFileWriter;
 
+    static {
+        FitsFactory.setUseHierarch(true);
+        FitsFactory.setLongStringsEnabled(true);
+    }
+
     public FitsWriterFactory(String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
         this.partition = partition;
         this.fileNamer = fileNamer;
@@ -40,7 +49,7 @@ public class FitsWriterFactory implements GuiderListener {
     }
 
     protected FitsWriter createFitsFileWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) throws IOException, FitsException {
-        return new FitsWriter(state, series, partition, fileNamer, headerSpecifications, null);
+        return new FitsWriter(state, series, partition, fileNamer, headerSpecifications, Collections.emptyList());
     }
 
     @Override
@@ -77,7 +86,7 @@ public class FitsWriterFactory implements GuiderListener {
         // Ignored for now, probably forever
     }
 
-    public static class FitsWriter implements Closeable {
+    public static class FitsWriter implements AutoCloseable {
 
         private final BufferedFile bufferedFile;
         private final Map<String, Object> properties;
@@ -85,11 +94,13 @@ public class FitsWriterFactory implements GuiderListener {
         private final String seriesId;
         private final Object finalFileName;
         private final File temporaryFileName;
+        private int stampCount = 0;
+        private final BasicHDU<?> primary;
 
-        public FitsWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, MetaDataSet extraMetaData) throws IOException, FitsException {
+        public FitsWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, List<FitsHeaderMetadataProvider> metaDataProviders) throws IOException, FitsException {
             this.seriesId = series.getId();
             Map<String, Object> props = new HashMap<>();
-            try { 
+            try {
                 ImageName imageName = new ImageName(series.getId());
                 props.put("ImageName", imageName.toString());
                 props.put("ImageDate", imageName.getDateString());
@@ -101,7 +112,7 @@ public class FitsWriterFactory implements GuiderListener {
                 props.put("ImageDate", "20230101");
                 props.put("ImageNumber", 1);
                 props.put("ImageController", "MC");
-                props.put("ImageSource", "C");                
+                props.put("ImageSource", "C");
             }
             ROILocation roiLocation = series.getLocation();
             SensorLocation sensorLocation = roiLocation.getLocation();
@@ -122,17 +133,19 @@ public class FitsWriterFactory implements GuiderListener {
             props.put("StartTime", state.getTimestamp());
             props.put("DAQSequence", state.getSequence());
             props.put("CCDSlot", rebLocation.getSensorName(sensorLocation.getSensor()));
+            props.put("StampCount", 0);
             File computedFileName = fileNamer.computeFileName(props);
             this.finalFileName = props.get("OriginalFileName");
             this.temporaryFileName = computedFileName;
             this.headerSpecifications = headerSpecifications;
             // Open the file and write the primary header
             BufferedFile bf = new BufferedFile(computedFileName, "rw");
-            BasicHDU primary = BasicHDU.getDummyHDU();
+            primary = BasicHDU.getDummyHDU();
             MetaDataSet metaDataSet = new MetaDataSet();
             metaDataSet.addMetaDataMap("primary", props);
-            metaDataSet.addMetaDataSet(extraMetaData);
-            
+            for (FitsHeaderMetadataProvider provider : metaDataProviders) {
+                metaDataSet.addMetaDataSet(provider.getPrimaryHeaderMetadata());
+            }            
             HeaderWriter.addMetaDataToHeader(computedFileName, primary, headerSpecifications.get("primary"), metaDataSet);
             FitsCheckSum.setChecksum(primary);
             primary.write(bf);
@@ -140,8 +153,18 @@ public class FitsWriterFactory implements GuiderListener {
             this.properties = props;
         }
 
+        private void fixupStampCount() throws IOException, FitsException {
+            Header header = primary.getHeader();
+            HeaderCard stampsCard = header.findCard("N_STAMPS");
+            stampsCard.setValue(stampCount);
+            FitsCheckSum.setChecksum(primary);
+            bufferedFile.seek(0);
+            primary.write(bufferedFile);
+        }
+
         @Override
-        public void close() throws IOException {
+        public void close() throws IOException, FitsException {
+            fixupStampCount();
             bufferedFile.close();
         }
 
@@ -166,6 +189,7 @@ public class FitsWriterFactory implements GuiderListener {
             header.write(bufferedFile);
             bufferedFile.getChannel().write(stamp);
             FitsUtil.pad(bufferedFile, imageSize);
+            stampCount++;
         }
 
         public String getImageName() {
@@ -175,7 +199,7 @@ public class FitsWriterFactory implements GuiderListener {
         public File getFileName() {
             return temporaryFileName;
         }
-        
+
     }
 
 }

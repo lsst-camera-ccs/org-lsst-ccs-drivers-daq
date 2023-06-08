@@ -5,7 +5,7 @@ LIBTGT = $(TGT)/$(ARCH)
 CC = g++ -std=c++0x -fPIC -Wno-deprecated
 INC = $(TGT)/headers
 
-DAQ_HOME ?= ../../../lib64/daq/R5-V6.1
+DAQ_HOME ?= ../../../lib64/daq/R5-V6.3
 
 all: $(LIBTGT)/libccs_daq_ims.so
 
@@ -33,7 +33,7 @@ $(OBJ)/MyGuiderSubscriber.o: MyGuiderSubscriber.cpp MyGuiderSubscriber.h
 	mkdir -p $(OBJ)
 	$(CC) -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -o $@ -c $<
 
-$(OBJ)/Channel.o: Channel.cpp Channel.h $(INC)/org_lsst_ccs_daq_ims_DAQSourceChannel.h
+$(OBJ)/Channel.o: Channel.cpp Channel.h $(INC)/org_lsst_ccs_daq_ims_DAQSourceChannelNativeImplementation.h
 	mkdir -p $(OBJ)
 	$(CC) -I. -I$(JAVA_HOME)/include -I$(JAVA_HOME)/include/linux/ -I$(TGT)/headers -I$(DAQ_HOME)/include -o $@ -c $<
 

@@ -30,7 +30,7 @@ class DAQSourceChannel implements ByteChannel {
     }
 
     protected final Store store;
-    protected long channel_;
+    protected DAQSourceChannelImplementation impl;
     private final Source.ChannelMode mode;
 
     DAQSourceChannel(Store store, Source source, Source.ChannelMode mode) throws DAQException {
@@ -38,28 +38,28 @@ class DAQSourceChannel implements ByteChannel {
         this.store = store;
         if (mode != Source.ChannelMode.STREAM) {
             // In the case of streaming we delay opening the channel until the first data is ready 
-            channel_ = store.openSourceChannel(image.getMetaData().getId(), source.getLocation(), mode);
+            impl = store.openSourceChannel(image.getMetaData().getId(), source.getLocation(), mode);
         }
         this.mode = mode;
     }
 
     @Override
     public boolean isOpen() {
-        return channel_ != 0;
+        return impl != null;
     }
 
     @Override
     public void close() throws IOException {
-        if (channel_ != 0) {
+        if (impl != null) {
             synchronized (store) {
-                close(channel_, mode == Source.ChannelMode.WRITE);
+                close(mode == Source.ChannelMode.WRITE);
             }
-            channel_ = 0;
+            impl = null;
         }
     }
 
     void checkOpen(ByteBuffer dst) throws IOException {
-        if (channel_ == 0) {
+        if (impl == null) {
             throw new IOException("Channel not open for read");
         }
         if (!dst.isDirect()) {
@@ -77,11 +77,18 @@ class DAQSourceChannel implements ByteChannel {
         throw new IOException("Channel not open for write.");
     }
 
-    protected native int read(long source_, ByteBuffer dst, int position, long offset, int length);
+    protected int read(ByteBuffer dst, int position, long offset, int length) {
+        return impl.read(dst, position, offset, length);
+    }
 
-    protected native int write(long source_, ByteBuffer src, int position, int remaining);
+    protected int write(ByteBuffer src, int position, int remaining) {
+        return impl.write(src, position, remaining);
+    }
 
-    private native void close(long source_, boolean write);
+    private void close(boolean write) {
+        impl.close(write);
+    }
+    
 
     static class ReadableDAQSourceChannel extends DAQSourceChannel {
 
@@ -101,7 +108,7 @@ class DAQSourceChannel implements ByteChannel {
                 return -1;
             }
             int position = dst.position();
-            int err = read(channel_, dst, position, offset, l);
+            int err = read(dst, position, offset, l);
             if (err != 0) {
                 DAQException daq = new DAQException("Error reading DAQ data", err);
                 throw new IOException("DAQ IO exception", daq);
@@ -134,14 +141,14 @@ class DAQSourceChannel implements ByteChannel {
                 if (l < 0) {
                     return -1;
                 }
-                if (channel_ == 0) {
+                if (impl == null) {
                     final Image image = source.getImage();
-                    channel_ = store.openSourceChannel(image.getMetaData().getId(), source.getLocation(), Source.ChannelMode.STREAM);
+                    impl = store.openSourceChannel(image.getMetaData().getId(), source.getLocation(), Source.ChannelMode.STREAM);
                 }
                 checkOpen(dst);
                 int position = dst.position();
                 //System.out.printf("Read %d %d %d %d\n", channel_, position, offset, l);
-                int err = read(channel_, dst, position, offset, l);
+                int err = read(dst, position, offset, l);
                 if (err != 0) {
                     throw new DAQException("Error reading DAQ data", err);
                 }
@@ -210,7 +217,7 @@ class DAQSourceChannel implements ByteChannel {
 //                throw new IOException("ByteBuffer size must be a multiple of 48");
 //            }
             int position = src.position();
-            int err = write(channel_, src, position, remaining);
+            int err = write(src, position, remaining);
             if (err != 0) {
                 DAQException daq = new DAQException("Error reading DAQ data", err);
                 throw new IOException("DAQ IO exception", daq);

@@ -46,7 +46,7 @@ interface StoreImplementation {
 
     ImageMetaData findImage(long store, String imageName, String folderName) throws DAQException;
 
-    long openSourceChannel(long store, long id, int index, boolean write) throws DAQException;
+    DAQSourceChannelImplementation openSourceChannelObject(long store, long id, int index, boolean write) throws DAQException;
 
     SourceMetaData addSourceToImage(long store, long id, int index, byte type, String platform, int[] registerValues) throws DAQException;
 

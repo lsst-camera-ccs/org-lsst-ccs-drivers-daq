@@ -89,6 +89,7 @@ public class CommandTool {
 
     private Store store;
     private FocalPlane focalPlane = FocalPlane.createFocalPlane();
+    private ImageListener imageListener;
 
     public CommandTool() {
     }
@@ -457,7 +458,7 @@ public class CommandTool {
     @Command(name = "listen", description = "Listen for images")
     public void listen() {
         checkStore();
-        store.addImageListener(new ImageListener() {
+        imageListener = new ImageListener() {
             @Override
             public void imageCreated(Image image) {
                 System.out.println("Image created " + image.getMetaData().getName());
@@ -476,9 +477,16 @@ public class CommandTool {
                     LOG.log(Level.SEVERE, "Exception in imageComplete listener", ex);
                 }
             }
-        });
+        };
+        store.addImageListener(imageListener);
     }
 
+    @Command(name = "unlisten", description = "Stop listen for images")
+    public void unlisten() {
+        checkStore();
+        store.removeImageListener(imageListener);
+    }
+    
     @Command(name = "read", description = "Read and decode data in image")
     public void read(String path,
             @Argument(defaultValue = ".", description = "Folder where FITS files will be written") File dir,

@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.ims;
 
+import java.nio.file.Path;
 import org.lsst.ccs.utilities.location.Location;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,7 +37,7 @@ public class Store implements AutoCloseable {
     private final Map<Long, Map<Integer, List<StreamListener>>> imageStreamMap = new ConcurrentHashMap<>();
     private static final Logger LOG = Logger.getLogger(Store.class.getName());
 
-    private static final int IMAGE_TIMEOUT_MICROS = 0;
+    private static final int IMAGE_TIMEOUT_MICROS = Integer.getInteger("org.lsst.ccs.daq.ims.ImageTimeout", 1_000_000);
     private static final int SOURCE_TIMEOUT_MICROS = Integer.getInteger("org.lsst.ccs.daq.ims.SourceTimeout", 10_000_000);
     private final static StoreImplementation impl;
     private final ExecutorService executor;
@@ -212,28 +213,34 @@ public class Store implements AutoCloseable {
         synchronized (this) {
             if (waitForImageTask == null || waitForImageTask.isCancelled() || waitForImageTask.isDone()) {
                 waitForImageTask = executor.submit(() -> {
+                    Thread thisThread = Thread.currentThread();
+                    String originalThreadName = thisThread.getName();
                     try {
-                        Thread.currentThread().setName("ImageStreamThread_" + partition);
-                        LOG.log(Level.INFO, () -> String.format("DAQ image listener starting with timeouts %,d %,d", IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS));
+                        thisThread.setName("ImageStreamThread_" + partition);
+                        LOG.log(Level.INFO, () -> String.format("DAQ image listener starting with timeouts %,dμs %,dμs", IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS));
                         long waitForImageStore = impl.attachStore(partition);
                         long stream1 = 0;
                         long stream2 = 0;
                         try {
                             stream1 = impl.attachStream(store, SOURCE_TIMEOUT_MICROS);
                             stream2 = impl.attachStream(store, SOURCE_TIMEOUT_MICROS);
-                            while (!Thread.currentThread().isInterrupted()) {
+                            while (!waitForImageTask.isCancelled()) {
                                 int rc = impl.waitForImage(Store.this, waitForImageStore, stream1, stream2, IMAGE_TIMEOUT_MICROS, SOURCE_TIMEOUT_MICROS);
                                 if (rc != 0 && rc != 68) { // 68 appears to mean timeout
                                     LOG.log(Level.SEVERE, "Unexpected rc from waitForImage: {0}", rc);
+                                } else {
+                                    LOG.log(Level.FINE, "waitForImage timeout with rc {0}, continuing to wait", rc);
                                 }
                             }
                         } finally {
                             if (stream1 != 0) impl.detachStream(stream1);
                             if (stream2 != 0) impl.detachStream(stream2);
-                            impl.detachStore(store);
+                            impl.detachStore(waitForImageStore);
                         }
                     } catch (Throwable x) {
                         LOG.log(Level.SEVERE, x, () -> String.format("Thread %s exiting", Thread.currentThread().getName()));
+                    } finally {
+                        thisThread.setName(originalThreadName);
                     }
                 });
 
@@ -355,9 +362,13 @@ public class Store implements AutoCloseable {
 
     @Override
     public void close() throws DAQException {
-        if (waitForImageTask != null && !waitForImageTask.isDone()) {
-            waitForImageTask.cancel(true);
+        synchronized (this) {
+            if (waitForImageTask != null && !waitForImageTask.isDone()) {
+                boolean success = waitForImageTask.cancel(true);
+                LOG.log(Level.FINE, "Store closed, waitForImageTask={0} {1}", new Object[]{success, waitForImageTask.isCancelled()});
+            }
         }
+        imageListeners.clear();
         if (camera != null) {
             camera.detach();
         }
@@ -415,8 +426,8 @@ public class Store implements AutoCloseable {
         return impl.findImage(store, imageName, folderName);
     }
 
-    long openSourceChannel(long id, Location location, Source.ChannelMode mode) throws DAQException {
-        return impl.openSourceChannel(store, id, location.index(), mode == Source.ChannelMode.WRITE);
+    DAQSourceChannelImplementation openSourceChannel(long id, Location location, Source.ChannelMode mode) throws DAQException {
+        return impl.openSourceChannelObject(store, id, location.index(), mode == Source.ChannelMode.WRITE);
     }
 
     SourceMetaData addSourceToImage(long id, Location location, int[] registerValues) throws DAQException {
@@ -461,6 +472,24 @@ public class Store implements AutoCloseable {
 
     long getStore() {
         return store;
+    }
+    
+    /**
+     * Simulate an image arriving in the 2-day store. This is implemented crudely since it is only designed to be
+     * used for AuxTel on the BTS.
+     * @param location
+     * @param meta
+     * @param registerList
+     * @param rawData
+     * @throws DAQException 
+     */
+    public void simulateTrigger(Location location, ImageMetaData meta, int[] registerList, Path rawData) throws DAQException {
+        if (impl instanceof StoreSimulatedImplementation) {
+            ((StoreSimulatedImplementation) impl).simulateTrigger(meta, location, registerList, rawData);
+        } else {
+            throw new UnsupportedOperationException("Only supported for simulated DAQ");
+        }
+        
     }
 
     void detachGuider(long guider) throws DAQException {

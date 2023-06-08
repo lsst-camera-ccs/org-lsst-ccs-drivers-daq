@@ -775,10 +775,11 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_ad
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachStream
 (JNIEnv* env, jobject obj, jlong store, jint sourceTimeoutMicros) {
     Store* store_ = (Store*) store;
-    return (jlong) new Stream(*store_, sourceTimeoutMicros);
+    // Per Gregg, this timeout is actually in units of 10ms
+    return (jlong) new Stream(*store_, sourceTimeoutMicros/10000);
 }
 
-JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detachSteam
+JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detachStream
 (JNIEnv* env, jobject obj, jlong stream) {
     delete ((Stream*) stream);
 }
@@ -788,7 +789,8 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitF
     Store* store_ = (Store*) store;
     Stream* stream1_ = (Stream*) stream1;
     Stream* stream2_ = (Stream*) stream2;
-    Image image(*store_, *stream1_, imageTimeoutMicros);
+    // Per Gregg, this timeout is actually in units of 10ms
+    Image image(*store_, *stream1_, imageTimeoutMicros/10000);
     if (!image) return image.error();
     env->CallVoidMethod(callback, JCimageCreatedCallbackMethod, createImageMetaData(env, image));
     MyBarrier barrier(*store_, env, image, callback, JCimageSourceStreamCallbackMethod);

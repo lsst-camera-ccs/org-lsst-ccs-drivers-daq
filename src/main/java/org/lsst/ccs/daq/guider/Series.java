@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.guider;
 
+import org.lsst.ccs.utilities.location.SensorLocation;
 import java.time.Instant;
 import java.util.List;
 
@@ -23,6 +24,30 @@ public class Series {
         this.stamps = stamps;
         this.configured = configured;
         this.remaining = remaining;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public Instant getBegin() {
+        return begin;
+    }
+
+    public int getSequence() {
+        return sequence;
+    }
+
+    public int getStamps() {
+        return stamps;
+    }
+
+    public List<SensorLocation> getConfigured() {
+        return configured;
+    }
+
+    public List<SensorLocation> getRemaining() {
+        return remaining;
     }
 
     @Override

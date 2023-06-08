@@ -1,5 +1,6 @@
 package org.lsst.ccs.daq.guider;
 
+import org.lsst.ccs.utilities.location.SensorLocation;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;

@@ -13,7 +13,7 @@ import org.lsst.ccs.daq.guider.FitsWriterFactory;
 import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.daq.ims.Guider;
 import org.lsst.ccs.daq.guider.ROISpec;
-import org.lsst.ccs.daq.guider.SensorLocation;
+import org.lsst.ccs.utilities.location.SensorLocation;
 import org.lsst.ccs.daq.guider.Series;
 import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.daq.ims.Guider.Subscriber;

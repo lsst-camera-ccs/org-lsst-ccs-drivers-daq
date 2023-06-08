@@ -10,7 +10,7 @@ import org.lsst.ccs.daq.guider.Config;
 import org.lsst.ccs.daq.guider.GuiderListener;
 import org.lsst.ccs.daq.guider.ROICommon;
 import org.lsst.ccs.daq.guider.ROILocation;
-import org.lsst.ccs.daq.guider.SensorLocation;
+import org.lsst.ccs.utilities.location.SensorLocation;
 import org.lsst.ccs.daq.guider.Series;
 import org.lsst.ccs.daq.guider.SeriesMetaData;
 import org.lsst.ccs.daq.guider.StateMetaData;

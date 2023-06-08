@@ -1,5 +1,7 @@
 package org.lsst.ccs.daq.guider;
 
+import org.lsst.ccs.utilities.location.SensorLocation;
+
 /**
  * Details of an ROI for a single sensor
  */

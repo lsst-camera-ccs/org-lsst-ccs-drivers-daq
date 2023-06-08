@@ -5,3 +5,6 @@ NAXIS1      Integer ${NAXIS1}           size of the n'th axis
 NAXIS2      Integer ${NAXIS2}           size of the n'th axis
 EXTNAME     String  ${EXTNAME}
 STMPTIME    Date    ${StampTime}
+# DM requested stamps
+EXTVER      Integer 1                                                  
+EXTNAME     String  IMAGE              
