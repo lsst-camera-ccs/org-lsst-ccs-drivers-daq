@@ -171,6 +171,7 @@ public class FitsWriterFactory implements GuiderListener {
         private void stamp(StateMetaData state, ByteBuffer stamp) throws FitsException, IOException {
             Map<String, Object> props = new HashMap<>();
             props.put("StampTime", state.getTimestamp());
+            props.put("StampCount",++stampCount); // 1 based count used for EXTVER
             int[][] intDummyData = new int[1][1];
             BasicHDU imageHDU = FitsFactory.hduFactory(intDummyData);
             Header header = imageHDU.getHeader();

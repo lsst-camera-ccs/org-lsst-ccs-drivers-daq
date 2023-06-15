@@ -3,8 +3,7 @@
 NAXIS       Integer ${NAXIS}            number of axis
 NAXIS1      Integer ${NAXIS1}           size of the n'th axis
 NAXIS2      Integer ${NAXIS2}           size of the n'th axis
-EXTNAME     String  ${EXTNAME}
-STMPTIME    Date    ${StampTime}
+STMPTIME!   Date    ${StampTime}
 # DM requested stamps
-EXTVER      Integer 1                                                  
+EXTVER!     Integer ${StampCount}                                        
 EXTNAME     String  IMAGE              
