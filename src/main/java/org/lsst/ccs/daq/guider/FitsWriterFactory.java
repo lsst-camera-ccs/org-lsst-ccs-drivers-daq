@@ -190,7 +190,6 @@ public class FitsWriterFactory implements GuiderListener {
             header.write(bufferedFile);
             bufferedFile.getChannel().write(stamp);
             FitsUtil.pad(bufferedFile, imageSize);
-            stampCount++;
         }
 
         public String getImageName() {
