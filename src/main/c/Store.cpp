@@ -794,7 +794,8 @@ JNIEXPORT jint JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_waitF
     if (!image) return image.error();
     env->CallVoidMethod(callback, JCimageCreatedCallbackMethod, createImageMetaData(env, image));
     MyBarrier barrier(*store_, env, image, callback, JCimageSourceStreamCallbackMethod);
-    barrier.run(*stream2_, sourceTimeoutMicros);
+    // Per Gregg, this timeout is (also) actually in units of 10ms
+    barrier.run(*stream2_, sourceTimeoutMicros/10000);
     // We get here either because the image is complete, or because it timed out. We cannot tell
     // which, so we will just hope for the best!
     env->CallVoidMethod(callback, JCimageCompleteCallbackMethod, createImageMetaData(env, image));
