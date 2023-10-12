@@ -36,16 +36,18 @@ public class FitsWriterFactory implements GuiderListener {
     private final FitsIntWriter.FileNamer fileNamer;
     private final Map<String, HeaderSpecification> headerSpecifications;
     private FitsWriter currentFitsFileWriter;
+    private final boolean includeRawStamp;
 
     static {
         FitsFactory.setUseHierarch(true);
         FitsFactory.setLongStringsEnabled(true);
     }
 
-    public FitsWriterFactory(String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
+    public FitsWriterFactory(String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, boolean includeRawStamp) {
         this.partition = partition;
         this.fileNamer = fileNamer;
         this.headerSpecifications = headerSpecifications;
+        this.includeRawStamp = includeRawStamp;
     }
 
     protected FitsWriter createFitsFileWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) throws IOException, FitsException {
@@ -82,8 +84,10 @@ public class FitsWriterFactory implements GuiderListener {
     }
 
     @Override
-    public void rawStamp(StateMetaData state, ByteBuffer rawStamp) {
-        // Ignored for now, probably forever
+    public void rawStamp(StateMetaData state, ByteBuffer rawStamp) throws FitsException, IOException {
+        if (currentFitsFileWriter != null && includeRawStamp) {
+            currentFitsFileWriter.rawStamp(state, rawStamp);
+        }
     }
 
     public static class FitsWriter implements AutoCloseable {
@@ -95,6 +99,7 @@ public class FitsWriterFactory implements GuiderListener {
         private final Object finalFileName;
         private final File temporaryFileName;
         private int stampCount = 0;
+        private int rawStampCount = 0;
         private final BasicHDU<?> primary;
 
         public FitsWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, List<FitsHeaderMetadataProvider> metaDataProviders) throws IOException, FitsException {
@@ -189,6 +194,30 @@ public class FitsWriterFactory implements GuiderListener {
             long imageSize = stamp.remaining();
             header.write(bufferedFile);
             bufferedFile.getChannel().write(stamp);
+            FitsUtil.pad(bufferedFile, imageSize);
+        }
+
+        private void rawStamp(StateMetaData state, ByteBuffer rawStamp) throws FitsException, IOException {
+            Map<String, Object> props = new HashMap<>();
+            props.put("StampTime", state.getTimestamp());
+            props.put("StampCount",++rawStampCount); // 1 based count used for EXTVER
+            int[][] intDummyData = new int[1][1];
+            BasicHDU imageHDU = FitsFactory.hduFactory(intDummyData);
+            Header header = imageHDU.getHeader();
+            header.setXtension("RAWSTAMP");
+            header.setBitpix(32);
+            header.setNaxes(2);
+            header.setNaxis(1, (int) properties.get("ROIRows"));
+            header.setNaxis(2, (int) properties.get("ROICols"));
+            MetaDataSet metaDataSet = new MetaDataSet();
+            metaDataSet.addMetaDataMap("stamp", props);
+            HeaderWriter.addMetaDataToHeader(null, imageHDU, headerSpecifications.get("stamp"), metaDataSet);
+            FitsCheckSum.setChecksum(imageHDU);
+            //long computeChecksum = FitsCheckSum.computeChecksum(stamp);
+            //FitsCheckSum.updateDataSum(header, computeChecksum);
+            long imageSize = rawStamp.remaining();
+            header.write(bufferedFile);
+            bufferedFile.getChannel().write(rawStamp);
             FitsUtil.pad(bufferedFile, imageSize);
         }
 

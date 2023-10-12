@@ -134,8 +134,8 @@ public class GuiderTool {
         Location R00 = Location.of("R00/RebG");
         SensorLocation sensorLocation0 = new SensorLocation(R00, 0);
         SensorLocation sensorLocation1 = new SensorLocation(R00, 1);
-        FitsWriterFactory writer0 = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications);
-        FitsWriterFactory writer1 = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications);
+        FitsWriterFactory writer0 = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications, false);
+        FitsWriterFactory writer1 = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications, false);
 
         subscribe0 = guider.subscribe(Collections.singleton(sensorLocation0), ByteOrder.BIG_ENDIAN, writer0);
         Thread t0 = new Thread(() -> {
