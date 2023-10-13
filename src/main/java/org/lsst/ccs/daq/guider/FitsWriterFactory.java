@@ -43,6 +43,10 @@ public class FitsWriterFactory implements GuiderListener {
         FitsFactory.setLongStringsEnabled(true);
     }
 
+    public FitsWriterFactory(String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
+        this(partition, fileNamer, headerSpecifications, false);
+    }
+    
     public FitsWriterFactory(String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, boolean includeRawStamp) {
         this.partition = partition;
         this.fileNamer = fileNamer;
@@ -201,24 +205,6 @@ public class FitsWriterFactory implements GuiderListener {
             Map<String, Object> props = new HashMap<>();
             props.put("StampTime", state.getTimestamp());
             props.put("StampCount",++rawStampCount); // 1 based count used for EXTVER
-//            int[][] intDummyData = new int[1][1];
-//            BasicHDU imageHDU = FitsFactory.hduFactory(intDummyData);
-//            Header header = imageHDU.getHeader();
-//            header.setXtension("RAWSTAMP");
-//            header.setBitpix(32);
-//            header.setNaxes(2);
-//            header.setNaxis(1, (int) properties.get("ROIRows"));
-//            header.setNaxis(2, (int) properties.get("ROICols"));
-//            MetaDataSet metaDataSet = new MetaDataSet();
-//            metaDataSet.addMetaDataMap("stamp", props);
-//            HeaderWriter.addMetaDataToHeader(null, imageHDU, headerSpecifications.get("stamp"), metaDataSet);
-//            FitsCheckSum.setChecksum(imageHDU);
-            //long computeChecksum = FitsCheckSum.computeChecksum(stamp);
-            //FitsCheckSum.updateDataSum(header, computeChecksum);
-//            long imageSize = rawStamp.remaining();
-//            header.write(bufferedFile);
-//            bufferedFile.getChannel().write(rawStamp);
-//            FitsUtil.pad(bufferedFile, imageSize);
             
             int[][] intDummyData = new int[1][1];
             BasicHDU binaryTableHDU = FitsFactory.hduFactory(intDummyData);
