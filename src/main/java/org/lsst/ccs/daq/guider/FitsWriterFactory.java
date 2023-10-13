@@ -201,20 +201,43 @@ public class FitsWriterFactory implements GuiderListener {
             Map<String, Object> props = new HashMap<>();
             props.put("StampTime", state.getTimestamp());
             props.put("StampCount",++rawStampCount); // 1 based count used for EXTVER
-            int[][] intDummyData = new int[1][1];
-            BasicHDU imageHDU = FitsFactory.hduFactory(intDummyData);
-            Header header = imageHDU.getHeader();
-            header.setXtension("RAWSTAMP");
-            header.setBitpix(32);
-            header.setNaxes(2);
-            header.setNaxis(1, (int) properties.get("ROIRows"));
-            header.setNaxis(2, (int) properties.get("ROICols"));
-            MetaDataSet metaDataSet = new MetaDataSet();
-            metaDataSet.addMetaDataMap("stamp", props);
-            HeaderWriter.addMetaDataToHeader(null, imageHDU, headerSpecifications.get("stamp"), metaDataSet);
-            FitsCheckSum.setChecksum(imageHDU);
+//            int[][] intDummyData = new int[1][1];
+//            BasicHDU imageHDU = FitsFactory.hduFactory(intDummyData);
+//            Header header = imageHDU.getHeader();
+//            header.setXtension("RAWSTAMP");
+//            header.setBitpix(32);
+//            header.setNaxes(2);
+//            header.setNaxis(1, (int) properties.get("ROIRows"));
+//            header.setNaxis(2, (int) properties.get("ROICols"));
+//            MetaDataSet metaDataSet = new MetaDataSet();
+//            metaDataSet.addMetaDataMap("stamp", props);
+//            HeaderWriter.addMetaDataToHeader(null, imageHDU, headerSpecifications.get("stamp"), metaDataSet);
+//            FitsCheckSum.setChecksum(imageHDU);
             //long computeChecksum = FitsCheckSum.computeChecksum(stamp);
             //FitsCheckSum.updateDataSum(header, computeChecksum);
+//            long imageSize = rawStamp.remaining();
+//            header.write(bufferedFile);
+//            bufferedFile.getChannel().write(rawStamp);
+//            FitsUtil.pad(bufferedFile, imageSize);
+            
+            int[][] intDummyData = new int[1][1];
+            BasicHDU binaryTableHDU = FitsFactory.hduFactory(intDummyData);
+            Header header = binaryTableHDU.getHeader();
+            header.setXtension("BINTABLE");
+            header.setBitpix(8);
+            header.setNaxes(2);
+            header.setNaxis(1, rawStamp.remaining());
+            header.setNaxis(2, 1);
+            header.addValue("PCOUNT", 0,"");
+            header.addValue("GCOUNT", 1, "");
+            header.addValue("TFIELDS", 1, "");
+            header.addValue("TFORM1", (rawStamp.remaining()/4)+"J", "");
+            header.addValue("TTYPE1", "rawStamp", "");
+
+            MetaDataSet metaDataSet = new MetaDataSet();
+            metaDataSet.addMetaDataMap("stamp", props);
+            HeaderWriter.addMetaDataToHeader(null, binaryTableHDU, headerSpecifications.get("stamp"), metaDataSet);
+            FitsCheckSum.setChecksum(binaryTableHDU);    
             long imageSize = rawStamp.remaining();
             header.write(bufferedFile);
             bufferedFile.getChannel().write(rawStamp);
@@ -232,3 +255,4 @@ public class FitsWriterFactory implements GuiderListener {
     }
 
 }
+
