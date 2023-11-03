@@ -18,11 +18,11 @@ public class DAQFirmwareStats extends DAQStats implements Serializable {
     private final long link_status;        // Link Status
     @DataAttributes(description = "Remote Link Data")
     private final long rlink_data;         // Remote Link Data
-    @DataAttributes(description = "PGP Cell Error Counter. This error counter increments when the lowest level PGP protocol quantum is in error. Examples of errors that would cause this counter to increment are, framing violations, incompatible protocol versions, CRC error, incorrect Cell size.")
+    @DataAttributes(description = "PGP Cell Error Counter. This error counter increments when the lowest level PGP protocol quantum is in error.")
     private final long cell_errors;        // Cell Error Count
-    @DataAttributes(description = "Link Down Counter. This should increment by 1 every time the PGP link transitions from UP to DOWN. Unfortunately, it does not use the LSST DAQ definition of UP, but rather only bits 1..0 of the state. Though normal initialization of the link causes only a single increment, on occasion a REB power cycle can cause the counter to increment more than once.")
+    @DataAttributes(description = "Link Down Counter. This should increment by 1 every time the PGP link transitions from UP to DOWN. Unfortunately, it does not use the LSST DAQ definition of UP, but rather only bits 1..0 of the state.")
     private final long link_down;          // Link Down Count
-    @DataAttributes(description = " Link Error Counter. This counter represents a lower level error than the Cell Error. This error is caused by 8B10B errors on the high speed serial line such as disparity errors or symbol decode errors. Sometimes this counter can increment during the link establishment process, though I have tried to change the firmware to eliminate this.")
+    @DataAttributes(description = "Link Error Counter. This counter represents a lower level error than the Cell Error. This error is caused by 8B10B errors on the high speed serial line such as disparity errors or symbol decode errors.")
     private final long link_errors;        // Link Error Count
     @DataAttributes(description = "Remote Overflow Counters (channel 0). These four counters measure the number of times the firmware on the remote side of the link has overflowed its buffers for each virtual channel.")
     private final long overflow_remote0;   // Remote Overflow VC Count 

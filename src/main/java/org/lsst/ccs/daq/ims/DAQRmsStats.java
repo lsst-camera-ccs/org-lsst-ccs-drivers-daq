@@ -34,7 +34,7 @@ public class DAQRmsStats extends DAQStats implements Serializable {
     private final long orphans;
     @DataAttributes(description = "Orphaned Response count. A Response was received for which there was no corresponding request.")
     private final long rundowns;
-    @DataAttributes(description = "Task ID High Water Mark. There is a fixed number of buffers available to store outstanding requests while waiting for responses. If the REB does not respond to a request, then a buffer resource is lost. This counter reflects the largest number of outstanding requests. Currently, in a properly functioning system there should never be more than one outstanding request at a time, and the High Water Mark should never be more than 1.")
+    @DataAttributes(description = "Task ID High Water Mark. There is a fixed number of buffers available to store outstanding requests while waiting for responses. If the REB does not respond to a request, then a buffer resource is lost. This counter reflects the largest number of outstanding requests.")
     private final long tid_hwm;
     private static final long serialVersionUID = -6149058303405500713L;
 
