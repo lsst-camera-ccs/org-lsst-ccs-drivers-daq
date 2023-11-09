@@ -133,6 +133,8 @@ public class FitsWriterFactory implements GuiderListener {
             props.put("DAQPartition", partition);
             props.put("IntegrationTime", common.getIntegrationTimeMillis());
             props.put("ROISegment", String.format("Segment%02d", roiLocation.getSegment()));
+            props.put("ROIStartCol", roiLocation.getStartCol());
+            props.put("ROIStartRow", roiLocation.getStartRow());
             props.put("ROICols", common.getCols());
             props.put("ROIRows", common.getRows());
             props.put("Firmware", String.format("%x", series.getFirmware()));
