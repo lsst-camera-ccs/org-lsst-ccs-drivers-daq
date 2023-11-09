@@ -189,8 +189,12 @@ public class FitsWriterFactory implements GuiderListener {
             header.setXtension("IMAGE");
             header.setBitpix(32);
             header.setNaxes(2);
-            header.setNaxis(1, (int) properties.get("ROIRows"));
-            header.setNaxis(2, (int) properties.get("ROICols"));
+            // Which is naxis1 vs naxis 2? For science images we use
+            // extendedMetadata.addMetaData("extension", "NAXIS1", images.getSerialPixels());
+            // extendedMetadata.addMetaData("extension", "NAXIS2", images.getParallelPixels());
+            // I think cols = serial, rows = parallel, so
+            header.setNaxis(1, (int) properties.get("ROICols"));
+            header.setNaxis(2, (int) properties.get("ROIRows"));
             MetaDataSet metaDataSet = new MetaDataSet();
             metaDataSet.addMetaDataMap("stamp", props);
             HeaderWriter.addMetaDataToHeader(null, imageHDU, headerSpecifications.get("stamp"), metaDataSet);
