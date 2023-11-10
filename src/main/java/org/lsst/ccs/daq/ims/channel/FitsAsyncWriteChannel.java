@@ -29,7 +29,7 @@ public class FitsAsyncWriteChannel extends FitsWriteChannel {
         availableBuffers = new ArrayBlockingQueue<>(NBUFFERS);
         exceptions = new LinkedBlockingQueue<>();
         for (int n = 0; n < NBUFFERS; n++) {
-            ByteBuffer bb = ByteBuffer.allocateDirect(500_000);
+            ByteBuffer bb = cache.allocateDirect(500_000);
             bb.order(ByteOrder.BIG_ENDIAN);
             availableBuffers.add(bb);
         }
@@ -42,7 +42,7 @@ public class FitsAsyncWriteChannel extends FitsWriteChannel {
             flush();
             // Wait until all asynch operations are complete
             for (int i = 0; i < NBUFFERS-1; i++) {
-                waitForBuffer();
+                cache.free(waitForBuffer());
             }
             isOpen = false;
         }
