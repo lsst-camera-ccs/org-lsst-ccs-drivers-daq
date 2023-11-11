@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import javax.management.InstanceAlreadyExistsException;
 import javax.management.MBeanRegistrationException;
 import javax.management.MBeanServer;
@@ -77,6 +78,11 @@ public class DirectByteBufferCache implements DirectByteBufferCacheMBean {
     }
 
     @Override
+    public String toString() {
+        return "DirectByteBufferCache{" + "byteBufferCache=" + getBufferSizeAndCounts() + ", bufferCount=" + bufferCount + ", totalCapacity=" + totalCapacity + ", inUseCount=" + inUseCount + ", inUseCapacity=" + inUseCapacity + '}';
+    }
+    
+    @Override
     public int getBufferCount() {
         return bufferCount.get();
     }
@@ -99,5 +105,13 @@ public class DirectByteBufferCache implements DirectByteBufferCacheMBean {
     @Override
     public int getByteBufferCacheSize() {
         return byteBufferCache.size();
+    }
+    
+    @Override
+    public Map<Integer, Integer> getBufferSizeAndCounts() {
+        return byteBufferCache.entrySet().stream().collect(Collectors.toMap(
+            e -> e.getKey(),
+            e -> e.getValue().size()
+        ));
     }
 }
