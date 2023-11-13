@@ -65,7 +65,7 @@ import org.lsst.ccs.daq.ims.channel.FitsIntReader;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
 import org.lsst.ccs.daq.ims.example.FitsFile.RawSource;
-import org.lsst.ccs.daq.util.DirectByteBufferCache;
+import org.lsst.ccs.utilities.image.direct.DirectByteBufferCache;
 import org.lsst.ccs.utilities.ccd.FocalPlane;
 import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;

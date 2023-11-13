@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
-import org.lsst.ccs.daq.util.DirectByteBufferCache;
+import org.lsst.ccs.utilities.image.direct.DirectByteBufferCache;
 
 /**
  * A class for reading data from a file channel, at a given position and length

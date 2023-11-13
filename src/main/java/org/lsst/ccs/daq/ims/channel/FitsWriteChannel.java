@@ -7,7 +7,7 @@ import java.nio.ByteOrder;
 import org.lsst.ccs.utilities.image.FitsFileWriter;
 
 import java.nio.IntBuffer;
-import org.lsst.ccs.daq.util.DirectByteBufferCache;
+import org.lsst.ccs.utilities.image.direct.DirectByteBufferCache;
 /**
  *
  * @author tonyj

@@ -14,7 +14,7 @@ import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.daq.ims.ImageMetaData;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter.PerCCDMetaDataProvider;
 import org.lsst.ccs.daq.ims.example.FitsFile;
-import org.lsst.ccs.daq.util.DirectByteBufferCache;
+import org.lsst.ccs.utilities.image.direct.DirectByteBufferCache;
 import org.lsst.ccs.utilities.ccd.CCD;
 import org.lsst.ccs.utilities.ccd.FocalPlane;
 import org.lsst.ccs.utilities.ccd.Reb;
