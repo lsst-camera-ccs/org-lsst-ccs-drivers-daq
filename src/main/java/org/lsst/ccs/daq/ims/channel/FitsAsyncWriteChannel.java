@@ -24,12 +24,13 @@ public class FitsAsyncWriteChannel extends FitsWriteChannel {
         super(writer, segment);
     }
 
+    // Note: initBuffers is called from the super constructor
     @Override
     void initBuffers() throws IOException {
         availableBuffers = new ArrayBlockingQueue<>(NBUFFERS);
         exceptions = new LinkedBlockingQueue<>();
         for (int n = 0; n < NBUFFERS; n++) {
-            ByteBuffer bb = ByteBuffer.allocateDirect(500_000);
+            ByteBuffer bb = cache.allocateDirect(500_000);
             bb.order(ByteOrder.BIG_ENDIAN);
             availableBuffers.add(bb);
         }
@@ -39,12 +40,17 @@ public class FitsAsyncWriteChannel extends FitsWriteChannel {
     @Override
     public void close() throws IOException {
         if (isOpen) {
-            flush();
-            // Wait until all asynch operations are complete
-            for (int i = 0; i < NBUFFERS-1; i++) {
-                waitForBuffer();
-            }
             isOpen = false;
+            flush();
+            availableBuffers.offer(currentBuffer);
+            // Wait for any outstand asynch operations to complete
+            while (availableBuffers.size() < NBUFFERS) {
+                availableBuffers.offer(waitForBuffer());
+            }
+            // Free all buffers
+            for (int i = 0; i < NBUFFERS; i++) {
+                cache.free(availableBuffers.remove());
+            }
         }
     }
 

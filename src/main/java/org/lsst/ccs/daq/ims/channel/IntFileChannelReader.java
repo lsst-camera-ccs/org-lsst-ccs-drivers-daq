@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
+import org.lsst.ccs.utilities.image.direct.DirectByteBufferCache;
 
 /**
  * A class for reading data from a file channel, at a given position and length
@@ -16,7 +17,7 @@ public class IntFileChannelReader implements ReadableIntChannel {
     private final FileChannel channel;
     private long position;
     private int length;
-    private ByteBuffer bb = ByteBuffer.allocateDirect(1000000);
+    private ByteBuffer bb = DirectByteBufferCache.instance().allocateDirect(1_000_000);
     private IntBuffer ib = bb.asIntBuffer();
 
 
@@ -63,6 +64,7 @@ public class IntFileChannelReader implements ReadableIntChannel {
 
     @Override
     public void close() throws IOException {
+        DirectByteBufferCache.instance().free(bb);
         ib = null;
         bb = null;
     }

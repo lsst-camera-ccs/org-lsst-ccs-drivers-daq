@@ -7,6 +7,7 @@ import java.nio.ByteOrder;
 import org.lsst.ccs.utilities.image.FitsFileWriter;
 
 import java.nio.IntBuffer;
+import org.lsst.ccs.utilities.image.direct.DirectByteBufferCache;
 /**
  *
  * @author tonyj
@@ -17,6 +18,7 @@ public class FitsWriteChannel implements WritableIntChannel {
     final String segment;
     final FitsFileWriter writer;
     boolean isOpen = true;
+    final DirectByteBufferCache cache = DirectByteBufferCache.instance();
     
     @SuppressWarnings("OverridableMethodCallInConstructor")
     public FitsWriteChannel(FitsFileWriter writer, String segment) throws IOException {
@@ -26,7 +28,7 @@ public class FitsWriteChannel implements WritableIntChannel {
     }
 
     void initBuffers() throws IOException {
-        currentBuffer = ByteBuffer.allocateDirect(1_000_000);
+        currentBuffer = cache.allocateDirect(1_000_000);
         currentBuffer.order(ByteOrder.BIG_ENDIAN);
     }
 
@@ -71,6 +73,7 @@ public class FitsWriteChannel implements WritableIntChannel {
         if (isOpen) {
             flush();
             isOpen = false;
+            cache.free(currentBuffer);
         }
     }
 

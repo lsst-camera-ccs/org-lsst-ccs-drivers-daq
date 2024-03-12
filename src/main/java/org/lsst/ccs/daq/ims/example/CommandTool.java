@@ -32,7 +32,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -66,6 +65,7 @@ import org.lsst.ccs.daq.ims.channel.FitsIntReader;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
 import org.lsst.ccs.daq.ims.example.FitsFile.ObsId;
 import org.lsst.ccs.daq.ims.example.FitsFile.RawSource;
+import org.lsst.ccs.utilities.image.direct.DirectByteBufferCache;
 import org.lsst.ccs.utilities.ccd.FocalPlane;
 import org.lsst.ccs.utilities.ccd.Reb;
 import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
@@ -90,6 +90,7 @@ public class CommandTool {
     private Store store;
     private FocalPlane focalPlane = FocalPlane.createFocalPlane();
     private ImageListener imageListener;
+    private final static DirectByteBufferCache byteBufferCache = DirectByteBufferCache.instance();
 
     public CommandTool() {
     }
@@ -231,7 +232,7 @@ public class CommandTool {
             super(r);
             this.setName("DAQ_read_thread_" + n++);
             this.setDaemon(true);
-            buffer = ByteBuffer.allocateDirect(bufferSize);
+            buffer = byteBufferCache.allocateDirect(bufferSize);
             buffer.order(ByteOrder.LITTLE_ENDIAN);
             try {
                 store = new Store(partition);
@@ -246,6 +247,7 @@ public class CommandTool {
             try {
                 super.run();
             } finally {
+                byteBufferCache.free(buffer);
                 try {
                     store.close();
                 } catch (DAQException x) {
@@ -440,15 +442,19 @@ public class CommandTool {
                 Path file = rawSource.getRaw();
                 try (FileChannel in = new FileInputStream(file.toFile()).getChannel();
                         ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
-                    ByteBuffer buffer = ByteBuffer.allocateDirect(1950720);
-                    for (;;) {
-                        buffer.clear();
-                        int len = in.read(buffer);
-                        if (len < 0) {
-                            break;
+                    ByteBuffer buffer = byteBufferCache.allocateDirect(1950720);
+                    try {
+                        for (;;) {
+                            buffer.clear();
+                            int len = in.read(buffer);
+                            if (len < 0) {
+                                break;
+                            }
+                            buffer.flip();
+                            channel.write(buffer);
                         }
-                        buffer.flip();
-                        channel.write(buffer);
+                    } finally {
+                        byteBufferCache.free(buffer);
                     }
                 }
             }
@@ -604,18 +610,22 @@ public class CommandTool {
                 File[] files = ffSource.getFiles().keySet().stream().map(FitsFile::getFile).toArray(File[]::new);
                 try (FitsIntReader reader = new FitsIntReader(locationType, reb.isAuxtelREB(), files);
                         ByteChannel channel = source.openChannel(ChannelMode.WRITE)) {
-                    ByteBuffer buffer = ByteBuffer.allocateDirect(1950720);
-                    buffer.order(ByteOrder.LITTLE_ENDIAN);
-                    IntBuffer intBuffer = buffer.asIntBuffer();
-                    for (;;) {
-                        intBuffer.clear();
-                        int len = reader.read(intBuffer);
-                        if (len < 0) {
-                            break;
+                    ByteBuffer buffer = byteBufferCache.allocateDirect(1950720);
+                    try {
+                        buffer.order(ByteOrder.LITTLE_ENDIAN);
+                        IntBuffer intBuffer = buffer.asIntBuffer();
+                        for (;;) {
+                            intBuffer.clear();
+                            int len = reader.read(intBuffer);
+                            if (len < 0) {
+                                break;
+                            }
+                            buffer.position(0);
+                            buffer.limit(4 * len);
+                            channel.write(buffer);
                         }
-                        buffer.position(0);
-                        buffer.limit(4 * len);
-                        channel.write(buffer);
+                    } finally {
+                        byteBufferCache.free(buffer);
                     }
                 }
             }
