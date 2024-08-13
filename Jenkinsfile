@@ -1,25 +1,42 @@
 pipeline {
     agent {
-        label 'Node1_4CPU||Node2_8CPU||Node3_4CPU'
+        label "Node1_4CPU||Node2_8CPU||Node3_4CPU"
     }
     tools {
-        maven 'maven 3.9.6'
-        jdk 'Java17'
+        maven "maven 3.9.6"
+        jdk "Java17"
     }
-    stages {
-        stage ('Initialize') {
-            steps {
-                sh '''
-                    echo "PATH = ${PATH}"
-                    echo "M2_HOME = ${M2_HOME}"
-                '''
-            }
-        }
 
-        stage ('Build') {
+    parameters {
+        booleanParam(name: "RELEASE",
+                description: "Build a release from current commit.",
+                defaultValue: false)
+    }
+
+    stages {
+        stage ("Build and Deploy SNAPSHOT") {
+            when {
+                expression { ! params.RELEASE }
+            }
             steps {
-                sh 'mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U clean install deploy:deploy site:site site:deploy' 
+                sh "mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
         }
     }
+
+    stage("Release") {
+        when {
+            expression { params.RELEASE }
+        }
+        steps {
+            sh "mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U -Dresume=false clean release:prepare release:perform"
+        }
+    }
+
+    post {
+        always {
+            sh "/home/jenkins/ccs/scripts/updateJiraVersions.sh"
+        }
+    }
+
 }
