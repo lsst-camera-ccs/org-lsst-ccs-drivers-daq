@@ -22,14 +22,14 @@ pipeline {
                 sh "mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
         }
-    }
 
-    stage("Release") {
-        when {
-            expression { params.RELEASE }
-        }
-        steps {
-            sh "mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U -Dresume=false clean release:prepare release:perform"
+        stage("Release") {
+            when {
+                expression { params.RELEASE }
+            }   
+            steps {
+                sh "mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U -Dresume=false clean release:prepare release:perform"
+            }
         }
     }
 
