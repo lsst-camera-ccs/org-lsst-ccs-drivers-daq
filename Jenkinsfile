@@ -1,8 +1,12 @@
+def _user="appuser"
+def _home="/home/" + _user
+
 pipeline {
     agent {
 
         docker { 
             image 'ts-dockerhub.lsst.org/robotsal:alma9'
+            args '-w ' + _home + ' 
             label "Node3_4CPU"
         }
 //        label "Node2_8CPU"
@@ -24,6 +28,7 @@ pipeline {
                 expression { ! params.RELEASE }
             }
             steps {
+                sh "printenv"
                 sh "which mvn"
                 sh "echo $PATH"
                 sh "mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U clean install deploy:deploy site:site site:deploy" 
