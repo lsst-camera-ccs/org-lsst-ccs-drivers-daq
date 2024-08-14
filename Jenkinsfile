@@ -29,7 +29,7 @@ pipeline {
             steps {
                 sh "printenv"
                 sh "echo $PATH"
-                sh "ls /home/jenkins/tools/hudson.tasks.Maven_MavenInstallation/maven_3.9.6/bin"
+                sh "whoami"
                 sh "/opt/maven/bin/mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
         }
