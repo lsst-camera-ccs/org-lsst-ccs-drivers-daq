@@ -28,10 +28,7 @@ pipeline {
                 expression { ! params.RELEASE }
             }
             steps {
-                sh "printenv"
-                sh "echo $PATH"
-                sh "whoami"
-                sh "cat /home/jenkins/ccs/maven/ccs-settings.xml"
+                sh "cat /home/appuser/ccs/maven/ccs-settings.xml"
                 sh "/opt/maven/bin/mvn -s /home/appuser/ccs/maven/ccs-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
         }
