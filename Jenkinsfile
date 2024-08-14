@@ -1,9 +1,12 @@
 pipeline {
     agent {
+/*
         docker { 
             image 'ts-dockerhub.lsst.org/robotsal:latest'
             label "Node3_4CPU"
         }
+*/
+        label "Node3_4CPU"
     }
     tools {
         maven "maven 3.9.6"
