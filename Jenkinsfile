@@ -41,7 +41,9 @@ pipeline {
 
     post {
         always {
-            sh "/home/jenkins/ccs/scripts/updateJiraVersions.sh"
+            sh "pwd"
+            sh "printenv"
+            sh "cat /home/jenkins/ccs/scripts/updateJiraVersions.sh"
         }
     }
 
