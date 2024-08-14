@@ -6,7 +6,7 @@ pipeline {
 
         docker { 
             image 'ts-dockerhub.lsst.org/robotsal:alma9'
-            args '-w ' + _home + ' 
+            args '-w ' + _home  
             label "Node3_4CPU"
         }
 //        label "Node2_8CPU"
