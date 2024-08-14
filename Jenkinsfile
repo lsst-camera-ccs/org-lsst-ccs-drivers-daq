@@ -1,6 +1,6 @@
 pipeline {
     agent {
-        label "Node1_4CPU||Node2_8CPU||Node3_4CPU"
+        label "Node3_4CPU"
     }
     tools {
         maven "maven 3.9.6"
