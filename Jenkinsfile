@@ -6,7 +6,6 @@ pipeline {
 
         docker { 
             image 'ts-dockerhub.lsst.org/robotsal:alma9'
-            args '-w ' + _home  
             label "Node3_4CPU"
         }
 //        label "Node2_8CPU"
@@ -31,7 +30,7 @@ pipeline {
                 sh "printenv"
                 sh "which mvn"
                 sh "echo $PATH"
-                sh "mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U clean install deploy:deploy site:site site:deploy" 
+                sh "$M2_HOME/bin/mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
         }
 
