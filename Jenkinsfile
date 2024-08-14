@@ -41,10 +41,7 @@ pipeline {
 
     post {
         always {
-            sh "pwd"
-            sh "ls target"
-            sh "printenv"
-            sh "cat /home/jenkins/ccs/scripts/updateJiraVersions.sh"
+            sh "/home/jenkins/ccs/scripts/updateJiraVersions.sh"
 
             //Email Notification
             step([$class: 'Mailer',
