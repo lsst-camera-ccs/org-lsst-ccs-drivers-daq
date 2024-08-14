@@ -6,7 +6,7 @@ pipeline {
             label "Node3_4CPU"
         }
 */
-        label "Node3_4CPU"
+        label "Node2_8CPU"
     }
     tools {
         maven "maven 3.9.6"
