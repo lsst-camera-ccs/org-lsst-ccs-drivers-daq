@@ -1,12 +1,11 @@
 pipeline {
     agent {
-/*
+
         docker { 
-            image 'ts-dockerhub.lsst.org/robotsal:latest'
+            image 'ts-dockerhub.lsst.org/robotsal:alma9'
             label "Node3_4CPU"
         }
-*/
-        label "Node2_8CPU"
+//        label "Node2_8CPU"
     }
     tools {
         maven "maven 3.9.6"
@@ -46,7 +45,7 @@ pipeline {
             //Email Notification
             step([$class: 'Mailer',
                 notifyEveryUnstableBuild: true,
-                recipients: "mxturri@gmail.com",
+                recipients: emailextrecipients("mxturri@gmail.com",culprits(),requestor()),
                 sendToIndividuals: true])
         }
     }
