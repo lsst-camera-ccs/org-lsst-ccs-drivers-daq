@@ -24,6 +24,8 @@ pipeline {
                 expression { ! params.RELEASE }
             }
             steps {
+                sh "which mvn"
+                sh "echo $PATH"
                 sh "mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
         }
