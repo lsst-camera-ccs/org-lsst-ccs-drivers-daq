@@ -4,11 +4,13 @@ def _home="/home/" + _user
 pipeline {
     agent {
 
+/*
         docker { 
             image 'ts-dockerhub.lsst.org/robotsal:alma9'
-            label "Node3_4CPU"
+            label "Node3_4CPU||Node1_4CPU||Node2_8CPU"
         }
-//        label "Node2_8CPU"
+*/
+            label "Node3_4CPU||Node1_4CPU||Node2_8CPU"
     }
     tools {
         maven "maven 3.9.6"
@@ -30,6 +32,7 @@ pipeline {
                 sh "printenv"
                 sh "echo $PATH"
                 sh "whoami"
+                sh "cat /home/jenkins/ccs/maven/ccs-settings.xml"
                 sh "/opt/maven/bin/mvn -U clean install deploy:deploy site:site site:deploy" 
             }
         }
@@ -39,7 +42,7 @@ pipeline {
                 expression { params.RELEASE }
             }   
             steps {
-                sh "mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U -Dresume=false clean release:prepare release:perform"
+                sh "/opt/maven/bin/mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U -Dresume=false clean release:prepare release:perform"
             }
         }
     }
