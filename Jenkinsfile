@@ -42,8 +42,15 @@ pipeline {
     post {
         always {
             sh "pwd"
+            sh "ls"
             sh "printenv"
             sh "cat /home/jenkins/ccs/scripts/updateJiraVersions.sh"
+
+            //Email Notification
+            step([$class: 'Mailer',
+                notifyEveryUnstableBuild: true,
+                recipients: "turri@slac.stanford.edu",
+                sendToIndividuals: true])
         }
     }
 
