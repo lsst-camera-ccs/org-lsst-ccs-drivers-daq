@@ -28,7 +28,6 @@ pipeline {
             }
             steps {
                 sh "printenv"
-                sh "which mvn"
                 sh "echo $PATH"
                 sh "$M2_HOME/bin/mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
