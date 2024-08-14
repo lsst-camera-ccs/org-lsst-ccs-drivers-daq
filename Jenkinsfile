@@ -2,6 +2,9 @@ pipeline {
     agent {
         docker { 
             image 'ts-dockerhub.lsst.org/robotsal:latest'
+            args '-w ' + _home + ' -e AWS_ACCESS_KEY_ID=$aws_key_id -e AWS_SECRET_ACCESS_KEY=$aws_secret_key ' + 
+            '-e NEXUS_USER=$nexus_user -e NEXUS_PASS=$nexus_pass ' +
+            '-e LSST_DDS_PARTITION_PREFIX=citest -v ${WORKSPACE}:' + _home + '/trunk'
             label "Node3_4CPU"
         }
     }
