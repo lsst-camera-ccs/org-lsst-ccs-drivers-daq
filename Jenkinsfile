@@ -1,4 +1,10 @@
 pipeline {
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+        AWS_SECRET_ACCESS_KEY = credentials('AWS_SECRET_ACCESS_KEY')
+        NEXUS_USER = credentials('nexus_username')
+        NEXUS_PASS = credentials('nexus_password')
+    }
     agent {
         docker { 
             image 'ts-dockerhub.lsst.org/robotsal:latest'
