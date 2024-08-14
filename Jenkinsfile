@@ -30,7 +30,7 @@ pipeline {
                 sh "printenv"
                 sh "echo $PATH"
                 sh "whoami"
-                sh "/opt/maven/bin/mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U clean install deploy:deploy site:site site:deploy" 
+                sh "/opt/maven/bin/mvn -U clean install deploy:deploy site:site site:deploy" 
             }
         }
 
