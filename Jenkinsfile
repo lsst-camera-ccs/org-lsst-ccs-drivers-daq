@@ -1,6 +1,7 @@
 pipeline {
     environment {
-        CCS_NEXUS_CREDENTIALS = credentials('ccs-nexus-deployment')
+        CCS_NEXUS_DEPLOYMENT_USR = credentials('CCS_NEXUS_DEPLOYMENT_USR')
+        CCS_NEXUS_DEPLOYMENT_PSW = credentials('CCS_NEXUS_DEPLOYMENT_PSW')
     }
     agent {
 
