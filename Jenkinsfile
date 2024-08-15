@@ -1,7 +1,7 @@
-def _user="appuser"
-def _home="/home/" + _user
-
 pipeline {
+    environment {
+        CCS_NEXUS_CREDENTIALS = credentials('ccs-nexus-deployment')
+    }
     agent {
 
         docker { 
@@ -38,14 +38,14 @@ pipeline {
                 expression { params.RELEASE }
             }   
             steps {
-                sh "/opt/maven/bin/mvn -s /home/jenkins/ccs/maven/ccs-settings.xml -U -Dresume=false clean release:prepare release:perform"
+                sh "/opt/maven/bin/mvn -s /home/appuser/ccs/maven/ccs-settings.xml -U -Dresume=false clean release:prepare release:perform"
             }
         }
     }
 
     post {
         always {
-            sh "/home/jenkins/ccs/scripts/updateJiraVersions.sh"
+            sh "/home/appuser/ccs/scripts/updateJiraVersions.sh"
 
             //Email Notification
             step([$class: 'Mailer',
