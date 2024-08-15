@@ -51,7 +51,7 @@ pipeline {
             //Email Notification
             step([$class: 'Mailer',
                 notifyEveryUnstableBuild: true,
-                recipients: emailextrecipients("mxturri@gmail.com",culprits(),requestor()),
+                recipients: "mxturri@gmail.com",
                 sendToIndividuals: true])
         }
     }
