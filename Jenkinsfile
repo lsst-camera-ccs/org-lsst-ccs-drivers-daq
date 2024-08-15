@@ -29,7 +29,6 @@ pipeline {
                 expression { ! params.RELEASE }
             }
             steps {
-                sh "cat /home/appuser/ccs/maven/ccs-settings.xml"
                 sh "/opt/maven/bin/mvn -s /home/appuser/ccs/maven/ccs-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
         }
