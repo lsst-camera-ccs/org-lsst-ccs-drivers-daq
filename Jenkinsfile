@@ -29,7 +29,7 @@ pipeline {
                 expression { ! params.RELEASE }
             }
             steps {
-                sh "/opt/maven/bin/mvn -s /home/appuser/ccs/maven/ccs-pipeline-settings.xml -U clean install deploy:deploy site:site site:deploy" 
+                sh "/opt/maven/bin/mvn -s /home/appuser/ccs/maven/pipeline-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
         }
 
@@ -38,7 +38,7 @@ pipeline {
                 expression { params.RELEASE }
             }   
             steps {
-                sh "/opt/maven/bin/mvn -s /home/appuser/ccs/maven/ccs-pipeline-settings.xml -U -Dresume=false clean release:prepare release:perform"
+                sh "/opt/maven/bin/mvn -s /home/appuser/ccs/maven/pipeline-settings.xml -U -Dresume=false clean release:prepare release:perform"
             }
         }
     }
