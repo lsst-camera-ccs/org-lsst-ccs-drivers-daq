@@ -6,7 +6,7 @@ pipeline {
     agent {
 
         docker { 
-            image 'ts-dockerhub.lsst.org/robotsal:alma9'
+            image 'ts-dockerhub.lsst.org/robotsal:latest'
             args '-v /home/jenkins/ccs:/home/appuser/ccs'
             label "Node3_4CPU||Node1_4CPU||Node2_8CPU"
         }
