@@ -29,6 +29,7 @@ pipeline {
                 expression { ! params.RELEASE }
             }
             steps {
+                sh "/opt/maven/bin/mvn -version"
                 sh "/opt/maven/bin/mvn -s /home/appuser/ccs/maven/pipeline-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
         }
