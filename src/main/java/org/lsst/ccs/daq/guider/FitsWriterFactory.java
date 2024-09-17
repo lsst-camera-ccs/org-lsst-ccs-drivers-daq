@@ -117,11 +117,7 @@ public class FitsWriterFactory implements GuiderListener {
                 props.put("ImageController", imageName.getController().getCode());
                 props.put("ImageSource", imageName.getSource().getCode());
             } catch (IllegalArgumentException x) {
-                props.put("ImageName", series.getId());
-                props.put("ImageDate", "20230101");
-                props.put("ImageNumber", 1);
-                props.put("ImageController", "MC");
-                props.put("ImageSource", "C");
+                throw new IOException("Bad OBSID, ignored: "+series.getId(), x);
             }
             ROILocation roiLocation = series.getLocation();
             SensorLocation sensorLocation = roiLocation.getLocation();
