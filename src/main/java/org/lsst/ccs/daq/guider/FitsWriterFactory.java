@@ -141,9 +141,9 @@ public class FitsWriterFactory implements GuiderListener {
             props.put("CCDControllerSerial", String.format("%x", series.getSerialNumber() & 0xFFFFFFFFL));
             props.put("DAQVersion", series.getVersion().toString());
             props.put("Platform", series.getPlatform());
-            props.put("SplitROI", series.isSplitROI());
-            props.put("UnderCols", series.getUnderCols());
-            props.put("CcdType", series.getCcdType());
+            props.put("ROISplit", series.isSplitROI());
+            props.put("ROIUnderCols", series.getUnderCols());
+            props.put("ROICCDType", series.getCcdType());
             props.put("StartTime", state.getTimestamp());
             props.put("DAQSequence", state.getSequence());
             props.put("CCDSlot", rebLocation.getSensorName(sensorLocation.getSensor()));
