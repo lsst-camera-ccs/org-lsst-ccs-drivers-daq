@@ -120,8 +120,11 @@ jobject createSeriesMetadata(JNIEnv* env, const GDS::SeriesMetadata& series) {
     jlong serialNumber = series.serial_number();
     jstring id = env->NewStringUTF(series.id());
     jstring platform = env->NewStringUTF(series.platform());
+    jboolean splitroi = series.splitroi();
+    jint undercols = series.undercols();
+    jint ccdType = series.vendor();
 
-    return env->NewObject(JCguiderSeriesMetadataClass, JCguiderSeriesMetadataConstructor, firmware, serialNumber, id, platform, createRoiCommon(env, common), createRoiLocation(env, location), createVersion(env, version));
+    return env->NewObject(JCguiderSeriesMetadataClass, JCguiderSeriesMetadataConstructor, firmware, serialNumber, id, platform, createRoiCommon(env, common), createRoiLocation(env, location), createVersion(env, version), splitroi, undercols, ccdType);
 }
 
 jobject MyGuiderSubscriber::createByteBuffer(JNIEnv* env, const GDS::RawStamp& stamp) {
@@ -229,7 +232,7 @@ void Guider_OnLoad(JNIEnv* env) {
     }
     JCguiderSeriesMetadataClass = (jclass) env->NewGlobalRef(guiderSeriesMetadataClass);
 
-    JCguiderSeriesMetadataConstructor = env->GetMethodID(JCguiderSeriesMetadataClass, "<init>", "(IJLjava/lang/String;Ljava/lang/String;Lorg/lsst/ccs/daq/guider/ROICommon;Lorg/lsst/ccs/daq/guider/ROILocation;Lorg/lsst/ccs/daq/ims/Version;)V");
+    JCguiderSeriesMetadataConstructor = env->GetMethodID(JCguiderSeriesMetadataClass, "<init>", "(IJLjava/lang/String;Ljava/lang/String;Lorg/lsst/ccs/daq/guider/ROICommon;Lorg/lsst/ccs/daq/guider/ROILocation;Lorg/lsst/ccs/daq/ims/Version;ZII)V");
     if (env->ExceptionCheck()) {
         return;
     }

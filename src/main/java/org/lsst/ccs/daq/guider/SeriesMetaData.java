@@ -14,8 +14,12 @@ public class SeriesMetaData {
     private final long serialNumber;
     private final String id;
     private final String platform;
-
-    private SeriesMetaData(int firmware, long serialNumber, String id, String platform, ROICommon common, ROILocation location, Version version) {
+    private final boolean splitroi;
+    private final int undercols;
+    private final int ccdType;
+    
+    
+    private SeriesMetaData(int firmware, long serialNumber, String id, String platform, ROICommon common, ROILocation location, Version version, boolean splitroi, int undercols, int ccdType) {
         this.firmware = firmware;
         this.serialNumber = serialNumber;
         this.common = common;
@@ -23,6 +27,9 @@ public class SeriesMetaData {
         this.version = version;
         this.id = id;
         this.platform = platform;
+        this.splitroi = splitroi;
+        this.undercols = undercols;
+        this.ccdType = ccdType;
     }
 
     public ROICommon getCommon() {
@@ -53,9 +60,21 @@ public class SeriesMetaData {
         return platform;
     }
 
+    public boolean isSplitROI() {
+        return splitroi;
+    }
+
+    public int getUnderCols() {
+        return undercols;
+    }
+
+    public int getCcdType() {
+        return ccdType;
+    }
+
     @Override
     public String toString() {
-        return "SeriesMetaData{" + "common=" + common + ", location=" + location + ", version=" + version + ", firmware=" + firmware + ", serialNumber=" + serialNumber + ", id=" + id + ", platform=" + platform + '}';
+        return "SeriesMetaData{" + "common=" + common + ", location=" + location + ", version=" + version + ", firmware=" + firmware + ", serialNumber=" + serialNumber + ", id=" + id + ", platform=" + platform + ", splitroi=" + splitroi + ", undercols=" + undercols + ", ccdType=" + ccdType + '}';
     }
     
 }
