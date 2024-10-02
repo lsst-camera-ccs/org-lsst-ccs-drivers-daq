@@ -117,11 +117,7 @@ public class FitsWriterFactory implements GuiderListener {
                 props.put("ImageController", imageName.getController().getCode());
                 props.put("ImageSource", imageName.getSource().getCode());
             } catch (IllegalArgumentException x) {
-                props.put("ImageName", series.getId());
-                props.put("ImageDate", "20230101");
-                props.put("ImageNumber", 1);
-                props.put("ImageController", "MC");
-                props.put("ImageSource", "C");
+                throw new IOException("Bad OBSID, ignored: "+series.getId(), x);
             }
             ROILocation roiLocation = series.getLocation();
             SensorLocation sensorLocation = roiLocation.getLocation();
@@ -141,6 +137,9 @@ public class FitsWriterFactory implements GuiderListener {
             props.put("CCDControllerSerial", String.format("%x", series.getSerialNumber() & 0xFFFFFFFFL));
             props.put("DAQVersion", series.getVersion().toString());
             props.put("Platform", series.getPlatform());
+            props.put("ROISplit", series.isSplitROI());
+            props.put("ROIUnderCols", series.getUnderCols());
+            props.put("ROICCDType", series.getCcdType());
             props.put("StartTime", state.getTimestamp());
             props.put("DAQSequence", state.getSequence());
             props.put("CCDSlot", rebLocation.getSensorName(sensorLocation.getSensor()));
