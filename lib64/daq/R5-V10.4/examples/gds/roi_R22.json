@@ -1,5 +1,0 @@
-{ "common":{ "rows": 50,"cols": 50, "integrationTimeMillis": 50  }, 
-  "R22S00": { "segment": 10, "startRow":  25, "startCol": 225},
-  "R22S01": { "segment": 11, "startRow":  50, "startCol": 250}, 
-  "R22S10": { "segment": 12, "startRow":  50, "startCol": 250}, 
-  "R22S11": { "segment": 13, "startRow":  50, "startCol": 250} }
