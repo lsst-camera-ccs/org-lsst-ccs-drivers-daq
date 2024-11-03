@@ -21,13 +21,15 @@ public class StateMetaData {
     private final long sequence;
     private final Instant timestamp;
     private final SensorLocation sensorLocation;
+    private final String comment;
 
-    private StateMetaData(int type, int status, int sequence, long timestampNanos, byte bay, byte board, int sensor) {
+    private StateMetaData(int type, int status, int sequence, long timestampNanos, byte bay, byte board, int sensor, String comment) {
         this.state = State.values()[type];
         this.status = Status.values()[status];
         this.sequence = sequence;
         this.timestamp = Instant.ofEpochSecond(timestampNanos / 1_000_000_000, timestampNanos % 1_000_000_000);
         this.sensorLocation = new SensorLocation(new Location(bay, board), sensor);
+        this.comment = comment;
     }
 
     public State getState() {
@@ -50,9 +52,12 @@ public class StateMetaData {
         return sensorLocation;
     }
 
+    public String getComment() {
+        return comment;
+    }
+
     @Override
     public String toString() {
-        return "StateMetaData{" + "state=" + state + ", status=" + status + ", sequence=" + sequence + ", timestamp=" + timestamp + ", sensorLocation=" + sensorLocation + '}';
+        return "StateMetaData{" + "state=" + state + ", status=" + status + ", sequence=" + sequence + ", timestamp=" + timestamp + ", sensorLocation=" + sensorLocation + ", comment=" + comment + '}';
     }
-    
 }

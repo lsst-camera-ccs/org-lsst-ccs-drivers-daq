@@ -257,17 +257,17 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Status stopGuider(long guider) {
+    public Status stopGuider(long guider, String comment) {
         return null;
     }
 
     @Override
-    public Status pauseGuider(long guider) {
+    public Status pauseGuider(long guider, String comment) {
         return null;
     }
 
     @Override
-    public Status resumeGuider(long guider) {
+    public Status resumeGuider(long guider, String comment) {
         return null;
     }
 

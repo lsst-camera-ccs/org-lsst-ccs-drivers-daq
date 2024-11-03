@@ -99,7 +99,7 @@ public class FitsWriterFactory implements GuiderListener {
         private final BufferedFile bufferedFile;
         private final Map<String, Object> properties;
         private final Map<String, HeaderSpecification> headerSpecifications;
-        private final String seriesId;
+        private final String obsid;
         private final Object finalFileName;
         private final File temporaryFileName;
         private int stampCount = 0;
@@ -107,7 +107,13 @@ public class FitsWriterFactory implements GuiderListener {
         private final BasicHDU<?> primary;
 
         public FitsWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, List<FitsHeaderMetadataProvider> metaDataProviders) throws IOException, FitsException {
-            this.seriesId = series.getId();
+            // The OBSID used to be provided in series meta-data, but now in state meta-data comment.
+            String seriesId = series.getId();
+            String comment = state.getComment();
+            this.obsid = comment == null ? seriesId : comment;
+            if (this.obsid == null) {
+                throw new IOException("Missing OBSID");
+            }
             Map<String, Object> props = new HashMap<>();
             try {
                 ImageName imageName = new ImageName(series.getId());
@@ -236,7 +242,7 @@ public class FitsWriterFactory implements GuiderListener {
         }
 
         public String getImageName() {
-            return seriesId;
+            return obsid;
         }
 
         public File getFileName() {

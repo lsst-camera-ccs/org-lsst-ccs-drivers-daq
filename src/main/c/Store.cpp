@@ -397,7 +397,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_abort
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider
-(JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jstring id, jintArray roiData) {
+(JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jstring comment, jintArray roiData) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
     GDS::RoiCommon common(rows, cols, integration);
@@ -413,10 +413,15 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
        uint16_t startCol = values[j+4];
        locs[i] = GDS::RoiLocation(GDS::Location(DAQ::Location(index), sensor), segment, startRow, startCol);
     }
-    const char *_id = env->GetStringUTFChars(id, 0);
-    int error = guider->start(common, locs, nlocs, _id, status);
+    int error;
+    if (comment) { 
+       const char *_comment = env->GetStringUTFChars(comment, 0);
+       error = guider->start(common, locs, nlocs, _comment, status);
+       env->ReleaseStringUTFChars(comment, _comment);
+    } else {
+       error = guider->start(common, locs, nlocs, status);
+    }
     if (!error) error = status.status();
-    env->ReleaseStringUTFChars(id, _id);
     env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
     if (error) {
         char x[MESSAGE_LENGTH];
@@ -456,10 +461,17 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_valid
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_stopGuider
-(JNIEnv* env, jobject obj, jlong guider_) {
+(JNIEnv* env, jobject obj, jlong guider_, jstring comment) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
-    int error = guider->stop(status);
+    int error; 
+    if (comment) {
+        const char *_comment = env->GetStringUTFChars(comment, 0);
+        error = guider->stop(_comment, status);
+        env->ReleaseStringUTFChars(comment, _comment);
+    } else {
+        error = guider->stop(status);
+    }
     if (!error) error = status.status();
     if (error) {
         char x[MESSAGE_LENGTH];
@@ -473,10 +485,17 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_pauseGuider
-(JNIEnv* env, jobject obj, jlong guider_) {
+(JNIEnv* env, jobject obj, jlong guider_, jstring comment) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
-    int error = guider->pause(status);
+    int error;
+    if (comment) {
+        const char *_comment = env->GetStringUTFChars(comment, 0);
+        error = guider->pause(_comment, status);
+        env->ReleaseStringUTFChars(comment, _comment);
+    } else {
+        error = guider->pause(status);
+    }
     if (!error) error = status.status();
     if (error) {
         char x[MESSAGE_LENGTH];
@@ -490,10 +509,17 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_pa
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_resumeGuider
-(JNIEnv* env, jobject obj, jlong guider_) {
+(JNIEnv* env, jobject obj, jlong guider_, jstring comment) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
-    int error = guider->resume(status);
+    int error;
+    if (comment) {
+       const char *_comment = env->GetStringUTFChars(comment, 0);
+       error = guider->resume(_comment, status);
+       env->ReleaseStringUTFChars(comment, _comment);
+    } else {
+       error = guider->resume(status); 
+    }
     if (!error) error = status.status();
     if (error) {
         char x[MESSAGE_LENGTH];

@@ -106,10 +106,11 @@ jobject createStateMetadata(JNIEnv* env, const GDS::StateMetadata& state) {
     jint status = state.status();
     jint sequence = state.sequence();
     jlong timestamp = state.timestamp();
+    jstring comment = env->NewStringUTF(state.comment());
     const GDS::Location location = state.sensor();
     const DAQ::Location source = location.source();
     jint sensor = location.sensor();
-    return env->NewObject(JCguiderStateMetadataClass, JCguiderStateMetadataConstructor, type, status, sequence, timestamp, location.bay(), source.board(), sensor);
+    return env->NewObject(JCguiderStateMetadataClass, JCguiderStateMetadataConstructor, type, status, sequence, timestamp, location.bay(), source.board(), sensor, comment);
 }
 
 jobject createSeriesMetadata(JNIEnv* env, const GDS::SeriesMetadata& series) {

@@ -86,11 +86,11 @@ interface StoreImplementation {
 
     void validateGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int[] roiData) throws DAQException;
     
-    Status stopGuider(long guider) throws DAQException;
+    Status stopGuider(long guider, String comment) throws DAQException;
 
-    Status pauseGuider(long guider) throws DAQException;
+    Status pauseGuider(long guider, String comment) throws DAQException;
 
-    Status resumeGuider(long guider) throws DAQException;
+    Status resumeGuider(long guider, String comment) throws DAQException;
 
     Status sleepGuider(long guider) throws DAQException;
 

@@ -80,15 +80,27 @@ public class Guider {
     }
 
     public Status stop() throws DAQException {
-        return store.stopGuider(guider);
+        return stop(null);
+    }
+    
+    public Status stop(String comment) throws DAQException {
+        return store.stopGuider(guider, comment);
     }
 
     public Status pause() throws DAQException {
-        return store.pauseGuider(guider);
+        return pause(null);
+    }
+    
+    public Status pause(String comment) throws DAQException {
+        return store.pauseGuider(guider, comment);
     }
 
     public Status resume() throws DAQException {
-        return store.resumeGuider(guider);
+        return resume(null);
+    }
+    
+    public Status resume(String comment) throws DAQException {
+        return store.resumeGuider(guider, comment);
     }
 
     public Status sleep() throws DAQException {

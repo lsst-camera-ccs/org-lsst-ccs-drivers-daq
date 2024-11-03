@@ -496,16 +496,16 @@ public class Store implements AutoCloseable {
         impl.detachGuider(guider);
     }
     
-    Status stopGuider(long guider) throws DAQException {
-        return impl.stopGuider(guider);
+    Status stopGuider(long guider, String comment) throws DAQException {
+        return impl.stopGuider(guider, comment);
     }
 
-    Status  resumeGuider(long guider) throws DAQException {
-        return impl.resumeGuider(guider);
+    Status  resumeGuider(long guider, String comment) throws DAQException {
+        return impl.resumeGuider(guider, comment);
     }
 
-    Status  pauseGuider(long guider) throws DAQException {
-        return impl.pauseGuider(guider);
+    Status  pauseGuider(long guider, String comment) throws DAQException {
+        return impl.pauseGuider(guider, comment);
     }
     
     Status  sleepGuider(long guider) throws DAQException {
