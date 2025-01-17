@@ -37,6 +37,7 @@ public class FitsWriterFactory implements GuiderListener {
     private final Map<String, HeaderSpecification> headerSpecifications;
     private FitsWriter currentFitsFileWriter;
     private final boolean includeRawStamp;
+    private SeriesMetaData series;
 
     static {
         FitsFactory.setUseHierarch(true);
@@ -59,25 +60,25 @@ public class FitsWriterFactory implements GuiderListener {
     }
 
     @Override
-    public void start(StateMetaData state, SeriesMetaData series) throws IOException, FitsException {
-        currentFitsFileWriter = createFitsFileWriter(state, series, partition, fileNamer, headerSpecifications);
+    public void start(StateMetaData state, SeriesMetaData series) {
+        this.series = series;
     }
 
     @Override
-    public void stop(StateMetaData state) throws IOException, FitsException {
+    public void stop(StateMetaData state) {
+    }
+
+    @Override
+    public void pause(StateMetaData state) throws IOException, FitsException {
         if (currentFitsFileWriter != null) {
             currentFitsFileWriter.close();
             currentFitsFileWriter = null;
         }
-
     }
 
     @Override
-    public void pause(StateMetaData state) {
-    }
-
-    @Override
-    public void resume(StateMetaData state) {
+    public void resume(StateMetaData state) throws IOException, FitsException {
+        currentFitsFileWriter = createFitsFileWriter(state, series, partition, fileNamer, headerSpecifications);
     }
 
     @Override
@@ -116,14 +117,14 @@ public class FitsWriterFactory implements GuiderListener {
             }
             Map<String, Object> props = new HashMap<>();
             try {
-                ImageName imageName = new ImageName(series.getId());
+                ImageName imageName = new ImageName(obsid);
                 props.put("ImageName", imageName.toString());
                 props.put("ImageDate", imageName.getDateString());
                 props.put("ImageNumber", imageName.getNumberString());
                 props.put("ImageController", imageName.getController().getCode());
                 props.put("ImageSource", imageName.getSource().getCode());
             } catch (IllegalArgumentException x) {
-                throw new IOException("Bad OBSID, ignored: "+series.getId(), x);
+                throw new IOException("Bad OBSID, rejected: "+obsid, x);
             }
             ROILocation roiLocation = series.getLocation();
             SensorLocation sensorLocation = roiLocation.getLocation();
