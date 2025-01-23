@@ -42,8 +42,8 @@ pipeline {
             }   
             steps {
 
-                env.GIT_UERNAME = '${GIT_CREDENTIALS_USR}'
-                env.GIT_PASSWORD = '${GIT_CREDENTIALS_PSW}'
+                env.GIT_UERNAME = env.GIT_CREDENTIALS_USR
+                env.GIT_PASSWORD = env.GIT_CREDENTIALS_PSW
                 sh "echo WE GO HERE"
                 sh "echo GIT CREDENTIALS: ${GIT_USERNAME} ${GIT_PASSWORD}"
                 sh "/opt/maven/bin/mvn -s /home/saluser/ccs/maven/pipeline-settings.xml -U -Dresume=false clean release:prepare release:perform"
