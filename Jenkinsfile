@@ -2,6 +2,7 @@ pipeline {
     environment {
         CCS_NEXUS_DEPLOYMENT_USR = credentials('CCS_NEXUS_DEPLOYMENT_USR')
         CCS_NEXUS_DEPLOYMENT_PSW = credentials('CCS_NEXUS_DEPLOYMENT_PSW')
+        JAVA_HOME = '/usr/lib/jvm/java-17-zulu-openjdk-jdk'
     }
     agent {
 
