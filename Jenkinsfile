@@ -4,8 +4,8 @@ pipeline {
         CCS_NEXUS_DEPLOYMENT_PSW = credentials('CCS_NEXUS_DEPLOYMENT_PSW')
         JAVA_HOME = '/usr/lib/jvm/java-17-zulu-openjdk-jdk'
         GIT_CREDENTIALS = credentials('89815f34-ac5c-4fbb-9c7c-3850d4a88750')
-        GIT_UERNAME = '$GIT_CREDENTIALS_USR'
-        GIT_PASSWORD = '$GIT_CREDENTIALS_PSW'
+        GIT_UERNAME = '${GIT_CREDENTIALS_USR}'
+        GIT_PASSWORD = '${GIT_CREDENTIALS_PSW}'
     }
     agent {
 
@@ -33,6 +33,8 @@ pipeline {
                 expression { ! params.RELEASE }
             }
             steps {
+                sh "echo WE GO HERE"
+                sh "echo GIT CREDENTIALS: $GIT_USERNAME $GIT_PASSWORD"
                 sh "/opt/maven/bin/mvn -version"
                 sh "/opt/maven/bin/mvn -s /home/saluser/ccs/maven/pipeline-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
@@ -43,6 +45,7 @@ pipeline {
                 expression { params.RELEASE }
             }   
             steps {
+                sh "echo WE GO HERE"
                 sh "echo GIT CREDENTIALS: $GIT_USERNAME $GIT_PASSWORD"
                 sh "/opt/maven/bin/mvn -s /home/saluser/ccs/maven/pipeline-settings.xml -U -Dresume=false clean release:prepare release:perform"
             }
