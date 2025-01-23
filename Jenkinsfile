@@ -8,7 +8,7 @@ pipeline {
 
         docker { 
             image 'ts-dockerhub.lsst.org/robotsal:latest'
-            args '-v /home/jenkins/ccs:/home/appuser/ccs'
+            args '-v /home/jenkins/ccs:/home/saluser/ccs'
             label "Node3_4CPU||Node1_4CPU||Node2_8CPU"
         }
 //            label "Node3_4CPU||Node1_4CPU||Node2_8CPU"
@@ -31,7 +31,7 @@ pipeline {
             }
             steps {
                 sh "/opt/maven/bin/mvn -version"
-                sh "/opt/maven/bin/mvn -s /home/appuser/ccs/maven/pipeline-settings.xml -U clean install deploy:deploy site:site site:deploy" 
+                sh "/opt/maven/bin/mvn -s /home/saluser/ccs/maven/pipeline-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
         }
 
@@ -40,14 +40,14 @@ pipeline {
                 expression { params.RELEASE }
             }   
             steps {
-                sh "/opt/maven/bin/mvn -s /home/appuser/ccs/maven/pipeline-settings.xml -U -Dresume=false clean release:prepare release:perform"
+                sh "/opt/maven/bin/mvn -s /home/saluser/ccs/maven/pipeline-settings.xml -U -Dresume=false clean release:prepare release:perform"
             }
         }
     }
 
     post {
         always {
-            sh "/home/appuser/ccs/scripts/updateJiraVersions.sh"
+            sh "/home/saluser/ccs/scripts/updateJiraVersions.sh"
 
             //Email Notification
             step([$class: 'Mailer',
