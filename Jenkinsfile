@@ -34,7 +34,7 @@ pipeline {
             }
             steps {
                 sh "echo WE GO HERE"
-                sh "echo test GIT CREDENTIALS: ${GIT_USERNAME_test} ${GIT_PASSWORD_test}"
+                sh "echo test GIT CREDENTIALS: ${env.GIT_USERNAME_test} ${env.GIT_PASSWORD_test}"
                 sh "/opt/maven/bin/mvn -version"
                 sh "/opt/maven/bin/mvn -s /home/saluser/ccs/maven/pipeline-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
