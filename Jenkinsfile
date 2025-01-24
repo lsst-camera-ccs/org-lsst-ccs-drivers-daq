@@ -35,6 +35,7 @@ pipeline {
             steps {
                 script {
                    env.GIT_USERNAME = env.GIT_CREDENTIALS_USR
+                   env.GIT_PASSWORD = env.GIT_CREDENTIALS_PSW
                 }
 
                 sh "echo WE GO HERE"
@@ -49,8 +50,13 @@ pipeline {
                 expression { params.RELEASE }
             }   
             steps {
+                script {
+                   env.GIT_USERNAME = env.GIT_CREDENTIALS_USR
+                   env.GIT_PASSWORD = env.GIT_CREDENTIALS_PSW
+                }
+
                 sh "echo WE GO HERE"
-                sh "echo GIT CREDENTIALS: $GIT_USERNAME $GIT_PASSWORD"
+                sh "echo test GIT CREDENTIALS: ${env.GIT_USERNAME} ${env.GIT_PASSWORD} ${env.GIT_CREDENTIALS_USR}"
                 sh "/opt/maven/bin/mvn -s /home/saluser/ccs/maven/pipeline-settings.xml -U -Dresume=false clean release:prepare release:perform"
             }
         }
