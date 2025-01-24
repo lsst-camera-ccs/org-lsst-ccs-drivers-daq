@@ -33,6 +33,8 @@ pipeline {
                 expression { ! params.RELEASE }
             }
             steps {
+                env.GIT_USERNAME = env.GIT_CREDENTIALS_USR
+
                 sh "echo WE GO HERE"
                 sh "echo test GIT CREDENTIALS: ${env.GIT_USERNAME} ${env.GIT_PASSWORD} ${env.GIT_CREDENTIALS_USR}"
                 sh "/opt/maven/bin/mvn -version"
