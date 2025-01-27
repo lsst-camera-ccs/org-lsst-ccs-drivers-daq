@@ -2,7 +2,6 @@ pipeline {
     environment {
         CCS_NEXUS_DEPLOYMENT_USR = credentials('CCS_NEXUS_DEPLOYMENT_USR')
         CCS_NEXUS_DEPLOYMENT_PSW = credentials('CCS_NEXUS_DEPLOYMENT_PSW')
-        JAVA_HOME = '/usr/lib/jvm/java-17-zulu-openjdk-jdk'
         GIT_CREDENTIALS = credentials('89815f34-ac5c-4fbb-9c7c-3850d4a88750')
         GIT_UERNAME = '${GIT_CREDENTIALS_USR}'
         GIT_PASSWORD = '${GIT_CREDENTIALS_PSW}'
@@ -28,6 +27,14 @@ pipeline {
                    env.GIT_USERNAME = env.GIT_CREDENTIALS_USR
                    env.GIT_PASSWORD = env.GIT_CREDENTIALS_PSW
                 }                
+
+                sh "echo *************** pipeline-settings.xml *********"
+                sh "cat /home/saluser/ccs/maven/pipeline-settings.xml"
+                sh "echo *************** settings.xml *********"
+                sh "cat /home/saluser/ccs/maven/settings.xml"
+                sh "echo *************** updateJiraVersions.sh *********"
+                sh "cat /home/saluser/ccs/maven/updateJiraVersions.sh"
+
             }
         }
 
