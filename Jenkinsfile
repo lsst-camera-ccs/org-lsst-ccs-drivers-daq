@@ -14,10 +14,6 @@ pipeline {
             label "Node3_4CPU||Node1_4CPU||Node2_8CPU"
         }
     }
-    tools {
-        maven "maven 3.9.6"
-        jdk "Java17"
-    }
 
     parameters {
         booleanParam(name: "RELEASE",
@@ -40,8 +36,6 @@ pipeline {
                 expression { ! params.RELEASE }
             }
             steps {
-                sh "echo WE GO HERE"
-                sh "echo test GIT CREDENTIALS: ${env.GIT_USERNAME} ${env.GIT_PASSWORD} ${env.GIT_CREDENTIALS_USR}"
                 sh "/opt/maven/bin/mvn -version"
                 sh "/opt/maven/bin/mvn -s /home/saluser/ccs/maven/pipeline-settings.xml -U clean install deploy:deploy site:site site:deploy" 
             }
@@ -52,9 +46,6 @@ pipeline {
                 expression { params.RELEASE }
             }   
             steps {
-
-                sh "echo WE GO HERE"
-                sh "echo test GIT CREDENTIALS: ${env.GIT_USERNAME} ${env.GIT_PASSWORD} ${env.GIT_CREDENTIALS_USR}"
                 sh "/opt/maven/bin/mvn -s /home/saluser/ccs/maven/pipeline-settings.xml -U -Dresume=false clean release:prepare release:perform"
             }
         }
