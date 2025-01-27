@@ -9,12 +9,12 @@ pipeline {
     }
     agent {
 
-        docker { 
-            image 'ts-dockerhub.lsst.org/robotsal:latest'
-            args '-v /home/jenkins/ccs:/home/saluser/ccs'
-            label "Node3_4CPU||Node1_4CPU||Node2_8CPU"
-        }
+//        docker { 
+//            image 'ts-dockerhub.lsst.org/robotsal:latest'
+//            args '-v /home/jenkins/ccs:/home/saluser/ccs'
 //            label "Node3_4CPU||Node1_4CPU||Node2_8CPU"
+//        }
+            label "Node3_4CPU||Node1_4CPU||Node2_8CPU"
     }
     tools {
         maven "maven 3.9.6"
