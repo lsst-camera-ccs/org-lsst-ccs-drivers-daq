@@ -8,13 +8,11 @@ pipeline {
         GIT_PASSWORD = '${GIT_CREDENTIALS_PSW}'
     }
     agent {
-
-//        docker { 
-//            image 'ts-dockerhub.lsst.org/robotsal:latest'
-//            args '-v /home/jenkins/ccs:/home/saluser/ccs'
-//            label "Node3_4CPU||Node1_4CPU||Node2_8CPU"
-//        }
+        docker { 
+            image 'ts-dockerhub.lsst.org/robotsal:latest'
+            args '-v /home/jenkins/ccs:/home/saluser/ccs'
             label "Node3_4CPU||Node1_4CPU||Node2_8CPU"
+        }
     }
     tools {
         maven "maven 3.9.6"
@@ -28,16 +26,20 @@ pipeline {
     }
 
     stages {
+        stage ("Configure Environment") {
+            steps {
+                script {
+                   env.GIT_USERNAME = env.GIT_CREDENTIALS_USR
+                   env.GIT_PASSWORD = env.GIT_CREDENTIALS_PSW
+                }                
+            }
+        }
+
         stage ("Build and Deploy SNAPSHOT") {
             when {
                 expression { ! params.RELEASE }
             }
             steps {
-                script {
-                   env.GIT_USERNAME = env.GIT_CREDENTIALS_USR
-                   env.GIT_PASSWORD = env.GIT_CREDENTIALS_PSW
-                }
-
                 sh "echo WE GO HERE"
                 sh "echo test GIT CREDENTIALS: ${env.GIT_USERNAME} ${env.GIT_PASSWORD} ${env.GIT_CREDENTIALS_USR}"
                 sh "/opt/maven/bin/mvn -version"
@@ -50,10 +52,6 @@ pipeline {
                 expression { params.RELEASE }
             }   
             steps {
-                script {
-                   env.GIT_USERNAME = env.GIT_CREDENTIALS_USR
-                   env.GIT_PASSWORD = env.GIT_CREDENTIALS_PSW
-                }
 
                 sh "echo WE GO HERE"
                 sh "echo test GIT CREDENTIALS: ${env.GIT_USERNAME} ${env.GIT_PASSWORD} ${env.GIT_CREDENTIALS_USR}"
