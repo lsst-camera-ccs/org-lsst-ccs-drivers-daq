@@ -30,8 +30,8 @@ pipeline {
 
                 sh "echo *************** pipeline-settings.xml *********"
                 sh "cat /home/saluser/ccs/maven/pipeline-settings.xml"
-                sh "echo *************** settings.xml *********"
-                sh "cat /home/saluser/ccs/maven/settings.xml"
+                sh "echo *************** ccs-settings.xml *********"
+                sh "cat /home/saluser/ccs/maven/ccs-settings.xml"
                 sh "echo *************** updateJiraVersions.sh *********"
                 sh "cat /home/saluser/ccs/maven/updateJiraVersions.sh"
 
