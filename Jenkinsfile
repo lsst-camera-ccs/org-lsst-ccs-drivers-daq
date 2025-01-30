@@ -14,6 +14,10 @@ pipeline {
         }
     }
 
+    triggers {
+        githubPush()
+    }
+
     parameters {
         booleanParam(name: "RELEASE",
                 description: "Build a release from current commit.",
@@ -27,14 +31,6 @@ pipeline {
                    env.GIT_USERNAME = env.GIT_CREDENTIALS_USR
                    env.GIT_PASSWORD = env.GIT_CREDENTIALS_PSW
                 }                
-
-                sh "echo *************** pipeline-settings.xml *********"
-                sh "cat /home/saluser/ccs/maven/pipeline-settings.xml"
-                sh "echo *************** ccs-settings.xml *********"
-                sh "cat /home/saluser/ccs/maven/ccs-settings.xml"
-                sh "echo *************** updateJiraVersions.sh *********"
-                sh "cat /home/saluser/ccs/scripts/updateJiraVersions.sh"
-
             }
         }
 
