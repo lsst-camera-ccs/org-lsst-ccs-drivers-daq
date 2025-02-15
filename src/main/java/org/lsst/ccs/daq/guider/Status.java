@@ -7,9 +7,9 @@ import java.time.Instant;
  * @author tonyj
  */
 public class Status {
-    
+
     public enum State {
-        UNDEFINED, STOPPED, PAUSED, RUNNING, ERROR, OFF
+        UNDEFINED, STOPPED, PAUSED, RUNNING, ERROR, OFF, CLEARING
     }
     private final Instant timestamp;
     private final int status;
@@ -49,5 +49,5 @@ public class Status {
     public String toString() {
         return "Status{" + "timestamp=" + timestamp + ", status=" + status + ", sequence=" + sequence + ", in=" + in + ", out=" + out + '}';
     }
-    
+
 }

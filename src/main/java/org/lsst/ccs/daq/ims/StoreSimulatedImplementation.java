@@ -11,8 +11,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
+
+import org.lsst.ccs.daq.guider.ClearParameters;
 import org.lsst.ccs.daq.guider.Config;
-import org.lsst.ccs.daq.guider.Series;
+import org.lsst.ccs.daq.guider.SeriesStatus;
 import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.Location.LocationType;
@@ -195,7 +197,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     public BitSet getConfiguredLocations(String partition) throws DAQException {
         return LocationSet.all().getBitSet();
     }
-    
+
     @Override
     public Version getClientVersion() throws DAQException {
         return release;
@@ -251,7 +253,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     public Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) {
         return null;
     }
-    
+
     @Override
     public void validateGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int[] roiData) throws DAQException {
     }
@@ -284,7 +286,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     @Override
     public void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException {
     }
-    
+
     @Override
     public void abortWaitForGuider(long subscriber) throws DAQException {
     }
@@ -304,7 +306,12 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Series guiderSeries(long guider) throws DAQException {
+    public SeriesStatus guiderSeries(long guider) throws DAQException {
+        return null;
+    }
+
+    @Override
+    public Status guiderClear(long guider, ClearParameters clearParameters) throws DAQException {
         return null;
     }
 }

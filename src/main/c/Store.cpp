@@ -87,7 +87,7 @@ jobject createVersion(JNIEnv* env, DVI::Version version) {
     jstring tag = env->NewStringUTF(version.tag());
     jboolean dirty = version.dirty();
     jint hash = version.hash();
-    jlong buildTime = version.buildTime;
+    jlong buildTime = (uint64_t) version.buildTime;
     return env->NewObject(JCversionClass, JCversionConstructor, tag, buildTime, dirty, hash);
 }
 
@@ -119,7 +119,7 @@ jobject createImageMetaData(JNIEnv* env, Image& image) {
     jstring annotation = env->NewStringUTF(metaData.annotation());
     jstring folder = env->NewStringUTF(metaData.folder());
     jint opcode = metaData.opcode();
-    jlong timestamp = metaData.timestamp();
+    jlong timestamp = (uint64_t) metaData.timestamp();
     jlong id_ = image.id().value();
     jobject bitset = createBitSet(env, metaData.elements());
     jobject version_ = createVersion(env, metaData.release());
@@ -295,12 +295,12 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     JCexConstructor = env->GetMethodID(JCexClass, "<init>", "(Ljava/lang/String;ILjava/lang/String;)V");
     if (env->ExceptionCheck()) {
         return JNI_VERSION;
-    }    
+    }
 
     JCexConstructor2 = env->GetMethodID(JCexClass, "<init>", "(Ljava/lang/String;)V");
     if (env->ExceptionCheck()) {
         return JNI_VERSION;
-    } 
+    }
 
     jclass intArrayClass = env->FindClass("[I");
     if (env->ExceptionCheck()) {
@@ -311,7 +311,7 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
     // Call corresponding function in Statistics.cpp
     JNI_Stats_OnLoad(env);
     Guider_OnLoad(env);
-    
+
     // Return the JNI Version as required by method
     return JNI_VERSION;
 }
@@ -347,8 +347,8 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachGuider
-(JNIEnv* env, jobject obj, jstring partition) {   
-    const char *partition_name = env->GetStringUTFChars(partition, 0); 
+(JNIEnv* env, jobject obj, jstring partition) {
+    const char *partition_name = env->GetStringUTFChars(partition, 0);
     try {
         GDS::Client* guider = new GDS::Client(partition_name);
         env->ReleaseStringUTFChars(partition, partition_name);
@@ -364,7 +364,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_detac
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_attachGuiderSubscriber
-(JNIEnv* env, jobject obj, jstring partition, jboolean bigEndian, jintArray locations) {   
+(JNIEnv* env, jobject obj, jstring partition, jboolean bigEndian, jintArray locations) {
     jint* values = env->GetIntArrayElements(locations, 0);
     int nlocs = env->GetArrayLength(locations);
     GDS::LocationSet locs;
@@ -414,7 +414,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
        locs[i] = GDS::RoiLocation(GDS::Location(DAQ::Location(index), sensor), segment, startRow, startCol);
     }
     int error;
-    if (comment) { 
+    if (comment) {
        const char *_comment = env->GetStringUTFChars(comment, 0);
        error = guider->start(common, locs, nlocs, _comment, status);
        env->ReleaseStringUTFChars(comment, _comment);
@@ -464,7 +464,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
 (JNIEnv* env, jobject obj, jlong guider_, jstring comment) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
-    int error; 
+    int error;
     if (comment) {
         const char *_comment = env->GetStringUTFChars(comment, 0);
         error = guider->stop(_comment, status);
@@ -478,7 +478,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
         char y[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Guider stop failed, status %d", error);
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
-        return NULL; 
+        return NULL;
     } else {
         return createGuiderStatus(env, status);
     }
@@ -502,7 +502,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_pa
         char y[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Guider pause failed, status %d", error);
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
-        return NULL; 
+        return NULL;
     } else {
         return createGuiderStatus(env, status);
     }
@@ -518,7 +518,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_re
        error = guider->resume(_comment, status);
        env->ReleaseStringUTFChars(comment, _comment);
     } else {
-       error = guider->resume(status); 
+       error = guider->resume(status);
     }
     if (!error) error = status.status();
     if (error) {
@@ -553,7 +553,8 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_wa
 (JNIEnv* env, jobject obj, jlong guider_) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
-    int error = guider->wake(status);
+    GDS::ClearParameters clearParameters; // TODO: Set clear parameters
+    int error = guider->wake(clearParameters, status);
     if (!error) error = status.status();
     if (error) {
         char x[MESSAGE_LENGTH];
@@ -566,16 +567,34 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_wa
     }
 }
 
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_clearGuider
+(JNIEnv* env, jobject obj, jlong guider_) {
+    GDS::Client*  guider = (GDS::Client*) guider_;
+    GDS::Status status;
+    GDS::ClearParameters clearParameters; // TODO: Set clear parameters
+    int error = guider->clear(clearParameters, status);
+    if (!error) error = status.status();
+    if (error) {
+        char x[MESSAGE_LENGTH];
+        char y[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Guider clear failed, status %d", error);
+        throwDAQException(env, x, error, GDS::Exception::decode(error, y));
+        return NULL;
+    } else {
+        return createGuiderStatus(env, status);
+    }
+}
+
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_guiderConfig
 (JNIEnv* env, jobject obj, jlong guider_) {
     GDS::Client* guider = (GDS::Client*) guider_;
     GDS::Status status;
-    GDS::Series series;
     GDS::RoiCommon roiCommon;
     GDS::RoiLocation locbuf[sizeof(GDS::RoiLocation)*GDS::LocationSet::SIZE];
+    GDS::ClearParameters clearParameters;
     unsigned nlocsbuf;
-    
-    int error = guider->config(status, series, roiCommon, locbuf, nlocsbuf);
+
+    int error = guider->config(status, clearParameters, roiCommon, locbuf, nlocsbuf);
     if (!error) error = status.status();
     if (error) {
         char x[MESSAGE_LENGTH];
@@ -584,7 +603,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_gu
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
         return NULL;
     }  else {
-        return createGuiderConfig(env, status, series, roiCommon, locbuf, nlocsbuf);
+        return createGuiderConfig(env, status, clearParameters, roiCommon, locbuf, nlocsbuf);
     }
 }
 
@@ -593,8 +612,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_gu
     GDS::Client* guider = (GDS::Client*) guider_;
     GDS::Status status;
     GDS::Series series;
-    
-    int error = guider->series(status, series);
+    GDS::Series idle;
+
+    int error = guider->series(status, series, idle);
     if (!error) error = status.status();
     if (error) {
         char x[MESSAGE_LENGTH];
@@ -603,7 +623,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_gu
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
     }
 
-    return createGuiderSeries(env, status, series);
+    return createGuiderSeriesStatus(env, status, series, idle);
 }
 
 JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_capacity
@@ -718,7 +738,7 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_fi
         throwDAQException(env, x, source.error());
         return 0;
     }
-    return createSourceMetaData(env, source);    
+    return createSourceMetaData(env, source);
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_addImageToFolder
@@ -926,7 +946,7 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_star
     CMS::Camera* camera_ = (CMS::Camera*) camera;
     OSA::TimeStamp timestamp;
     camera_->sequence(opcode, timestamp);
-    return (jlong)timestamp;
+    return (uint64_t)timestamp;
 }
 
 

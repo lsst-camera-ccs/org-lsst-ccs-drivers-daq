@@ -14,7 +14,7 @@ import org.lsst.ccs.daq.ims.DAQException;
 import org.lsst.ccs.daq.ims.Guider;
 import org.lsst.ccs.daq.guider.ROISpec;
 import org.lsst.ccs.utilities.location.SensorLocation;
-import org.lsst.ccs.daq.guider.Series;
+import org.lsst.ccs.daq.guider.SeriesStatus;
 import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.daq.ims.Guider.Subscriber;
 import org.lsst.ccs.daq.ims.Store;
@@ -37,7 +37,7 @@ public class GuiderTool {
     private Guider guider;
     private Subscriber subscribe0;
     private Subscriber subscribe1;
-    
+
     public GuiderTool() {
     }
 
@@ -97,7 +97,7 @@ public class GuiderTool {
     }
 
     @Command(name = "series", description = "Get the guider series")
-    public Series series() throws DAQException {
+    public SeriesStatus series() throws DAQException {
         checkStore();
         return guider.series();
     }
@@ -118,7 +118,7 @@ public class GuiderTool {
         guider.validate(spec.getCommon(), spec.getLocations());
     }
 
-    
+
     @Command(name = "fits", description = "Subscribe to notifications to write a FITS file")
     public void fitsWrite() throws DAQException {
 
@@ -160,13 +160,13 @@ public class GuiderTool {
         });
         t1.start();
     }
-    
-    @Command(name="unsubscribe", description = "Unsubscribe ") 
+
+    @Command(name="unsubscribe", description = "Unsubscribe ")
     public void unsubscribe() throws DAQException {
         if (subscribe0 != null) subscribe0.close();
         if (subscribe1 != null) subscribe1.close();
     }
-    
+
     @Command(name = "version", description = "Get version info")
     public Version version() throws DAQException {
         return Store.getClientVersion();

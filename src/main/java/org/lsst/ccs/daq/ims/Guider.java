@@ -6,13 +6,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.lsst.ccs.daq.guider.ClearParameters;
 import org.lsst.ccs.daq.guider.Config;
 import org.lsst.ccs.daq.guider.GuiderListener;
 import org.lsst.ccs.daq.guider.ROICommon;
 import org.lsst.ccs.daq.guider.ROILocation;
 import org.lsst.ccs.utilities.location.SensorLocation;
-import org.lsst.ccs.daq.guider.Series;
 import org.lsst.ccs.daq.guider.SeriesMetaData;
+import org.lsst.ccs.daq.guider.SeriesStatus;
 import org.lsst.ccs.daq.guider.StateMetaData;
 import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.utilities.location.LocationSet;
@@ -72,9 +74,9 @@ public class Guider {
             roiData[j + 3] = location.getStartRow();
             roiData[j + 4] = location.getStartCol();
         }
-        store.validateGuider(guider, common.getRows(), common.getCols(), common.getIntegrationTimeMillis(), roiData);        
+        store.validateGuider(guider, common.getRows(), common.getCols(), common.getIntegrationTimeMillis(), roiData);
     }
-    
+
     public Subscriber subscribe(Set<SensorLocation> locations, ByteOrder byteOrder, GuiderListener listener) throws DAQException {
         return new Subscriber(store, locations, byteOrder, listener);
     }
@@ -82,7 +84,7 @@ public class Guider {
     public Status stop() throws DAQException {
         return stop(null);
     }
-    
+
     public Status stop(String comment) throws DAQException {
         return store.stopGuider(guider, comment);
     }
@@ -90,7 +92,7 @@ public class Guider {
     public Status pause() throws DAQException {
         return pause(null);
     }
-    
+
     public Status pause(String comment) throws DAQException {
         return store.pauseGuider(guider, comment);
     }
@@ -98,7 +100,7 @@ public class Guider {
     public Status resume() throws DAQException {
         return resume(null);
     }
-    
+
     public Status resume(String comment) throws DAQException {
         return store.resumeGuider(guider, comment);
     }
@@ -111,11 +113,15 @@ public class Guider {
         return store.wakeGuider(guider);
     }
 
+    public Status clear(ClearParameters clearParameters) throws DAQException {
+        return store.guiderClear(guider, clearParameters);
+    }
+
     public Config config() throws DAQException {
         return store.guiderConfig(guider);
     }
 
-    public Series series() throws DAQException {
+    public SeriesStatus series() throws DAQException {
         return store.guiderSeries(guider);
     }
 

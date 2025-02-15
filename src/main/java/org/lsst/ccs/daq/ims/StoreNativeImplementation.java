@@ -2,8 +2,10 @@ package org.lsst.ccs.daq.ims;
 
 import java.util.BitSet;
 import java.util.List;
+
+import org.lsst.ccs.daq.guider.ClearParameters;
 import org.lsst.ccs.daq.guider.Config;
-import org.lsst.ccs.daq.guider.Series;
+import org.lsst.ccs.daq.guider.SeriesStatus;
 import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.utilities.location.Location.LocationType;
 
@@ -30,7 +32,7 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native void detachCamera(long camera) throws DAQException;
-    
+
     @Override
     public synchronized native long attachClient(String partition) throws DAQException;
 
@@ -88,7 +90,7 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native void detachStream(long stream) throws DAQException;
-    
+
     @Override
     public native int waitForImage(Store callback, long store, long stream1, long stream2, int imageTimeoutMicros, int sourceTimeoutMicros) throws DAQException;
 
@@ -100,10 +102,10 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native BitSet getConfiguredLocations(String partition) throws DAQException;
-    
+
     @Override
     public native Version getClientVersion() throws DAQException;
-    
+
     @Override
     public void setRegisterList(long store, long camera, LocationType type, int[] registerList) throws DAQException {
         setRegisterList(store, camera, type.getCCDCount(), registerList);
@@ -136,8 +138,8 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) throws DAQException;
-    
-    
+
+
     @Override
     public synchronized native void validateGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int[] roiData) throws DAQException;
 
@@ -155,10 +157,10 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native Status wakeGuider(long guider) throws DAQException;
-    
+
     @Override
     public native void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException;
-       
+
     @Override
     public native void abortWaitForGuider(long subscriber) throws DAQException;
 
@@ -172,5 +174,8 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native Config guiderConfig(long guider) throws DAQException;
 
     @Override
-    public synchronized native Series guiderSeries(long guider) throws DAQException;
+    public synchronized native SeriesStatus guiderSeries(long guider) throws DAQException;
+
+    @Override
+    public synchronized native Status guiderClear(long guider, ClearParameters clearParameters) throws DAQException;
 }

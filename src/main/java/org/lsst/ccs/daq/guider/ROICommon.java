@@ -11,6 +11,11 @@ public class ROICommon {
     final int rows;
     final int cols;
     final int integrationTimeMillis;
+    // The following we added in R5-V13 of the DAQ
+    final int underCols;
+    final int overCols;
+    final int overRows;
+    final int flushCount;
 
     /**
      * Create an instance of ROICommand
@@ -25,6 +30,11 @@ public class ROICommon {
         this.rows = rows;
         this.cols = cols;
         this.integrationTimeMillis = integrationTimeMillis;
+        // defaults from Gregg. These can not currently be set from JSON.
+        underCols = 0;
+        overCols = 0;
+        overRows = 0;
+        flushCount = 2;
     }
 
     public int getRows() {
@@ -39,9 +49,11 @@ public class ROICommon {
         return integrationTimeMillis;
     }
 
+
+
     @Override
     public String toString() {
         return "ROICommon{" + "rows=" + rows + ", cols=" + cols + ", integrationTimeMillis=" + integrationTimeMillis + '}';
     }
-    
+
 }

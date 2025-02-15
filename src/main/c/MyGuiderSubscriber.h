@@ -11,9 +11,12 @@
 #include "gds/Stamp.hh"
 #include "gds/Series.hh"
 #include "gds/Status.hh"
+#include "gds/ClearParameters.hh"
 
-extern jobject createGuiderConfig(JNIEnv* env, const GDS::Status& status, const GDS::Series& series, const GDS::RoiCommon& common, const GDS::RoiLocation* location, int nLocations);
-extern jobject createGuiderSeries(JNIEnv* env, const GDS::Status& status, const GDS::Series& series);
+extern jobject createGuiderConfig(JNIEnv* env, const GDS::Status& status, const GDS::ClearParameters& series, const GDS::RoiCommon& common, const GDS::RoiLocation* location, int nLocations);
+extern jobject createGuiderClearParameters(JNIEnv* env, const GDS::ClearParameters& clearParameters);
+extern jobject createGuiderSeriesStatus(JNIEnv* env, const GDS::Status& status, const GDS::Series& series, const GDS::Series& idle);
+extern jobject createGuiderSeries(JNIEnv* env, const GDS::Series& series);
 extern jobject createGuiderStatus(JNIEnv* env, const GDS::Status& status);
 
 void Guider_OnLoad(JNIEnv*);
