@@ -8,6 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lsst.ccs.command.annotations.Argument;
 import org.lsst.ccs.command.annotations.Command;
+import org.lsst.ccs.daq.guider.ClearParameters;
 import org.lsst.ccs.daq.guider.Config;
 import org.lsst.ccs.daq.guider.FitsWriterFactory;
 import org.lsst.ccs.daq.ims.DAQException;
@@ -110,6 +111,13 @@ public class GuiderTool {
         return guider.start(spec.getCommon(), imageName, spec.getLocations());
     }
 
+    @Command(name = "clear", description = "Clear the guider")
+    public Status clear(int delay, int preRows, int flushCount, int readRows) throws DAQException {
+        checkStore();
+        ClearParameters cp = new ClearParameters(delay, preRows, flushCount, readRows);
+        return guider.clear(cp);
+    }
+    
     @Command(name = "validate", description = "Validate the roi")
     public void validate(String roiSpec) throws DAQException {
         checkStore();
