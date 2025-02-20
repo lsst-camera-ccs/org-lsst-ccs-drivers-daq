@@ -159,6 +159,9 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native Status wakeGuider(long guider) throws DAQException;
 
     @Override
+    public synchronized native Status clearGuider(long guider) throws DAQException;
+
+    @Override
     public native void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException;
 
     @Override
@@ -176,6 +179,4 @@ class StoreNativeImplementation implements StoreImplementation {
     @Override
     public synchronized native SeriesStatus guiderSeries(long guider) throws DAQException;
 
-    @Override
-    public synchronized native Status guiderClear(long guider, ClearParameters clearParameters) throws DAQException;
 }

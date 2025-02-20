@@ -110,5 +110,5 @@ interface StoreImplementation {
 
     public SeriesStatus guiderSeries(long guider) throws DAQException;
 
-    Status guiderClear(long guider, ClearParameters clearParameters) throws DAQException;
+    Status clearGuider(long guider) throws DAQException;
 }

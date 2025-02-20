@@ -311,7 +311,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Status guiderClear(long guider, ClearParameters clearParameters) throws DAQException {
+    public Status clearGuider(long guider) throws DAQException {
         return null;
     }
 }

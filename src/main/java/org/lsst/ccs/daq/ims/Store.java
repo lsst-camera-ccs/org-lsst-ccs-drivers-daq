@@ -551,7 +551,7 @@ public class Store implements AutoCloseable {
     }
 
     public Status guiderClear(long guider, ClearParameters clearParameters) throws DAQException {
-        return impl.guiderClear(guider, clearParameters);
+        return impl.clearGuider(guider);
     }
 
 }
