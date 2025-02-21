@@ -3,7 +3,6 @@ package org.lsst.ccs.daq.ims;
 import java.util.BitSet;
 import java.util.List;
 
-import org.lsst.ccs.daq.guider.ClearParameters;
 import org.lsst.ccs.daq.guider.Config;
 import org.lsst.ccs.daq.guider.SeriesStatus;
 import org.lsst.ccs.daq.guider.Status;
@@ -98,17 +97,19 @@ interface StoreImplementation {
 
     Status wakeGuider(long guider) throws DAQException;
 
-    public long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException;
+    long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException;
 
-    public void detachGuiderSubscriber(long subscriber) throws DAQException;
+    void detachGuiderSubscriber(long subscriber) throws DAQException;
 
-    public void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException;
+    void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException;
 
-    public void abortWaitForGuider(long subscriber) throws DAQException;
+    void abortWaitForGuider(long subscriber) throws DAQException;
 
-    public Config guiderConfig(long guider) throws DAQException;
+    Config guiderConfig(long guider) throws DAQException;
 
-    public SeriesStatus guiderSeries(long guider) throws DAQException;
+    SeriesStatus guiderSeries(long guider) throws DAQException;
 
     Status clearGuider(long guider) throws DAQException;
+
+    String getClientPlatform(String partition) throws DAQException;
 }

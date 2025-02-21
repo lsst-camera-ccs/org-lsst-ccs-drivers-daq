@@ -180,6 +180,12 @@ public class GuiderTool {
         return Store.getClientVersion();
     }
 
+    @Command(name = "platform", description = "Get platform name")
+    public String platform() throws DAQException {
+        checkStore();
+        return guider.getClientPlatform();
+    }
+    
     @Command(name = "locations", description = "List configured locations")
     public LocationSet locations() throws DAQException {
         checkStore();

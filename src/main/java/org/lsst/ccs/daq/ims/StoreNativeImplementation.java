@@ -3,7 +3,6 @@ package org.lsst.ccs.daq.ims;
 import java.util.BitSet;
 import java.util.List;
 
-import org.lsst.ccs.daq.guider.ClearParameters;
 import org.lsst.ccs.daq.guider.Config;
 import org.lsst.ccs.daq.guider.SeriesStatus;
 import org.lsst.ccs.daq.guider.Status;
@@ -179,4 +178,6 @@ class StoreNativeImplementation implements StoreImplementation {
     @Override
     public synchronized native SeriesStatus guiderSeries(long guider) throws DAQException;
 
+    @Override
+    public synchronized native String getClientPlatform(String partition) throws DAQException;
 }

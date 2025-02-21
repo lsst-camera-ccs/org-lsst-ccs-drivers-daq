@@ -15,6 +15,7 @@
 #include "cms/Camera.hh"
 #include "cms/Exception.hh"
 #include "rms/Client.hh"
+#include "dsi/Platform.hh"
 #include "rms/Instruction.hh"
 #include "rms/InstructionList.hh"
 #include "gds/Client.hh"
@@ -874,6 +875,16 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_ge
   (JNIEnv *env, jobject obj) {
     DVI::Version version;
     return createVersion(env, version);
+}
+
+JNIEXPORT jstring JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_getClientPlatform
+  (JNIEnv *env, jobject obj, jstring partition) {
+    const char *partition_ = env->GetStringUTFChars(partition, 0);
+    RMS::Client client(partition_);
+    DSI::Platform platforms[71];
+    client.probe(platforms);
+    env->ReleaseStringUTFChars(partition, partition_);
+    return env->NewStringUTF(platforms[0].name());
 }
 
 void setRegisterList

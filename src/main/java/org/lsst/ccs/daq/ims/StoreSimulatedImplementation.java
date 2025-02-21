@@ -12,7 +12,6 @@ import java.util.Random;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
-import org.lsst.ccs.daq.guider.ClearParameters;
 import org.lsst.ccs.daq.guider.Config;
 import org.lsst.ccs.daq.guider.SeriesStatus;
 import org.lsst.ccs.daq.guider.Status;
@@ -313,5 +312,10 @@ class StoreSimulatedImplementation implements StoreImplementation {
     @Override
     public Status clearGuider(long guider) throws DAQException {
         return null;
+    }
+
+    @Override
+    public String getClientPlatform(String partition) {
+        return "unknown";
     }
 }

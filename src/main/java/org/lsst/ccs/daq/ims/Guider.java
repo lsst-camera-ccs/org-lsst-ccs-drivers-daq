@@ -137,6 +137,10 @@ public class Guider {
         return store.getConfiguredLocations();
     }
 
+    public String getClientPlatform() throws DAQException {
+        return store.getClientPlatform();
+    }
+
     public static class Subscriber implements AutoCloseable {
 
         private static final Logger LOG = Logger.getLogger(Subscriber.class.getName());

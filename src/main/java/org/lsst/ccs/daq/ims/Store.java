@@ -448,6 +448,10 @@ public class Store implements AutoCloseable {
         return impl.getClientVersion();
     }
 
+    public String getClientPlatform() throws DAQException {
+        return impl.getClientPlatform(this.partition);
+    }
+    
     static String decodeException(int rc) {
         return impl.decodeException(rc);
     }
