@@ -2,7 +2,9 @@ package org.lsst.ccs.daq.ims.example;
 
 import java.io.File;
 import java.nio.ByteOrder;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,7 +25,6 @@ import org.lsst.ccs.daq.ims.Version;
 import org.lsst.ccs.daq.ims.channel.FitsIntWriter;
 import org.lsst.ccs.utilities.image.FitsHeadersSpecificationsBuilder;
 import org.lsst.ccs.utilities.image.HeaderSpecification;
-import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.location.LocationSet;
 
 /**
@@ -36,8 +37,7 @@ public class GuiderTool {
 
     private Store store;
     private Guider guider;
-    private Subscriber subscribe0;
-    private Subscriber subscribe1;
+    private List<Subscriber> subscribers= new ArrayList<>();
 
     public GuiderTool() {
     }
@@ -74,9 +74,9 @@ public class GuiderTool {
     }
 
     @Command(name = "resume", description = "Resume the guider")
-    public Status resume() throws DAQException {
+    public Status resume(String comment) throws DAQException {
         checkStore();
-        return guider.resume();
+        return guider.resume(comment);
     }
 
     @Command(name = "sleep", description = "Sleep the guider")
@@ -104,11 +104,11 @@ public class GuiderTool {
     }
 
     @Command(name = "start", description = "Start the guider")
-    public Status start(String imageName, String roiSpec) throws DAQException {
+    public Status start(String roiSpec) throws DAQException {
         checkStore();
         ROISpec spec = ROISpec.parse(roiSpec);
         spec.sanityCheck(guider.getConfiguredLocations());
-        return guider.start(spec.getCommon(), imageName, spec.getLocations());
+        return guider.start(spec.getCommon(), spec.getLocations());
     }
 
     @Command(name = "clear", description = "Clear the guider")
@@ -117,7 +117,7 @@ public class GuiderTool {
         ClearParameters cp = new ClearParameters(delay, preRows, flushCount, readRows);
         return guider.clear(cp);
     }
-    
+
     @Command(name = "validate", description = "Validate the roi")
     public void validate(String roiSpec) throws DAQException {
         checkStore();
@@ -128,7 +128,7 @@ public class GuiderTool {
 
 
     @Command(name = "fits", description = "Subscribe to notifications to write a FITS file")
-    public void fitsWrite() throws DAQException {
+    public void fitsWrite(String location) throws DAQException {
 
         FitsHeadersSpecificationsBuilder headerSpecBuilder = new FitsHeadersSpecificationsBuilder();
         headerSpecBuilder.addSpecFile("guider-primary.spec", "primary");
@@ -139,40 +139,28 @@ public class GuiderTool {
         checkStore();
         FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(new File("."), String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
 
-        Location R00 = Location.of("R00/RebG");
-        SensorLocation sensorLocation0 = new SensorLocation(R00, 0);
-        SensorLocation sensorLocation1 = new SensorLocation(R00, 1);
-        FitsWriterFactory writer0 = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications, false);
-        FitsWriterFactory writer1 = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications, false);
+        SensorLocation sensorLocation = SensorLocation.of(location);
+        FitsWriterFactory writer = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications, false);
 
-        subscribe0 = guider.subscribe(Collections.singleton(sensorLocation0), ByteOrder.BIG_ENDIAN, writer0);
+        Subscriber subscriber = guider.subscribe(Collections.singleton(sensorLocation), ByteOrder.BIG_ENDIAN, writer);
+        subscribers.add(subscriber);
         Thread t0 = new Thread(() -> {
             for (;;) {
                 try {
-                    subscribe0.waitForGuider();
+                    subscriber.waitForGuider();
                 } catch (DAQException x) {
                     LOG.log(Level.SEVERE, "DAQ Exception", x);
                 }
             }
         });
         t0.start();
-        subscribe1 = guider.subscribe(Collections.singleton(sensorLocation1), ByteOrder.BIG_ENDIAN, writer1); //        Thread t = new Thread(() -> {
-        Thread t1 = new Thread(() -> {
-            for (;;) {
-                try {
-                    subscribe1.waitForGuider();
-                } catch (DAQException x) {
-                    LOG.log(Level.SEVERE, "DAQ Exception", x);
-                }
-            }
-        });
-        t1.start();
     }
 
     @Command(name="unsubscribe", description = "Unsubscribe ")
     public void unsubscribe() throws DAQException {
-        if (subscribe0 != null) subscribe0.close();
-        if (subscribe1 != null) subscribe1.close();
+        for (Subscriber subscriber : subscribers) {
+            subscriber.close();
+        }
     }
 
     @Command(name = "version", description = "Get version info")
@@ -185,7 +173,7 @@ public class GuiderTool {
         checkStore();
         return guider.getClientPlatform();
     }
-    
+
     @Command(name = "locations", description = "List configured locations")
     public LocationSet locations() throws DAQException {
         checkStore();

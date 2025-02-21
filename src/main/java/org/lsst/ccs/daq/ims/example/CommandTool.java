@@ -208,18 +208,24 @@ public class CommandTool {
         Emulator emulator = store.getEmulator();
         emulator.stop();
     }
-    
+
     @Command(name = "restart", description = "Restart a playlist")
     public void restart() throws DAQException {
         checkStore();
         Emulator emulator = store.getEmulator();
         emulator.restart();
     }
-    
+
     @Command(name = "locations", description = "List configured locations")
     public LocationSet locations() throws DAQException {
         checkStore();
         return store.getConfiguredSources();
+    }
+
+    @Command(name = "platform", description = "Get platform name")
+    public String platform() throws DAQException {
+        checkStore();
+        return store.getClientPlatform();
     }
 
     private static class ReadThread extends Thread {
@@ -492,7 +498,7 @@ public class CommandTool {
         checkStore();
         store.removeImageListener(imageListener);
     }
-    
+
     @Command(name = "read", description = "Read and decode data in image")
     public void read(String path,
             @Argument(defaultValue = ".", description = "Folder where FITS files will be written") File dir,

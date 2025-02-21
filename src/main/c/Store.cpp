@@ -29,6 +29,7 @@
 #include "Statistics.h"
 #include "MyGuiderSubscriber.h"
 
+#include <cstring>
 
 #define MESSAGE_LENGTH 1024
 #define MAX_GUIDER_LOCATIONS 8
@@ -551,10 +552,10 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_sl
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_wakeGuider
-(JNIEnv* env, jobject obj, jlong guider_) {
+(JNIEnv* env, jobject obj, jlong guider_, jint delay, jint preRows, jint flushCount, jint readRows) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
-    GDS::ClearParameters clearParameters; // TODO: Set clear parameters
+    GDS::ClearParameters clearParameters(delay, preRows, flushCount, readRows);
     int error = guider->wake(clearParameters, status);
     if (!error) error = status.status();
     if (error) {
@@ -569,10 +570,10 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_wa
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_clearGuider
-(JNIEnv* env, jobject obj, jlong guider_) {
+(JNIEnv* env, jobject obj, jlong guider_, jint delay, jint preRows, jint flushCount, jint readRows) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
-    GDS::ClearParameters clearParameters; // TODO: Set clear parameters
+    GDS::ClearParameters clearParameters(delay, preRows, flushCount, readRows);
     int error = guider->clear(clearParameters, status);
     if (!error) error = status.status();
     if (error) {
@@ -881,10 +882,16 @@ JNIEXPORT jstring JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_ge
   (JNIEnv *env, jobject obj, jstring partition) {
     const char *partition_ = env->GetStringUTFChars(partition, 0);
     RMS::Client client(partition_);
-    DSI::Platform platforms[71];
+    DSI::Platform platforms[DSI::Set::SIZE];
     client.probe(platforms);
     env->ReleaseStringUTFChars(partition, partition_);
-    return env->NewStringUTF(platforms[0].name());
+    for (int i=0; i<DSI::Set::SIZE; i++) {
+        // We assume the first non-blank item is the one we want
+        if (strlen(platforms[i].name()) > 0) {
+    	    return env->NewStringUTF(platforms[i].name());
+	    }
+    }
+    return NULL;
 }
 
 void setRegisterList

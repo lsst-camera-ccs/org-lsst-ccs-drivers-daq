@@ -451,7 +451,7 @@ public class Store implements AutoCloseable {
     public String getClientPlatform() throws DAQException {
         return impl.getClientPlatform(this.partition);
     }
-    
+
     static String decodeException(int rc) {
         return impl.decodeException(rc);
     }
@@ -518,8 +518,12 @@ public class Store implements AutoCloseable {
         return impl.sleepGuider(guider);
     }
 
-    Status  wakeGuider(long guider) throws DAQException {
-        return impl.wakeGuider(guider);
+    Status wakeGuider(long guider) throws DAQException {
+        return wakeGuider(guider, ClearParameters.defaultValue());
+    }
+
+    Status  wakeGuider(long guider, ClearParameters clearParameters) throws DAQException {
+        return impl.wakeGuider(guider,  clearParameters.getDelay(), clearParameters.getPreRows(), clearParameters.getFlushCount(), clearParameters.getReadRows());
     }
 
     Status  startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, String id, int[] roiData) throws DAQException {
@@ -555,7 +559,7 @@ public class Store implements AutoCloseable {
     }
 
     public Status guiderClear(long guider, ClearParameters clearParameters) throws DAQException {
-        return impl.clearGuider(guider);
+        return impl.clearGuider(guider, clearParameters.getDelay(), clearParameters.getPreRows(), clearParameters.getFlushCount(), clearParameters.getReadRows());
     }
 
 }

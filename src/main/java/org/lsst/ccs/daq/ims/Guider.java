@@ -35,17 +35,19 @@ public class Guider {
         this.guider = guider;
     }
 
+    public Status start(ROICommon common, List<ROILocation> locations) throws DAQException {
+        return this.start(common, locations, null);
+    }
     /**
      * Start the guider, using the specified ROI locations
      *
      * @param common The common settings for this start command
-     * @param id The id of this sequence of guider images. From CCS this will
-     * normally be the OBSID.
      * @param locations The set of ROIs to start
+     * @param id The id of this sequence of guider images.
      * @return The status after the command completes
      * @throws DAQException
      */
-    public Status start(ROICommon common, String id, List<ROILocation> locations) throws DAQException {
+    public Status start(ROICommon common, List<ROILocation> locations, String id) throws DAQException {
         final int nLocs = locations.size();
         int[] roiData = new int[nLocs * 5];
         for (int i = 0; i < nLocs; i++) {

@@ -215,7 +215,6 @@ jmethodID findMethod(JNIEnv* env, jclass classObject, const char* methodName, co
     return method;
 }
 
-
 void Guider_OnLoad(JNIEnv* env) {
 
     jclass subscriberClass = findClass(env, "org/lsst/ccs/daq/ims/Guider$Subscriber");
@@ -304,7 +303,7 @@ void Guider_OnLoad(JNIEnv* env) {
     }
     JCguiderConfigClass = (jclass) env->NewGlobalRef(guiderConfigClass);
 
-    JCguiderConfigConstructor = findMethod(env, JCguiderConfigClass, "<init>", "(Lorg/lsst/ccs/daq/guider/Series;Lorg/lsst/ccs/daq/guider/ROICommon;Ljava/util/List;)V");
+    JCguiderConfigConstructor = findMethod(env, JCguiderConfigClass, "<init>", "(Lorg/lsst/ccs/daq/guider/Status;Lorg/lsst/ccs/daq/guider/ClearParameters;Lorg/lsst/ccs/daq/guider/ROICommon;Ljava/util/List;)V");
     if (env->ExceptionCheck()) {
         return;
     }
