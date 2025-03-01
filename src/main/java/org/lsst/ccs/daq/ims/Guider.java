@@ -112,11 +112,15 @@ public class Guider {
     }
 
     public Status wake() throws DAQException {
-        return store.wakeGuider(guider);
+        return wake(ClearParameters.defaultValue());
+    }
+
+    public Status wake(ClearParameters clearParameters) throws DAQException {
+        return store.wakeGuider(guider, clearParameters);
     }
 
     public Status clear(ClearParameters clearParameters) throws DAQException {
-        return store.guiderClear(guider, clearParameters);
+        return store.clearGuider(guider, clearParameters);
     }
 
     public Config config() throws DAQException {

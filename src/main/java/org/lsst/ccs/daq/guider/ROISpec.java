@@ -48,7 +48,7 @@ public class ROISpec {
     public List<ROILocation> getLocations() {
         return locations;
     }
-    
+
     public SensorLocationSet getSensorLocations() {
         return locations.stream().map(ROILocation::getLocation).collect(Collectors.toCollection(SensorLocationSet::new));
     }
@@ -69,7 +69,15 @@ public class ROISpec {
             }
         }
     }
-       
+
+    public void sanityCheckWithSensorLocations(SensorLocationSet configuredLocations) throws DAQException {
+        for (ROILocation l : locations) {
+            if (!configuredLocations.contains(l.getLocation())) {
+                throw new IllegalArgumentException("SensorLocation "+l+" not configured as a guider");
+            }
+        }
+    }
+
     @Override
     public String toString() {
         try {
