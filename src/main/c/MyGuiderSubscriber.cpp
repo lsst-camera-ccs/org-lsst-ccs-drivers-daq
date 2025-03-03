@@ -16,8 +16,8 @@ static jclass JCguiderStateMetadataClass;
 static jmethodID JCguiderStateMetadataConstructor;
 static jclass JCguiderSeriesMetadataClass;
 static jmethodID JCguiderSeriesMetadataConstructor;
-static jclass JCguiderRoiCommonClass;
-static jmethodID JCguiderRoiCommonConstructor;
+static jclass JCguiderRoiCommonExtendedClass;
+static jmethodID JCguiderRoiCommonExtendedConstructor;
 static jclass JCguiderRoiLocationClass;
 static jmethodID JCguiderRoiLocationConstructor;
 static jclass JCguiderConfigClass;
@@ -46,12 +46,16 @@ jobject createGuiderStatus(JNIEnv* env, const GDS::Status& status) {
    return env->NewObject(JCguiderStatusClass, JCguiderStatusConstructor, time, state, sequence, in, out);
 }
 
-jobject createRoiCommon(JNIEnv* env, const GDS::RoiCommon& location) {
+jobject createRoiCommonExtended(JNIEnv* env, const GDS::RoiCommon& location) {
     jint nrows = location.nrows();
     jint ncols = location.ncols();
     jint integration = location.integration();
+    jint underCols = location.underCols();
+    jint overCols = location.overCols();
+    jint overRows = location.overRows();
+    jint flushCount = location.flushCount();
 
-    return env->NewObject(JCguiderRoiCommonClass, JCguiderRoiCommonConstructor, nrows, ncols, integration);
+    return env->NewObject(JCguiderRoiCommonExtendedClass, JCguiderRoiCommonExtendedConstructor, nrows, ncols, integration, underCols, overCols, overRows, flushCount);
 }
 
 jobject createRoiLocation(JNIEnv* env, const GDS::RoiLocation& location) {
@@ -72,7 +76,7 @@ jobject createGuiderConfig(JNIEnv* env, const GDS::Status& status, const GDS::Cl
     for (int i=0; i<nLocations; i++) {
         addObjectToList(env, list, createRoiLocation(env, location[i]));
     }
-    return env->NewObject(JCguiderConfigClass, JCguiderConfigConstructor, createGuiderStatus(env, status), createGuiderClearParameters(env, clearParamaters), createRoiCommon(env, common), list);
+    return env->NewObject(JCguiderConfigClass, JCguiderConfigConstructor, createGuiderStatus(env, status), createGuiderClearParameters(env, clearParamaters), createRoiCommonExtended(env, common), list);
 }
 
 jobject createGuiderClearParameters(JNIEnv* env, const GDS::ClearParameters& clearParameters) {
@@ -141,10 +145,9 @@ jobject createSeriesMetadata(JNIEnv* env, const GDS::SeriesMetadata& series) {
     jstring id = env->NewStringUTF(series.id());
     jstring platform = env->NewStringUTF(series.platform());
     jboolean splitroi = series.splitroi();
-    jint undercols = 0; // FIXME
     jint ccdType = series.vendor();
 
-    return env->NewObject(JCguiderSeriesMetadataClass, JCguiderSeriesMetadataConstructor, firmware, serialNumber, id, platform, createRoiCommon(env, common), createRoiLocation(env, location), createVersion(env, version), splitroi, undercols, ccdType);
+    return env->NewObject(JCguiderSeriesMetadataClass, JCguiderSeriesMetadataConstructor, firmware, serialNumber, id, platform, createRoiCommonExtended(env, common), createRoiLocation(env, location), createVersion(env, version), splitroi, ccdType);
 }
 
 jobject MyGuiderSubscriber::createByteBuffer(JNIEnv* env, const GDS::RawStamp& stamp) {
@@ -203,13 +206,18 @@ jclass findClass(JNIEnv* env, const char* className) {
         printf("Exception at findClass %s\n", className);
         env->ExceptionDescribe();
     }
-    return classObject;
+    return  (jclass) env->NewGlobalRef(classObject);
 }
 
 jmethodID findMethod(JNIEnv* env, jclass classObject, const char* methodName, const char* methodArgs) {
     jmethodID method = env->GetMethodID(classObject, methodName, methodArgs);
     if (env->ExceptionCheck()) {
-        printf("Exception at findMethod %s %s\n", methodName, methodArgs);
+        jclass classclass = env->FindClass("java/lang/Class");
+        jmethodID getNameMethod = env->GetMethodID(classclass, "getName", "()Ljava/lang/String;");
+        jstring jClassName = (jstring) env->CallObjectMethod(classObject, getNameMethod);
+        const char* className = env->GetStringUTFChars(jClassName, NULL);
+        printf("Exception at findMethod %s %s %s\n", className, methodName, methodArgs);
+        env->ReleaseStringUTFChars(jClassName, className);
         env->ExceptionDescribe();
     }
     return method;
@@ -217,11 +225,10 @@ jmethodID findMethod(JNIEnv* env, jclass classObject, const char* methodName, co
 
 void Guider_OnLoad(JNIEnv* env) {
 
-    jclass subscriberClass = findClass(env, "org/lsst/ccs/daq/ims/Guider$Subscriber");
+    JCsubscriberClass = findClass(env, "org/lsst/ccs/daq/ims/Guider$Subscriber");
     if (env->ExceptionCheck()) {
         return;
     }
-    JCsubscriberClass = (jclass) env->NewGlobalRef(subscriberClass);
 
     JCsubscriberStartCallbackMethod = findMethod(env, JCsubscriberClass, "startCallback", "(Lorg/lsst/ccs/daq/guider/StateMetaData;Lorg/lsst/ccs/daq/guider/SeriesMetaData;)V");
     if (env->ExceptionCheck()) {
@@ -253,110 +260,100 @@ void Guider_OnLoad(JNIEnv* env) {
         return;
     }
 
-    jclass guiderStateMetadataClass = findClass(env, "org/lsst/ccs/daq/guider/StateMetaData");
+    JCguiderStateMetadataClass = findClass(env, "org/lsst/ccs/daq/guider/StateMetaData");
     if (env->ExceptionCheck()) {
         return;
     }
-    JCguiderStateMetadataClass = (jclass) env->NewGlobalRef(guiderStateMetadataClass);
 
     JCguiderStateMetadataConstructor = findMethod(env,JCguiderStateMetadataClass, "<init>", "(IIIJBBILjava/lang/String;)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    jclass guiderSeriesMetadataClass = findClass(env, "org/lsst/ccs/daq/guider/SeriesMetaData");
-    if (env->ExceptionCheck()) {
-        return;
-    }
-    JCguiderSeriesMetadataClass = (jclass) env->NewGlobalRef(guiderSeriesMetadataClass);
-
-    JCguiderSeriesMetadataConstructor = findMethod(env, JCguiderSeriesMetadataClass, "<init>", "(IJLjava/lang/String;Ljava/lang/String;Lorg/lsst/ccs/daq/guider/ROICommon;Lorg/lsst/ccs/daq/guider/ROILocation;Lorg/lsst/ccs/daq/ims/Version;ZII)V"),(JCguiderSeriesMetadataClass,"<init>");
+    JCguiderSeriesMetadataClass = findClass(env, "org/lsst/ccs/daq/guider/SeriesMetaData");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    jclass guiderRoiCommonClass = findClass(env, "org/lsst/ccs/daq/guider/ROICommon");
-    if (env->ExceptionCheck()) {
-        return;
-    }
-    JCguiderRoiCommonClass = (jclass) env->NewGlobalRef(guiderRoiCommonClass);
-
-    JCguiderRoiCommonConstructor = findMethod(env, JCguiderRoiCommonClass, "<init>", "(III)V");
+    JCguiderSeriesMetadataConstructor = findMethod(env, JCguiderSeriesMetadataClass, "<init>", "(IJLjava/lang/String;Ljava/lang/String;Lorg/lsst/ccs/daq/guider/ROICommonExtended;Lorg/lsst/ccs/daq/guider/ROILocation;Lorg/lsst/ccs/daq/ims/Version;ZI)V"),(JCguiderSeriesMetadataClass,"<init>");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    jclass guiderRoiLocationClass = findClass(env, "org/lsst/ccs/daq/guider/ROILocation");
+    JCguiderRoiCommonExtendedClass = findClass(env, "org/lsst/ccs/daq/guider/ROICommonExtended");
     if (env->ExceptionCheck()) {
         return;
     }
-    JCguiderRoiLocationClass = (jclass) env->NewGlobalRef(guiderRoiLocationClass);
+
+    JCguiderRoiCommonExtendedConstructor = findMethod(env, JCguiderRoiCommonExtendedClass, "<init>", "(IIIIIII)V");
+    if (env->ExceptionCheck()) {
+        return;
+    }
+
+    JCguiderRoiLocationClass = findClass(env, "org/lsst/ccs/daq/guider/ROILocation");
+    if (env->ExceptionCheck()) {
+        return;
+    }
 
     JCguiderRoiLocationConstructor = findMethod(env, JCguiderRoiLocationClass, "<init>", "(BBIIII)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    jclass guiderConfigClass = findClass(env, "org/lsst/ccs/daq/guider/Config");
-    if (env->ExceptionCheck()) {
-        return;
-    }
-    JCguiderConfigClass = (jclass) env->NewGlobalRef(guiderConfigClass);
-
-    JCguiderConfigConstructor = findMethod(env, JCguiderConfigClass, "<init>", "(Lorg/lsst/ccs/daq/guider/Status;Lorg/lsst/ccs/daq/guider/ClearParameters;Lorg/lsst/ccs/daq/guider/ROICommon;Ljava/util/List;)V");
+    JCguiderConfigClass = findClass(env, "org/lsst/ccs/daq/guider/Config");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    jclass guiderClearParametersClass = findClass(env, "org/lsst/ccs/daq/guider/ClearParameters");
+    JCguiderConfigConstructor = findMethod(env, JCguiderConfigClass, "<init>", "(Lorg/lsst/ccs/daq/guider/Status;Lorg/lsst/ccs/daq/guider/ClearParameters;Lorg/lsst/ccs/daq/guider/ROICommonExtended;Ljava/util/List;)V");
     if (env->ExceptionCheck()) {
         return;
     }
-    JCguiderClearParametersClass = (jclass) env->NewGlobalRef(guiderClearParametersClass);
+
+    JCguiderClearParametersClass = findClass(env, "org/lsst/ccs/daq/guider/ClearParameters");
+    if (env->ExceptionCheck()) {
+        return;
+    }
 
     JCguiderClearParametersConstructor = findMethod(env, JCguiderClearParametersClass, "<init>", "(IIII)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    jclass guiderSeriesStatusClass = findClass(env, "org/lsst/ccs/daq/guider/SeriesStatus");
+    JCguiderSeriesStatusClass = findClass(env, "org/lsst/ccs/daq/guider/SeriesStatus");
     if (env->ExceptionCheck()) {
         return;
     }
-    JCguiderSeriesStatusClass = (jclass) env->NewGlobalRef(guiderSeriesStatusClass);
 
     JCguiderSeriesStatusConstructor = findMethod(env, JCguiderSeriesStatusClass, "<init>", "(Lorg/lsst/ccs/daq/guider/Status;Lorg/lsst/ccs/daq/guider/Series;Lorg/lsst/ccs/daq/guider/Series;)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    jclass guiderSeriesClass = findClass(env, "org/lsst/ccs/daq/guider/Series");
+    JCguiderSeriesClass = findClass(env, "org/lsst/ccs/daq/guider/Series");
     if (env->ExceptionCheck()) {
         return;
     }
-    JCguiderSeriesClass = (jclass) env->NewGlobalRef(guiderSeriesClass);
 
     JCguiderSeriesConstructor = findMethod(env, JCguiderSeriesClass, "<init>", "(JIILjava/util/List;Ljava/util/List;)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    jclass guiderSensorLocationClass = findClass(env, "org/lsst/ccs/utilities/location/SensorLocation");
+    JCguiderSensorLocationClass = findClass(env, "org/lsst/ccs/utilities/location/SensorLocation");
     if (env->ExceptionCheck()) {
         return;
     }
-    JCguiderSensorLocationClass = (jclass) env->NewGlobalRef(guiderSensorLocationClass);
 
     JCguiderSensorLocationConstructor = findMethod(env, JCguiderSensorLocationClass, "<init>", "(BBI)V");
     if (env->ExceptionCheck()) {
         return;
     }
 
-    jclass guiderStatusClass = findClass(env, "org/lsst/ccs/daq/guider/Status");
+    JCguiderStatusClass = findClass(env, "org/lsst/ccs/daq/guider/Status");
     if (env->ExceptionCheck()) {
         return;
     }
-    JCguiderStatusClass = (jclass) env->NewGlobalRef(guiderStatusClass);
 
     JCguiderStatusConstructor = findMethod(env, JCguiderStatusClass, "<init>", "(JIIII)V");
     if (env->ExceptionCheck()) {

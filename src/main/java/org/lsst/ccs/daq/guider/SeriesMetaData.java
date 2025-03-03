@@ -7,7 +7,7 @@ import org.lsst.ccs.daq.ims.Version;
  */
 public class SeriesMetaData {
 
-    private final ROICommon common;
+    private final ROICommonExtended common;
     private final ROILocation location;
     private final Version version;
     private final int firmware;
@@ -15,11 +15,9 @@ public class SeriesMetaData {
     private final String id;
     private final String platform;
     private final boolean splitroi;
-    private final int undercols;
     private final int ccdType;
-    
-    
-    private SeriesMetaData(int firmware, long serialNumber, String id, String platform, ROICommon common, ROILocation location, Version version, boolean splitroi, int undercols, int ccdType) {
+
+    private SeriesMetaData(int firmware, long serialNumber, String id, String platform, ROICommonExtended common, ROILocation location, Version version, boolean splitroi, int ccdType) {
         this.firmware = firmware;
         this.serialNumber = serialNumber;
         this.common = common;
@@ -28,11 +26,10 @@ public class SeriesMetaData {
         this.id = id;
         this.platform = platform;
         this.splitroi = splitroi;
-        this.undercols = undercols;
         this.ccdType = ccdType;
     }
 
-    public ROICommon getCommon() {
+    public ROICommonExtended getCommon() {
         return common;
     }
 
@@ -64,17 +61,12 @@ public class SeriesMetaData {
         return splitroi;
     }
 
-    public int getUnderCols() {
-        return undercols;
-    }
-
     public int getCcdType() {
         return ccdType;
     }
 
     @Override
     public String toString() {
-        return "SeriesMetaData{" + "common=" + common + ", location=" + location + ", version=" + version + ", firmware=" + firmware + ", serialNumber=" + serialNumber + ", id=" + id + ", platform=" + platform + ", splitroi=" + splitroi + ", undercols=" + undercols + ", ccdType=" + ccdType + '}';
+        return "SeriesMetaData{" + "common=" + common + ", location=" + location + ", version=" + version + ", firmware=" + firmware + ", serialNumber=" + serialNumber + ", id=" + id + ", platform=" + platform + ", splitroi=" + splitroi + ", ccdType=" + ccdType + '}';
     }
-    
 }

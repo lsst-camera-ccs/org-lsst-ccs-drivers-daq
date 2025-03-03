@@ -9,11 +9,11 @@ import java.util.List;
 public class Config {
 
     private final Status status;
-    private final ROICommon common;
+    private final ROICommonExtended common;
     private final List<ROILocation> locations;
     private final ClearParameters clearParameters;
 
-    private Config(Status status, ClearParameters clearParameters, ROICommon common, List<ROILocation> locations) {
+    private Config(Status status, ClearParameters clearParameters, ROICommonExtended common, List<ROILocation> locations) {
         this.status = status;
         this.clearParameters = clearParameters;
         this.common = common;
@@ -24,7 +24,7 @@ public class Config {
         return status;
     }
 
-    public ROICommon getCommon() {
+    public ROICommonExtended getCommon() {
         return common;
     }
 

@@ -52,7 +52,7 @@
                         <arg>target/classes/headers</arg>
                     </compilerArgs>
                 </configuration>
-            </plugin>    
+            </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
@@ -83,7 +83,7 @@
         <dependency>
             <groupId>org.lsst</groupId>
             <artifactId>org-lsst-ccs-image-utilities</artifactId>
-            <version>3.1.22</version>
+            <version>3.1.23-SNAPSHOT</version>
             <type>jar</type>
         </dependency>
         <dependency>
@@ -93,4 +93,3 @@
     </dependencies>
 
 </project>
-

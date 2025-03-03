@@ -10,7 +10,7 @@ public class ClearParameters {
     private final int preRows;
     private final int flushCount;
     private final int readRows;
-    public final static String DEFAULT_CLEAR_PARAMETERS_STRING = "{\"delay\":50,\"preRows\":100,\"flushCount\":2,\"readRows\":100}";
+    public final static String DEFAULT_CLEAR_PARAMETERS_STRING = "{\"delay\":50,\"preRows\":100,\"flushCount\":2,\"readRows\":0}";
     private final static ClearParameters DEFAULT_CLEAR_PARAMETERS = ClearParameters.parse(DEFAULT_CLEAR_PARAMETERS_STRING);
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)

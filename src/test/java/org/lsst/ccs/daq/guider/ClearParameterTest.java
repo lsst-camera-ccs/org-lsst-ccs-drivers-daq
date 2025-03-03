@@ -22,7 +22,7 @@ public class ClearParameterTest {
     @Test
     public void testToString() {
         ClearParameters clearParameters = ClearParameters.defaultValue();
-        assertEquals("{\"delay\":50,\"preRows\":100,\"flushCount\":2,\"readRows\":100}", clearParameters.toString());
+        assertEquals(ClearParameters.DEFAULT_CLEAR_PARAMETERS_STRING, clearParameters.toString());
     }
 
 }

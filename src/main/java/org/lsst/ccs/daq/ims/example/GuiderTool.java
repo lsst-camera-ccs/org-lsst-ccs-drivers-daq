@@ -128,7 +128,7 @@ public class GuiderTool {
 
 
     @Command(name = "fits", description = "Subscribe to notifications to write a FITS file")
-    public void fitsWrite(String location) throws DAQException {
+    public void fitsWrite(String location, @Argument(defaultValue = "false") boolean includeRawStamp) throws DAQException {
 
         FitsHeadersSpecificationsBuilder headerSpecBuilder = new FitsHeadersSpecificationsBuilder();
         headerSpecBuilder.addSpecFile("guider-primary.spec", "primary");
@@ -140,7 +140,7 @@ public class GuiderTool {
         FitsIntWriter.FileNamer namer = (Map<String, Object> props) -> new File(new File("."), String.format("%s_%s_%s.fits", props.get("ImageName"), props.get("RaftBay"), props.get("CCDSlot")));
 
         SensorLocation sensorLocation = SensorLocation.of(location);
-        FitsWriterFactory writer = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications, false);
+        FitsWriterFactory writer = new FitsWriterFactory(store.getPartition(), namer, headerSpecifications, includeRawStamp);
 
         Subscriber subscriber = guider.subscribe(Collections.singleton(sensorLocation), ByteOrder.BIG_ENDIAN, writer);
         subscribers.add(subscriber);

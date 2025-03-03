@@ -47,7 +47,7 @@ public class FitsWriterFactory implements GuiderListener {
     public FitsWriterFactory(String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
         this(partition, fileNamer, headerSpecifications, false);
     }
-    
+
     public FitsWriterFactory(String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, boolean includeRawStamp) {
         this.partition = partition;
         this.fileNamer = fileNamer;
@@ -129,7 +129,7 @@ public class FitsWriterFactory implements GuiderListener {
             ROILocation roiLocation = series.getLocation();
             SensorLocation sensorLocation = roiLocation.getLocation();
             Location rebLocation = sensorLocation.getRebLocation();
-            ROICommon common = series.getCommon();
+            ROICommonExtended common = series.getCommon();
             props.put("FileCreationTime", CCSTimeStamp.currentTime());
             props.put("RaftBay", rebLocation.getRaftName());
             props.put("RebSlot", rebLocation.getBoardName());
@@ -145,7 +145,10 @@ public class FitsWriterFactory implements GuiderListener {
             props.put("DAQVersion", series.getVersion().toString());
             props.put("Platform", series.getPlatform());
             props.put("ROISplit", series.isSplitROI());
-            props.put("ROIUnderCols", series.getUnderCols());
+            props.put("ROIUnderCols", common.getUnderCols());
+            props.put("ROIOverCols", common.getOverCols());
+            props.put("ROIOverRows", common.getOverRows());
+            props.put("ROIFlushCount", common.getFlushCount());
             props.put("ROICCDType", series.getCcdType());
             props.put("StartTime", state.getTimestamp());
             props.put("DAQSequence", state.getSequence());
@@ -162,7 +165,7 @@ public class FitsWriterFactory implements GuiderListener {
             metaDataSet.addMetaDataMap("primary", props);
             for (FitsHeaderMetadataProvider provider : metaDataProviders) {
                 metaDataSet.addMetaDataSet(provider.getPrimaryHeaderMetadata());
-            }            
+            }
             HeaderWriter.addMetaDataToHeader(computedFileName, primary, headerSpecifications.get("primary"), metaDataSet);
             FitsCheckSum.setChecksum(primary);
             primary.write(bf);
@@ -189,6 +192,7 @@ public class FitsWriterFactory implements GuiderListener {
             Map<String, Object> props = new HashMap<>();
             props.put("StampTime", state.getTimestamp());
             props.put("StampCount",++stampCount); // 1 based count used for EXTVER
+            props.put("ExtName", "IMAGE");
             int[][] intDummyData = new int[1][1];
             BasicHDU imageHDU = FitsFactory.hduFactory(intDummyData);
             Header header = imageHDU.getHeader();
@@ -206,7 +210,7 @@ public class FitsWriterFactory implements GuiderListener {
             HeaderWriter.addMetaDataToHeader(null, imageHDU, headerSpecifications.get("stamp"), metaDataSet);
             FitsCheckSum.setChecksum(imageHDU);
             //long computeChecksum = FitsCheckSum.computeChecksum(stamp);
-            //FitsCheckSum.updateDataSum(header, computeChecksum);
+            //FitsCheckSum.updateCheckSum(header, computeChecksum);
             long imageSize = stamp.remaining();
             header.write(bufferedFile);
             bufferedFile.getChannel().write(stamp);
@@ -217,7 +221,9 @@ public class FitsWriterFactory implements GuiderListener {
             Map<String, Object> props = new HashMap<>();
             props.put("StampTime", state.getTimestamp());
             props.put("StampCount",++rawStampCount); // 1 based count used for EXTVER
-            
+            props.put("ExtName", "RAWSTAMP");
+
+
             int[][] intDummyData = new int[1][1];
             BasicHDU binaryTableHDU = FitsFactory.hduFactory(intDummyData);
             Header header = binaryTableHDU.getHeader();
@@ -235,7 +241,9 @@ public class FitsWriterFactory implements GuiderListener {
             MetaDataSet metaDataSet = new MetaDataSet();
             metaDataSet.addMetaDataMap("stamp", props);
             HeaderWriter.addMetaDataToHeader(null, binaryTableHDU, headerSpecifications.get("stamp"), metaDataSet);
-            FitsCheckSum.setChecksum(binaryTableHDU);    
+            FitsCheckSum.setChecksum(binaryTableHDU);
+            //long computeChecksum = FitsCheckSum.computeChecksum(rawStamp);
+            //FitsCheckSum.updateCheckSum(header, computeChecksum);
             long imageSize = rawStamp.remaining();
             header.write(bufferedFile);
             bufferedFile.getChannel().write(rawStamp);
@@ -253,4 +261,3 @@ public class FitsWriterFactory implements GuiderListener {
     }
 
 }
-
