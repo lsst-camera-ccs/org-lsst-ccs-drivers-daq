@@ -8,6 +8,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.FitsException;
 import nom.tam.fits.FitsFactory;
@@ -31,6 +36,8 @@ import org.lsst.ccs.utilities.taitime.CCSTimeStamp;
  * @author tonyj
  */
 public class FitsWriterFactory implements GuiderListener {
+
+    private static final Logger LOG = Logger.getLogger(FitsWriterFactory.class.getName());
 
     private final String partition;
     private final FitsIntWriter.FileNamer fileNamer;
@@ -71,7 +78,13 @@ public class FitsWriterFactory implements GuiderListener {
     @Override
     public void pause(StateMetaData state) throws IOException, FitsException {
         if (currentFitsFileWriter != null) {
-            currentFitsFileWriter.close();
+            // Testing on TS8 shows that closing the File can take a suprisingly long time (~1 second)
+            // To avoid having the pause callback take so long, we perform the close asynchronously.
+            currentFitsFileWriter.closeAsync()
+            .exceptionally((t) -> {
+                LOG.log(Level.SEVERE, "Async close failed", t);
+                return null;
+            });
             currentFitsFileWriter = null;
         }
     }
@@ -182,10 +195,24 @@ public class FitsWriterFactory implements GuiderListener {
             primary.write(bufferedFile);
         }
 
+        public CompletableFuture<Void> closeAsync() {
+            return CompletableFuture.runAsync(() -> {
+                try {
+                    close();
+                } catch (IOException | FitsException x) {
+                    throw new CompletionException(x);
+                }
+            });
+        }
+
         @Override
         public void close() throws IOException, FitsException {
+            long start = System.nanoTime();
             fixupStampCount();
+            long start2 = System.nanoTime();
             bufferedFile.close();
+            long stop = System.nanoTime();
+            LOG.log(Level.INFO, "Closing file {0} took {1}ns fixupStampCount took {2}ns", new Object[]{temporaryFileName, stop-start, start2-start});
         }
 
         private void stamp(StateMetaData state, ByteBuffer stamp) throws FitsException, IOException {

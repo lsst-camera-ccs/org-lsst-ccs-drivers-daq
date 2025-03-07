@@ -180,56 +180,74 @@ public class Guider {
         }
 
         private void startCallback(StateMetaData state, SeriesMetaData series) {
-            LOG.log(Level.INFO, "start {0} {1}", new Object[]{state, series});
+            long start = System.nanoTime();
             try {
                 listener.start(state, series);
             } catch (Exception x) {
                 LOG.log(Level.WARNING, "start callback failed", x);
+            } finally {
+                long stop = System.nanoTime();
+                LOG.log(Level.INFO, "start took {0}ns {1} {2}", new Object[]{stop - start, state, series});
             }
         }
 
         void stopCallback(StateMetaData state) {
-            LOG.log(Level.INFO, "stop {0}", state);
+            long start = System.nanoTime();
             try {
                 listener.stop(state);
             } catch (Exception x) {
                 LOG.log(Level.WARNING, "stop callback failed", x);
+            } finally {
+                long stop = System.nanoTime();
+                LOG.log(Level.INFO, "stop took {0}ns {1}", new Object[]{stop - start, state});
             }
         }
 
         void pauseCallback(StateMetaData state) {
-            LOG.log(Level.INFO, "pause {0}", state);
+            long start = System.nanoTime();
             try {
                 listener.pause(state);
             } catch (Exception x) {
                 LOG.log(Level.WARNING, "pause callback failed", x);
+            } finally {
+                long stop = System.nanoTime();
+                LOG.log(Level.INFO, "pause took {0}ns {1}", new Object[]{stop - start, state});
             }
         }
 
         void resumeCallback(StateMetaData state) {
-            LOG.log(Level.INFO, "resume {0}", state);
+            long start = System.nanoTime();
             try {
                 listener.resume(state);
             } catch (Exception x) {
                 LOG.log(Level.WARNING, "resume callback failed", x);
+            } finally {
+                long stop = System.nanoTime();
+                LOG.log(Level.INFO, "resume took {0}ns {1}", new Object[]{stop - start, state});
             }
         }
 
         void rawStampCallback(StateMetaData state, ByteBuffer rawStamp) {
-            LOG.log(Level.INFO, "rawStamp {0} {1}", new Object[]{state, rawStamp.remaining()});
+            long start = System.nanoTime();
             try {
                 listener.rawStamp(state, rawStamp);
             } catch (Exception x) {
                 LOG.log(Level.WARNING, "rawStamp callback failed", x);
+            } finally {
+                long stop = System.nanoTime();
+                LOG.log(Level.INFO, "rawStamp took {0}ns {1} {2}", new Object[]{stop - start, state, rawStamp.remaining()});
             }
         }
 
         void stampCallback(StateMetaData state, ByteBuffer stamp) {
-            LOG.log(Level.INFO, "stamp {0} {1}", new Object[]{state, stamp.remaining()});
+            long start = System.nanoTime();
             try {
                 listener.stamp(state, stamp);
             } catch (Exception x) {
                 LOG.log(Level.WARNING, "stamp callback failed", x);
+            } finally {
+                long stop = System.nanoTime();
+                LOG.log(Level.INFO, "stamp took {0}ns {1} {2}", new Object[]{stop - start, state, stamp.remaining()});
             }
         }
 
