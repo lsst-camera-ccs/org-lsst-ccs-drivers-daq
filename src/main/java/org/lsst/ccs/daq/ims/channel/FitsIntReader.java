@@ -7,6 +7,9 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import org.lsst.ccs.utilities.location.Location.LocationType;
+
 import nom.tam.fits.BasicHDU;
 import nom.tam.fits.Data;
 import nom.tam.fits.FitsException;
@@ -17,7 +20,6 @@ import nom.tam.fits.TruncatedFileException;
 import nom.tam.fits.header.Standard;
 import nom.tam.image.compression.hdu.CompressedImageHDU;
 import nom.tam.util.BufferedFile;
-import org.lsst.ccs.utilities.location.Location.LocationType;
 
 /**
  * Open a set of FITS files as a single DAQ source.
@@ -33,12 +35,13 @@ public class FitsIntReader implements ReadableIntChannel {
     private final List<Segment> segments;
 
     /**
-     * 
+     * Read a set of FITS files, and multiplex them into them into a single DAQ 2-day store element.
+     *
      * @param sourceType The type of source to read (WAVEFRONT, GUIDER, SCIENCE)
      * @param auxtel Whether there are auxtel files or not
      * @param files The set of files to read.
      * @throws IOException
-     * @throws TruncatedFileException 
+     * @throws TruncatedFileException
      */
     public FitsIntReader(LocationType sourceType, boolean auxtel, File... files) throws IOException, TruncatedFileException {
         ReadoutConfig config = new ReadoutConfig(sourceType, auxtel);
@@ -51,7 +54,11 @@ public class FitsIntReader implements ReadableIntChannel {
         }
         segments = new ArrayList<>();
         for (File file : files) {
-            openFITSFile(segments, file);
+            openFITSFile(segments, file, nSegmentsPerCCD);
+        }
+        int expectedSegments = config.getDataSegmentMap().length * config.getDataSensorMap().length;
+        if (segments.size() != expectedSegments) {
+            throw new IOException("Wrong number of segments, expected "+expectedSegments+" actual "+segments.size()+" from "+files.length+" files");
         }
 
         ReadableIntChannel[] inputs = new ReadableIntChannel[segments.size()];
@@ -80,11 +87,11 @@ public class FitsIntReader implements ReadableIntChannel {
         }
     }
 
-    private static void openFITSFile(List<Segment> segments, File file) throws IOException, TruncatedFileException {
+    private static void openFITSFile(List<Segment> segments, File file, int nSegments) throws IOException, TruncatedFileException {
         BufferedFile bf = new BufferedFile(file, "r");
-        for (int i = 0; i < 17; i++) {
+        for (int i = 0; i < nSegments + 1; i++) {
             Header header = new Header(bf);
-            // Skip primary header, assumes file contains 16 image extensions
+            // Skip primary header
             String ccdSlot = null;
             if (i == 0) {
                 ccdSlot = header.getStringValue("CCDSLOT");
