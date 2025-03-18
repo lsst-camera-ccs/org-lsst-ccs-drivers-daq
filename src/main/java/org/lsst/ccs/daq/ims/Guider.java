@@ -11,6 +11,7 @@ import org.lsst.ccs.daq.guider.ClearParameters;
 import org.lsst.ccs.daq.guider.Config;
 import org.lsst.ccs.daq.guider.GuiderListener;
 import org.lsst.ccs.daq.guider.ROICommon;
+import org.lsst.ccs.daq.guider.ROICommonExtended;
 import org.lsst.ccs.daq.guider.ROILocation;
 import org.lsst.ccs.utilities.location.SensorLocation;
 import org.lsst.ccs.daq.guider.SeriesMetaData;
@@ -38,7 +39,12 @@ public class Guider {
     public Status start(ROICommon common, List<ROILocation> locations) throws DAQException {
         return this.start(common, locations, null);
     }
-    /**
+
+
+    public Status start(ROICommon common, List<ROILocation> locations, String id) throws DAQException {
+        return start(new ROICommonExtended(common), locations, id);
+    }
+        /**
      * Start the guider, using the specified ROI locations
      *
      * @param common The common settings for this start command
@@ -47,7 +53,7 @@ public class Guider {
      * @return The status after the command completes
      * @throws DAQException
      */
-    public Status start(ROICommon common, List<ROILocation> locations, String id) throws DAQException {
+    public Status start(ROICommonExtended common, List<ROILocation> locations, String id) throws DAQException {
         final int nLocs = locations.size();
         int[] roiData = new int[nLocs * 5];
         for (int i = 0; i < nLocs; i++) {
@@ -60,7 +66,7 @@ public class Guider {
             roiData[j + 3] = location.getStartRow();
             roiData[j + 4] = location.getStartCol();
         }
-        return store.startGuider(guider, common.getRows(), common.getCols(), common.getIntegrationTimeMillis(), id, roiData);
+        return store.startGuider(guider, common.getRows(), common.getCols(), common.getIntegrationTimeMillis(),  common.getOverRows(), common.getUnderCols(), common.getOverCols(), common.getFlushCount(), id, roiData);
     }
 
     public void validate(ROICommon common, List<ROILocation> locations) throws DAQException {

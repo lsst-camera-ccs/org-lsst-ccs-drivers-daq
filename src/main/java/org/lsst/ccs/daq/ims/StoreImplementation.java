@@ -83,7 +83,7 @@ interface StoreImplementation {
 
     void detachGuider(long guider) throws DAQException;
 
-    Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) throws DAQException;
+    Status startGuider(long guider, int rows, int cols, int integration, int overRows, int underCols, int overCols, int flushCount, String id, int[] roiData) throws DAQException;
 
     void validateGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int[] roiData) throws DAQException;
 

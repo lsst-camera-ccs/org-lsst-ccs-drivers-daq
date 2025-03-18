@@ -249,7 +249,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Status startGuider(long guider, int rows, int cols, int integration, String id, int[] roiData) {
+    public Status startGuider(long guider, int rows, int cols, int integration, int overRows, int underCols, int overCols, int flushCount, String id, int[] roiData) {
         return null;
     }
 

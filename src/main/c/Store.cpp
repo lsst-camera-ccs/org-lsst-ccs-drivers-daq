@@ -399,10 +399,10 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_abort
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_startGuider
-(JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jstring comment, jintArray roiData) {
+(JNIEnv* env, jobject obj, jlong guider_, jint rows, jint cols, jint integration, jint overRows, jint underCols, jint overCols, jint flushCount, jstring comment, jintArray roiData) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
-    GDS::RoiCommon common(rows, cols, integration);
+    GDS::RoiCommon common(rows, cols, integration, overRows, underCols, overCols, flushCount);
     GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];
     jint* values = env->GetIntArrayElements(roiData, 0);
     int nlocs = env->GetArrayLength(roiData)/5;
@@ -552,10 +552,10 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_sl
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_wakeGuider
-(JNIEnv* env, jobject obj, jlong guider_, jint delay, jint preRows, jint flushCount, jint readRows) {
+(JNIEnv* env, jobject obj, jlong guider_, jint delay, jint preRows, jint flushCount, jint readRows, jint postRows, jint overRows) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
-    GDS::ClearParameters clearParameters(delay, preRows, flushCount, readRows);
+    GDS::ClearParameters clearParameters(delay, preRows, flushCount, readRows, postRows, overRows);
     int error = guider->wake(clearParameters, status);
     if (!error) error = status.status();
     if (error) {
@@ -570,10 +570,10 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_wa
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_clearGuider
-(JNIEnv* env, jobject obj, jlong guider_, jint delay, jint preRows, jint flushCount, jint readRows) {
+(JNIEnv* env, jobject obj, jlong guider_, jint delay, jint preRows, jint flushCount, jint readRows, jint postRows, jint overRows) {
     GDS::Client*  guider = (GDS::Client*) guider_;
     GDS::Status status;
-    GDS::ClearParameters clearParameters(delay, preRows, flushCount, readRows);
+    GDS::ClearParameters clearParameters(delay, preRows, flushCount, readRows, postRows, overRows);
     int error = guider->clear(clearParameters, status);
     if (!error) error = status.status();
     if (error) {

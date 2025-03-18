@@ -10,15 +10,21 @@ public class ClearParameters {
     private final int preRows;
     private final int flushCount;
     private final int readRows;
-    public final static String DEFAULT_CLEAR_PARAMETERS_STRING = "{\"delay\":50,\"preRows\":100,\"flushCount\":2,\"readRows\":0}";
+    private final int postRows;
+    private final int overRows;
+    public final static String DEFAULT_CLEAR_PARAMETERS_STRING = "{\"delay\":50,\"preRows\":100,\"flushCount\":2,\"readRows\":0,\"postRows\":0,\"overRows\":0}";
     private final static ClearParameters DEFAULT_CLEAR_PARAMETERS = ClearParameters.parse(DEFAULT_CLEAR_PARAMETERS_STRING);
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
-    public ClearParameters(@JsonProperty("delay") int delay, @JsonProperty("preRows") int preRows, @JsonProperty("flushCount") int flushCount, @JsonProperty("readRows") int readRows) {
+    public ClearParameters(@JsonProperty("delay") int delay, @JsonProperty("preRows") int preRows,
+        @JsonProperty("flushCount") int flushCount, @JsonProperty("readRows") int readRows,
+        @JsonProperty("postRows") int postRows, @JsonProperty("overRows") int overRows) {
         this.delay = delay;
         this.preRows = preRows;
         this.flushCount = flushCount;
         this.readRows = readRows;
+        this.postRows = postRows;
+        this.overRows = overRows;
     }
 
     public int getDelay() {
@@ -35,6 +41,14 @@ public class ClearParameters {
 
     public int getReadRows() {
         return readRows;
+    }
+
+    public int getPostRows() {
+        return postRows;
+    }
+
+    public int getOverRows() {
+        return overRows;
     }
 
     public static ClearParameters parse(String clearSpec) throws IllegalArgumentException {

@@ -84,7 +84,9 @@ jobject createGuiderClearParameters(JNIEnv* env, const GDS::ClearParameters& cle
     jint preRows = clearParameters.preRows();
     jint flushCount = clearParameters.flushCount();
     jint readRows = clearParameters.readRows();
-    return env->NewObject(JCguiderClearParametersClass, JCguiderClearParametersConstructor, delay, preRows, flushCount, readRows);
+    jint postRows =  clearParameters.postRows();
+    jint overRows = clearParameters.overRows();
+    return env->NewObject(JCguiderClearParametersClass, JCguiderClearParametersConstructor, delay, preRows, flushCount, readRows, postRows, overRows);
 }
 
 jobject createSensorLocation(JNIEnv* env, const GDS::Location& location) {
@@ -315,7 +317,7 @@ void Guider_OnLoad(JNIEnv* env) {
         return;
     }
 
-    JCguiderClearParametersConstructor = findMethod(env, JCguiderClearParametersClass, "<init>", "(IIII)V");
+    JCguiderClearParametersConstructor = findMethod(env, JCguiderClearParametersClass, "<init>", "(IIIIII)V");
     if (env->ExceptionCheck()) {
         return;
     }

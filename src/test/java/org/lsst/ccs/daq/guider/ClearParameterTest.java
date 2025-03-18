@@ -17,6 +17,8 @@ public class ClearParameterTest {
         assertEquals(100, clearParameters.getReadRows());
         assertEquals(50, clearParameters.getDelay());
         assertEquals(100, clearParameters.getPreRows());
+        assertEquals(0, clearParameters.getPostRows());
+        assertEquals(0, clearParameters.getOverRows());
     }
 
     @Test

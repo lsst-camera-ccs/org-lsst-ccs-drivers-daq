@@ -112,9 +112,9 @@ public class GuiderTool {
     }
 
     @Command(name = "clear", description = "Clear the guider")
-    public Status clear(int delay, int preRows, int flushCount, int readRows) throws DAQException {
+    public Status clear(String clearSpec) throws DAQException {
         checkStore();
-        ClearParameters cp = new ClearParameters(delay, preRows, flushCount, readRows);
+        ClearParameters cp = ClearParameters.parse(clearSpec);
         return guider.clear(cp);
     }
 

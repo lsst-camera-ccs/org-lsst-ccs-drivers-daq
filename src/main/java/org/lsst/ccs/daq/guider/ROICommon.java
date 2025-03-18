@@ -26,6 +26,12 @@ public class ROICommon {
         this.integrationTimeMillis = integrationTimeMillis;
     }
 
+    public ROICommon(ROICommon common) {
+        this.rows = common.getRows();
+        this.cols = common.getCols();
+        this.integrationTimeMillis = common.getIntegrationTimeMillis();
+    }
+
     public int getRows() {
         return rows;
     }
