@@ -95,7 +95,7 @@ interface StoreImplementation {
 
     Status sleepGuider(long guider) throws DAQException;
 
-    Status wakeGuider(long guider, int delay, int preRows, int flushCount, int readRows) throws DAQException;
+    Status wakeGuider(long guider, int delay, int preRows, int flushCount, int readRows, int postRows, int overRows) throws DAQException;
 
     long attachGuiderSubscriber(String partition, boolean bigEndian, int[] locations) throws DAQException;
 
@@ -109,7 +109,7 @@ interface StoreImplementation {
 
     SeriesStatus guiderSeries(long guider) throws DAQException;
 
-    Status clearGuider(long guider, int delay, int preRows, int flushCount, int readRows) throws DAQException;
+    Status clearGuider(long guider, int delay, int preRows, int flushCount, int readRows, int postRows, int overRows) throws DAQException;
 
     String getClientPlatform(String partition) throws DAQException;
 }

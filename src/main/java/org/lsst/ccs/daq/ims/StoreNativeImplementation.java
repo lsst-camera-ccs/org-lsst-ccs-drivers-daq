@@ -155,10 +155,10 @@ class StoreNativeImplementation implements StoreImplementation {
     public synchronized native Status sleepGuider(long guider) throws DAQException;
 
     @Override
-    public synchronized native Status wakeGuider(long guider, int delay, int preRows, int flushCount, int readRows) throws DAQException;
+    public synchronized native Status wakeGuider(long guider, int delay, int preRows, int flushCount, int readRows, int postRows, int overRows) throws DAQException;
 
     @Override
-    public synchronized native Status clearGuider(long guider, int delay, int preRows, int flushCount, int readRows) throws DAQException;
+    public synchronized native Status clearGuider(long guider, int delay, int preRows, int flushCount, int readRows, int postRows, int overRows) throws DAQException;
 
     @Override
     public native void waitForGuider(long subscriber, Guider.Subscriber callback) throws DAQException;

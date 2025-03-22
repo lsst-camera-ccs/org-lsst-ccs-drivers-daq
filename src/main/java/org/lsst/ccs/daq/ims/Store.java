@@ -523,7 +523,7 @@ public class Store implements AutoCloseable {
     }
 
     Status  wakeGuider(long guider, ClearParameters clearParameters) throws DAQException {
-        return impl.wakeGuider(guider,  clearParameters.getDelay(), clearParameters.getPreRows(), clearParameters.getFlushCount(), clearParameters.getReadRows());
+        return impl.wakeGuider(guider,  clearParameters.getDelay(), clearParameters.getPreRows(), clearParameters.getFlushCount(), clearParameters.getReadRows(), clearParameters.getPostRows(), clearParameters.getOverRows());
     }
 
     Status  startGuider(long guider, int nRows, int nCols, int integrationTimeMilliSeconds, int overRows, int underCols, int overCols, int flushCount, String id, int[] roiData) throws DAQException {
@@ -559,7 +559,7 @@ public class Store implements AutoCloseable {
     }
 
     public Status clearGuider(long guider, ClearParameters clearParameters) throws DAQException {
-        return impl.clearGuider(guider, clearParameters.getDelay(), clearParameters.getPreRows(), clearParameters.getFlushCount(), clearParameters.getReadRows());
+        return impl.clearGuider(guider, clearParameters.getDelay(), clearParameters.getPreRows(), clearParameters.getFlushCount(), clearParameters.getReadRows(), clearParameters.getPostRows(), clearParameters.getOverRows());
     }
 
 }

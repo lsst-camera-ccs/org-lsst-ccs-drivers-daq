@@ -278,7 +278,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Status wakeGuider(long guider, int delay, int preRows, int flushCount, int readRows) {
+    public Status wakeGuider(long guider, int delay, int preRows, int flushCount, int readRows, int postRows, int overRows) {
         return null;
     }
 
@@ -310,7 +310,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Status clearGuider(long guider, int delay, int preRows, int flushCount, int readRows) throws DAQException {
+    public Status clearGuider(long guider, int delay, int preRows, int flushCount, int readRows, int postRows, int overRows) throws DAQException {
         return null;
     }
 
