@@ -9,7 +9,7 @@ import java.time.Instant;
 public class Status {
 
     public enum State {
-        UNDEFINED, STOPPED, PAUSED, RUNNING, ERROR, OFF, CLEARING
+        UNDEFINED, IDLECLEARING, PAUSED, RUNNING, ERROR, OFF, CLEARING
     }
     private final Instant timestamp;
     private final int status;
