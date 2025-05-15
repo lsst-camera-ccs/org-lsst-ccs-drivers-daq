@@ -130,12 +130,13 @@ jobject createStateMetadata(JNIEnv* env, const GDS::StateMetadata& state) {
     jint type = state.type();
     jint status = state.status();
     jint sequence = state.sequence();
+    jint stamp = state.stamp();
     jlong timestamp = (uint64_t) state.timestamp();
     jstring comment = env->NewStringUTF(state.comment());
     const GDS::Location location = state.sensor();
     const DAQ::Location source = location.source();
     jint sensor = location.sensor();
-    return env->NewObject(JCguiderStateMetadataClass, JCguiderStateMetadataConstructor, type, status, sequence, timestamp, location.bay(), source.board(), sensor, comment);
+    return env->NewObject(JCguiderStateMetadataClass, JCguiderStateMetadataConstructor, type, status, sequence, stamp, timestamp, location.bay(), source.board(), sensor, comment);
 }
 
 jobject createSeriesMetadata(JNIEnv* env, const GDS::SeriesMetadata& series) {
@@ -267,7 +268,7 @@ void Guider_OnLoad(JNIEnv* env) {
         return;
     }
 
-    JCguiderStateMetadataConstructor = findMethod(env,JCguiderStateMetadataClass, "<init>", "(IIIJBBILjava/lang/String;)V");
+    JCguiderStateMetadataConstructor = findMethod(env,JCguiderStateMetadataClass, "<init>", "(IIIIJBBILjava/lang/String;)V");
     if (env->ExceptionCheck()) {
         return;
     }

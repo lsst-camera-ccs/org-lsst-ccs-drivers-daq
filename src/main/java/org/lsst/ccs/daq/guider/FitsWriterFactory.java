@@ -218,6 +218,7 @@ public class FitsWriterFactory implements GuiderListener {
         private void stamp(StateMetaData state, ByteBuffer stamp) throws FitsException, IOException {
             Map<String, Object> props = new HashMap<>();
             props.put("StampTime", state.getTimestamp());
+            props.put("DAQStamp", state.getStamp());
             props.put("StampCount",++stampCount); // 1 based count used for EXTVER
             props.put("ExtName", "IMAGE");
             int[][] intDummyData = new int[1][1];
