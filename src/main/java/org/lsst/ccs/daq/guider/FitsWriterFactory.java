@@ -119,6 +119,7 @@ public class FitsWriterFactory implements GuiderListener {
         private int stampCount = 0;
         private int rawStampCount = 0;
         private final BasicHDU<?> primary;
+        private int lastDAQStamp;
 
         public FitsWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, List<FitsHeaderMetadataProvider> metaDataProviders) throws IOException, FitsException {
             // The OBSID used to be provided in series meta-data, but now in state meta-data comment.
@@ -187,6 +188,9 @@ public class FitsWriterFactory implements GuiderListener {
         }
 
         private void fixupStampCount() throws IOException, FitsException {
+            if (stampCount != lastDAQStamp) {
+                LOG.log(Level.WARNING, "DAQ stamp count {0} not equal to number of stamps received {1}", new Object[]{lastDAQStamp, stampCount});
+            }
             Header header = primary.getHeader();
             HeaderCard stampsCard = header.findCard("N_STAMPS");
             stampsCard.setValue(stampCount);
@@ -218,6 +222,7 @@ public class FitsWriterFactory implements GuiderListener {
         private void stamp(StateMetaData state, ByteBuffer stamp) throws FitsException, IOException {
             Map<String, Object> props = new HashMap<>();
             props.put("StampTime", state.getTimestamp());
+            lastDAQStamp =  state.getStamp();
             props.put("DAQStamp", state.getStamp());
             props.put("StampCount",++stampCount); // 1 based count used for EXTVER
             props.put("ExtName", "IMAGE");
@@ -248,6 +253,7 @@ public class FitsWriterFactory implements GuiderListener {
         private void rawStamp(StateMetaData state, ByteBuffer rawStamp) throws FitsException, IOException {
             Map<String, Object> props = new HashMap<>();
             props.put("StampTime", state.getTimestamp());
+            props.put("DAQStamp", state.getStamp());
             props.put("StampCount",++rawStampCount); // 1 based count used for EXTVER
             props.put("ExtName", "RAWSTAMP");
 
