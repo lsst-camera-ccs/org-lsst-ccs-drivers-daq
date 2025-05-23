@@ -80,6 +80,8 @@ public class FitsWriterFactory implements GuiderListener {
         if (currentFitsFileWriter != null) {
             // Testing on TS8 shows that closing the File can take a suprisingly long time (~1 second)
             // To avoid having the pause callback take so long, we perform the close asynchronously.
+            // TODO: Get final number of DAQstamps and insert them into the header
+            // int DAQStamp = state.getStamp();
             currentFitsFileWriter.closeAsync()
             .exceptionally((t) -> {
                 LOG.log(Level.SEVERE, "Async close failed", t);
@@ -188,8 +190,9 @@ public class FitsWriterFactory implements GuiderListener {
         }
 
         private void fixupStampCount() throws IOException, FitsException {
-            if (stampCount != lastDAQStamp) {
-                LOG.log(Level.WARNING, "DAQ stamp count {0} not equal to number of stamps received {1}", new Object[]{lastDAQStamp, stampCount});
+            // DAQStamp is zero based
+            if (stampCount != lastDAQStamp+1) {
+                LOG.log(Level.WARNING, "{2}: DAQ stamp count {0} not equal to number of stamps received {1}", new Object[]{lastDAQStamp+1, stampCount, obsid});
             }
             Header header = primary.getHeader();
             HeaderCard stampsCard = header.findCard("N_STAMPS");
