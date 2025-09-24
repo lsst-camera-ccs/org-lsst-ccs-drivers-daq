@@ -18,15 +18,18 @@ public class StateMetaData {
     }
     private final State state;
     private final Status status;
-    private final long sequence;
+    private final int sequence;
+    private final int stamp;
     private final Instant timestamp;
     private final SensorLocation sensorLocation;
     private final String comment;
 
-    private StateMetaData(int type, int status, int sequence, long timestampNanos, byte bay, byte board, int sensor, String comment) {
+    @SuppressWarnings("unused")
+    private StateMetaData(int type, int status, int sequence, int stamp, long timestampNanos, byte bay, byte board, int sensor, String comment) {
         this.state = State.values()[type];
         this.status = Status.values()[status];
         this.sequence = sequence;
+        this.stamp = stamp;
         this.timestamp = Instant.ofEpochSecond(timestampNanos / 1_000_000_000, timestampNanos % 1_000_000_000);
         this.sensorLocation = new SensorLocation(new Location(bay, board), sensor);
         this.comment = comment;
@@ -40,8 +43,12 @@ public class StateMetaData {
         return status;
     }
 
-    public long getSequence() {
+    public int getSequence() {
         return sequence;
+    }
+
+    public int getStamp() {
+        return stamp;
     }
 
     public Instant getTimestamp() {
@@ -58,6 +65,6 @@ public class StateMetaData {
 
     @Override
     public String toString() {
-        return "StateMetaData{" + "state=" + state + ", status=" + status + ", sequence=" + sequence + ", timestamp=" + timestamp + ", sensorLocation=" + sensorLocation + ", comment=" + comment + '}';
+        return "StateMetaData{" + "state=" + state + ", status=" + status + ", sequence=" + sequence + ", stamp=" + stamp + ", timestamp=" + timestamp + ", sensorLocation=" + sensorLocation + ", comment=" + comment + '}';
     }
 }

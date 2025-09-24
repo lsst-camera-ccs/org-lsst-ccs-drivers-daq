@@ -80,6 +80,8 @@ public class FitsWriterFactory implements GuiderListener {
         if (currentFitsFileWriter != null) {
             // Testing on TS8 shows that closing the File can take a suprisingly long time (~1 second)
             // To avoid having the pause callback take so long, we perform the close asynchronously.
+            // TODO: Get final number of DAQstamps and insert them into the header
+            // int DAQStamp = state.getStamp();
             currentFitsFileWriter.closeAsync()
             .exceptionally((t) -> {
                 LOG.log(Level.SEVERE, "Async close failed", t);
@@ -119,6 +121,7 @@ public class FitsWriterFactory implements GuiderListener {
         private int stampCount = 0;
         private int rawStampCount = 0;
         private final BasicHDU<?> primary;
+        private int lastDAQStamp;
 
         public FitsWriter(StateMetaData state, SeriesMetaData series, String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications, List<FitsHeaderMetadataProvider> metaDataProviders) throws IOException, FitsException {
             // The OBSID used to be provided in series meta-data, but now in state meta-data comment.
@@ -187,6 +190,10 @@ public class FitsWriterFactory implements GuiderListener {
         }
 
         private void fixupStampCount() throws IOException, FitsException {
+            // DAQStamp is zero based
+            if (stampCount != lastDAQStamp+1) {
+                LOG.log(Level.WARNING, "{2}: DAQ stamp count {0} not equal to number of stamps received {1}", new Object[]{lastDAQStamp+1, stampCount, obsid});
+            }
             Header header = primary.getHeader();
             HeaderCard stampsCard = header.findCard("N_STAMPS");
             stampsCard.setValue(stampCount);
@@ -218,6 +225,8 @@ public class FitsWriterFactory implements GuiderListener {
         private void stamp(StateMetaData state, ByteBuffer stamp) throws FitsException, IOException {
             Map<String, Object> props = new HashMap<>();
             props.put("StampTime", state.getTimestamp());
+            lastDAQStamp =  state.getStamp();
+            props.put("DAQStamp", state.getStamp());
             props.put("StampCount",++stampCount); // 1 based count used for EXTVER
             props.put("ExtName", "IMAGE");
             int[][] intDummyData = new int[1][1];
@@ -247,6 +256,7 @@ public class FitsWriterFactory implements GuiderListener {
         private void rawStamp(StateMetaData state, ByteBuffer rawStamp) throws FitsException, IOException {
             Map<String, Object> props = new HashMap<>();
             props.put("StampTime", state.getTimestamp());
+            props.put("DAQStamp", state.getStamp());
             props.put("StampCount",++rawStampCount); // 1 based count used for EXTVER
             props.put("ExtName", "RAWSTAMP");
 

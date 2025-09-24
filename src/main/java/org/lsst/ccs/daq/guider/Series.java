@@ -16,6 +16,7 @@ public class Series {
     private final List<SensorLocation> configured;
     private final List<SensorLocation> remaining;
 
+    @SuppressWarnings("unused")
     private Series(long timestampNanos, int sequence, int stamps, List<SensorLocation> configured, List<SensorLocation> remaining) {
         this.begin = Instant.ofEpochSecond(timestampNanos / 1_000_000_000, timestampNanos % 1_000_000_000);
         this.sequence = sequence;
