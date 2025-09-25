@@ -11,7 +11,7 @@ public class Status {
     // These should be kept in sync with the states defined in the DAQ
     // enum : uint8_t {UNDEFINED=0, IDLECLEARING=1, PAUSED=2, RUNNING=3, ERROR=4, SLEEPING=5, CLEARING=6, IDLEPAUSE=7};
     public enum State {
-        UNDEFINED, STOPPED, PAUSED, RUNNING, ERROR, OFF, CLEARING
+        UNDEFINED, IDLECLEARING, PAUSED, RUNNING, ERROR, SLEEPING, CLEARING, IDLEPAUSE
     }
     private final Instant timestamp;
     private final int status;
