@@ -73,26 +73,40 @@ public class FitsWriterFactory implements GuiderListener {
 
     @Override
     public void stop(StateMetaData state) {
+        if (currentFitsFileWriter != null) {
+            // Normally file is closed on pause, but sometimes pause fails with an error,
+            // So if the file is still open, we should close it now LSSTCCSDRIVER-478
+            LOG.log(Level.WARNING, "Previous guider FITS file was still open on stop");
+            closeFile();
+        }
     }
 
     @Override
-    public void pause(StateMetaData state) throws IOException, FitsException {
+    public void pause(StateMetaData state) {
+        closeFile();
+    }
+
+    private void closeFile() {
         if (currentFitsFileWriter != null) {
             // Testing on TS8 shows that closing the File can take a suprisingly long time (~1 second)
             // To avoid having the pause callback take so long, we perform the close asynchronously.
             // TODO: Get final number of DAQstamps and insert them into the header
             // int DAQStamp = state.getStamp();
             currentFitsFileWriter.closeAsync()
-            .exceptionally((t) -> {
-                LOG.log(Level.SEVERE, "Async close failed", t);
-                return null;
-            });
+                    .exceptionally((t) -> {
+                        LOG.log(Level.SEVERE, "Async close failed", t);
+                        return null;
+                    });
             currentFitsFileWriter = null;
         }
     }
 
     @Override
     public void resume(StateMetaData state) throws IOException, FitsException {
+        if (currentFitsFileWriter != null) {
+            LOG.log(Level.WARNING, "Previous guider FITS file was still open on resume");
+            closeFile();
+        }
         currentFitsFileWriter = createFitsFileWriter(state, series, partition, fileNamer, headerSpecifications);
     }
 
