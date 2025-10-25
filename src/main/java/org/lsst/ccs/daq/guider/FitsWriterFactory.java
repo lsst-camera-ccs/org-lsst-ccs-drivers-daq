@@ -31,7 +31,8 @@ import org.lsst.ccs.utilities.location.Location;
 import org.lsst.ccs.utilities.taitime.CCSTimeStamp;
 
 /**
- * Creates a new FitsWriter when it receives a start event from the guider
+ * Creates a new FitsWriter when it receives a resume event from the guider.
+ * Creates one FitsWriter per guider sensor.
  *
  * @author tonyj
  */
@@ -42,13 +43,12 @@ public class FitsWriterFactory implements GuiderListener {
     private final String partition;
     private final FitsIntWriter.FileNamer fileNamer;
     private final Map<String, HeaderSpecification> headerSpecifications;
-    private FitsWriter currentFitsFileWriter;
+    private volatile FitsWriter currentFitsFileWriter;
     private final boolean includeRawStamp;
     private SeriesMetaData series;
 
     static {
         FitsFactory.setUseHierarch(true);
-        FitsFactory.setLongStringsEnabled(true);
     }
 
     public FitsWriterFactory(String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
@@ -76,8 +76,12 @@ public class FitsWriterFactory implements GuiderListener {
         if (currentFitsFileWriter != null) {
             // Normally file is closed on pause, but sometimes pause fails with an error,
             // So if the file is still open, we should close it now LSSTCCSDRIVER-478
-            LOG.log(Level.WARNING, "Previous guider FITS file was still open on stop");
-            closeFile();
+            synchronized (this) {
+                if (currentFitsFileWriter != null) {
+                    LOG.log(Level.WARNING, "Previous guider FITS file {0} was still open on stop", currentFitsFileWriter.getFileName());
+                    closeFile();
+                }
+            }
         }
     }
 
@@ -86,15 +90,16 @@ public class FitsWriterFactory implements GuiderListener {
         closeFile();
     }
 
-    private void closeFile() {
+    private synchronized void closeFile() {
         if (currentFitsFileWriter != null) {
             // Testing on TS8 shows that closing the File can take a suprisingly long time (~1 second)
             // To avoid having the pause callback take so long, we perform the close asynchronously.
             // TODO: Get final number of DAQstamps and insert them into the header
             // int DAQStamp = state.getStamp();
-            currentFitsFileWriter.closeAsync()
+            final FitsWriter fileToClose = currentFitsFileWriter;
+            fileToClose.closeAsync()
                     .exceptionally((t) -> {
-                        LOG.log(Level.SEVERE, "Async close failed", t);
+                        LOG.log(Level.SEVERE, "Async close failed: "+fileToClose.getFileName(), t);
                         return null;
                     });
             currentFitsFileWriter = null;
@@ -104,8 +109,12 @@ public class FitsWriterFactory implements GuiderListener {
     @Override
     public void resume(StateMetaData state) throws IOException, FitsException {
         if (currentFitsFileWriter != null) {
-            LOG.log(Level.WARNING, "Previous guider FITS file was still open on resume");
-            closeFile();
+            synchronized (this) {
+                if (currentFitsFileWriter != null) {
+                    LOG.log(Level.WARNING, "Previous guider FITS file {0} was still open on resume", currentFitsFileWriter);
+                    closeFile();
+                }
+            }
         }
         currentFitsFileWriter = createFitsFileWriter(state, series, partition, fileNamer, headerSpecifications);
     }
@@ -206,7 +215,7 @@ public class FitsWriterFactory implements GuiderListener {
         private void fixupStampCount() throws IOException, FitsException {
             // DAQStamp is zero based
             if (stampCount != lastDAQStamp+1) {
-                LOG.log(Level.WARNING, "{2}: DAQ stamp count {0} not equal to number of stamps received {1}", new Object[]{lastDAQStamp+1, stampCount, obsid});
+                LOG.log(Level.WARNING, "{2}: DAQ stamp count {0} not equal to number of stamps received {1}", new Object[]{lastDAQStamp+1, stampCount, temporaryFileName});
             }
             Header header = primary.getHeader();
             HeaderCard stampsCard = header.findCard("N_STAMPS");
