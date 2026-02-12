@@ -5,17 +5,17 @@
     <artifactId>org-lsst-ccs-drivers-daq</artifactId>
     <version>1.5.15-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <url>${org.lsst.ccs.site.url}</url>
+    <url>${org.lsst.ccs.site.url.base}${org.lsst.ccs.site.dir}</url>
     <name>LSST CCS - DAQ Driver</name>
 
     <parent>
         <groupId>org.lsst</groupId>
         <artifactId>org-lsst-ccs-drivers</artifactId>
-        <version>6.2.3</version>
+        <version>6.2.13-SNAPSHOT</version>
     </parent>
 
     <properties>
-        <org.lsst.ccs.site.url>https://repo-nexus.lsst.org/nexus/content/sites/${org.lsst.ccs.site.name}/site-root/drivers/${project.artifactId}/${project.version}</org.lsst.ccs.site.url>
+        <org.lsst.ccs.site.dir>site-root/drivers/${project.artifactId}/${project.version}</org.lsst.ccs.site.dir>
     </properties>
 
     <repositories>
@@ -28,9 +28,9 @@
 
     <distributionManagement>
         <site>
-            <id>lsst-maven2-site</id>
-            <name>LSST Maven2 central site repository</name>
-            <url>dav:${org.lsst.ccs.site.url}</url>
+            <id>github</id>
+            <name>LSST Public pages in github</name>
+            <url>scm:git:https://${env.GIT_USERNAME}:${env.GIT_PASSWORD}@github.com/lsst-camera-ccs/org-lsst-ccs-site.git</url>
         </site>
     </distributionManagement>
 
