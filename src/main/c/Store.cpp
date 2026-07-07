@@ -416,13 +416,22 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
        locs[i] = GDS::RoiLocation(GDS::Location(DAQ::Location(index), sensor), segment, startRow, startCol);
     }
     int error;
-    if (comment) {
-       const char *_comment = env->GetStringUTFChars(comment, 0);
-       error = guider->start(common, locs, nlocs, _comment, status);
-       env->ReleaseStringUTFChars(comment, _comment);
-    } else {
-       error = guider->start(common, locs, nlocs, status);
+    const char* _comment = NULL;
+    try {
+        if (comment) {
+           _comment = env->GetStringUTFChars(comment, 0);
+           // This can throw GDS::Exception
+           error = guider->start(common, locs, nlocs, _comment, status);
+        } else {
+           error = guider->start(common, locs, nlocs, status);
+        }
+    } catch (GDS::Exception& x) {
+       if (_comment) env->ReleaseStringUTFChars(comment, _comment);
+       env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
+       env->ThrowNew(JCexClass, x.what());
+       return NULL;
     }
+    if (_comment) env->ReleaseStringUTFChars(comment, _comment);
     if (!error) error = status.status();
     env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
     if (error) {
@@ -454,12 +463,14 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_valid
        locs[i] = GDS::RoiLocation(GDS::Location(DAQ::Location(index), sensor), segment, startRow, startCol);
     }
     try {
-       guider->validate(common, locs, nlocs);
-       env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
+       bool success = guider->validate(common, locs, nlocs);
+       if (!success) {
+          env->ThrowNew(JCexClass, "ROI validation failed");
+       } 
     } catch (GDS::Exception& x) {
        env->ThrowNew(JCexClass, x.what());
     }
-
+    env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
 }
 
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_stopGuider
