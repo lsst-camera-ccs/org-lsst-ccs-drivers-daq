@@ -180,4 +180,7 @@ class StoreNativeImplementation implements StoreImplementation {
 
     @Override
     public synchronized native String getClientPlatform(String partition) throws DAQException;
+
+    @Override
+    public synchronized native Status playGuider(long guider, String[] files);
 }

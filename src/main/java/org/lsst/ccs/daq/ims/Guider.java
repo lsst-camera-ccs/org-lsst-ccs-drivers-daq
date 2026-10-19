@@ -104,6 +104,10 @@ public class Guider {
     public Status pause(String comment) throws DAQException {
         return store.pauseGuider(guider, comment);
     }
+    
+    public Status play(String... files) throws DAQException {
+        return store.playGuider(guider, files);
+    }
 
     public Status resume() throws DAQException {
         return resume(null);

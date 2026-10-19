@@ -318,4 +318,9 @@ class StoreSimulatedImplementation implements StoreImplementation {
     public String getClientPlatform(String partition) {
         return "unknown";
     }
+
+    @Override
+    public Status playGuider(long guider, String[] files) {
+        return null;
+    }
 }

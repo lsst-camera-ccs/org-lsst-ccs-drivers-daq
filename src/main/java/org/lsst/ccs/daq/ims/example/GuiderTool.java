@@ -90,6 +90,12 @@ public class GuiderTool {
         checkStore();
         return guider.wake();
     }
+    
+    @Command(name = "play", description = "Set emulator play list")
+    public Status play(String... files) throws DAQException {
+        checkStore();
+        return guider.play(files);
+    }
 
     @Command(name = "config", description = "Get the guider config")
     public Config config() throws DAQException {

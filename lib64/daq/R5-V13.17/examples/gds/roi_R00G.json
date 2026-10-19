@@ -1,0 +1,3 @@
+{ "common":{ "rows": 50,"cols": 50, "integrationTimeMillis": 50  }, 
+  "R00SG0": { "segment": 10, "startRow":  25, "startCol": 225},
+  "R00SG1": { "segment": 11, "startRow":  50, "startCol": 250} }
