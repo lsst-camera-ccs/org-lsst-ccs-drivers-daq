@@ -100,7 +100,7 @@ public class Guider {
     public Status start(ROICommon common, List<ROILocation> locations, String id) throws DAQException {
         return start(new ROICommonExtended(common), locations, id);
     }
-        /**
+    /**
      * Start the guider, using the specified ROI locations
      *
      * @param common The common settings for this start command
