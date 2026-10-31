@@ -27,6 +27,15 @@ public class Status {
         this.out = State.values()[outState];
     }
 
+    /**
+     * Creates a Status with the given in/out states. Intended for tests, which
+     * cannot otherwise construct a Status (instances normally come from the DAQ
+     * via JNI).
+     */
+    static Status of(State in, State out) {
+        return new Status(0, 0, 0, in.ordinal(), out.ordinal());
+    }
+
     public Instant getTimestamp() {
         return timestamp;
     }
