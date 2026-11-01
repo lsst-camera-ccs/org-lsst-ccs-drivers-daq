@@ -2,6 +2,7 @@ package org.lsst.ccs.daq.ims;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -36,6 +37,19 @@ public class Guider {
     // gds/Exception.hh: enum Id { COMMAND_TIMEOUT=-1, ..., INVALID_TRANSITION=2, ... }
     private static final int COMMAND_TIMEOUT = -1;
     private static final int INVALID_TRANSITION = 2;
+
+    // The guider states that indicate each state-changing command has already
+    // taken effect, used to reconcile a lost response after a command timeout.
+    // Some commands have more than one settled state because the state reached
+    // depends on the state the command started from (e.g. pause lands in PAUSED
+    // from RUNNING but in IDLEPAUSE from IDLECLEARING).
+    private static final Set<State> START_SUCCESS = EnumSet.of(State.PAUSED);
+    private static final Set<State> STOP_SUCCESS = EnumSet.of(State.IDLECLEARING);
+    private static final Set<State> PAUSE_SUCCESS = EnumSet.of(State.PAUSED, State.IDLEPAUSE);
+    private static final Set<State> RESUME_SUCCESS = EnumSet.of(State.RUNNING, State.IDLECLEARING);
+    private static final Set<State> SLEEP_SUCCESS = EnumSet.of(State.SLEEPING);
+    private static final Set<State> WAKE_SUCCESS = EnumSet.of(State.IDLECLEARING);
+    private static final Set<State> CLEAR_SUCCESS = EnumSet.of(State.CLEARING);
 
     static final int DEFAULT_MAX_RETRIES = 1;
 
@@ -76,26 +90,30 @@ public class Guider {
      * A command timeout is ambiguous: either the command never reached the DAQ
      * (in which case a retry is correct) or the command was acted on but its
      * response was lost (in which case the guider has already changed state and a
-     * blind retry would fail with {@link #INVALID_TRANSITION}). When a
-     * {@code target} state is supplied, on a timeout we query the current guider
+     * blind retry would fail with {@link #INVALID_TRANSITION}). When a set of
+     * {@code successStates} is supplied, on a timeout we query the current guider
      * state via {@link #config()} and reconcile:
      * <ul>
-     * <li>if the guider is already in {@code target}, the command took effect and
-     * we return the queried status without re-issuing the command;</li>
+     * <li>if the guider is in one of {@code successStates}, the command took
+     * effect and we return the queried status without re-issuing it;</li>
      * <li>if the guider is in an inconclusive state ({@link State#ERROR} or
      * {@link State#UNDEFINED}), we give up and throw a descriptive exception
      * rather than fabricate success or blindly retry;</li>
      * <li>otherwise we retry the command (bounded by {@code maxRetries}).</li>
      * </ul>
-     * When {@code target} is {@code null} (for a command with no single settled
-     * target state) a timeout is handled by a plain retry.
+     * A set (rather than a single state) is required because the settled state a
+     * command reaches depends on the state it started from: e.g. {@code pause}
+     * reaches {@link State#PAUSED} from {@link State#RUNNING} but
+     * {@link State#IDLEPAUSE} from {@link State#IDLECLEARING}. When
+     * {@code successStates} is {@code null} or empty (for a command with no
+     * settled success state) a timeout is handled by a plain retry.
      *
      * @param name the command name, for logging
-     * @param target the expected guider state after the command, or {@code null}
-     * to disable state reconciliation
+     * @param successStates the guider states that mean the command already
+     * succeeded, or {@code null}/empty to disable state reconciliation
      * @param command the command to run
      */
-    private RetryStatus withRetry(String name, State target, GuiderCommand command) throws DAQException {
+    private RetryStatus withRetry(String name, Set<State> successStates, GuiderCommand command) throws DAQException {
         int timeouts = 0;
         int retries = 0;
         while (true) {
@@ -113,10 +131,10 @@ public class Guider {
                 }
                 timeouts++;
                 // Timeout: try to reconcile against the guider's actual state before retrying.
-                if (target != null) {
+                if (successStates != null && !successStates.isEmpty()) {
                     Status current = config().getStatus();
                     State actual = current.getOut();
-                    if (actual == target) {
+                    if (successStates.contains(actual)) {
                         LOG.log(Level.INFO, "Guider command {0} timed out but the guider is already in state {1}; "
                                 + "the command took effect but its response was lost", new Object[]{name, actual});
                         return new RetryStatus(current, timeouts, retries);
@@ -168,7 +186,7 @@ public class Guider {
             roiData[j + 3] = location.getStartRow();
             roiData[j + 4] = location.getStartCol();
         }
-        return withRetry("start", State.RUNNING, () -> store.startGuider(guider, common.getRows(), common.getCols(), common.getIntegrationTimeMillis(),  common.getOverRows(), common.getUnderCols(), common.getOverCols(), common.getFlushCount(), id, roiData));
+        return withRetry("start", START_SUCCESS, () -> store.startGuider(guider, common.getRows(), common.getCols(), common.getIntegrationTimeMillis(),  common.getOverRows(), common.getUnderCols(), common.getOverCols(), common.getFlushCount(), id, roiData));
     }
 
     public void validate(ROICommon common, List<ROILocation> locations) throws DAQException {
@@ -196,7 +214,7 @@ public class Guider {
     }
 
     public RetryStatus stop(String comment) throws DAQException {
-        return withRetry("stop", State.IDLECLEARING, () -> store.stopGuider(guider, comment));
+        return withRetry("stop", STOP_SUCCESS, () -> store.stopGuider(guider, comment));
     }
 
     public RetryStatus pause() throws DAQException {
@@ -204,7 +222,7 @@ public class Guider {
     }
 
     public RetryStatus pause(String comment) throws DAQException {
-        return withRetry("pause", State.PAUSED, () -> store.pauseGuider(guider, comment));
+        return withRetry("pause", PAUSE_SUCCESS, () -> store.pauseGuider(guider, comment));
     }
     
     public Status play(String... files) throws DAQException {
@@ -216,11 +234,11 @@ public class Guider {
     }
 
     public RetryStatus resume(String comment) throws DAQException {
-        return withRetry("resume", State.RUNNING, () -> store.resumeGuider(guider, comment));
+        return withRetry("resume", RESUME_SUCCESS, () -> store.resumeGuider(guider, comment));
     }
 
     public RetryStatus sleep() throws DAQException {
-        return withRetry("sleep", State.SLEEPING, () -> store.sleepGuider(guider));
+        return withRetry("sleep", SLEEP_SUCCESS, () -> store.sleepGuider(guider));
     }
 
     public RetryStatus wake() throws DAQException {
@@ -228,11 +246,11 @@ public class Guider {
     }
 
     public RetryStatus wake(ClearParameters clearParameters) throws DAQException {
-        return withRetry("wake", State.IDLECLEARING, () -> store.wakeGuider(guider, clearParameters));
+        return withRetry("wake", WAKE_SUCCESS, () -> store.wakeGuider(guider, clearParameters));
     }
 
     public RetryStatus clear(ClearParameters clearParameters) throws DAQException {
-        return withRetry("clear", State.CLEARING, () -> store.clearGuider(guider, clearParameters));
+        return withRetry("clear", CLEAR_SUCCESS, () -> store.clearGuider(guider, clearParameters));
     }
 
     public Config config() throws DAQException {
