@@ -406,6 +406,13 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
     GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];
     jint* values = env->GetIntArrayElements(roiData, 0);
     int nlocs = env->GetArrayLength(roiData)/5;
+    if (nlocs > MAX_GUIDER_LOCATIONS) {
+        env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Too many guider ROI locations specified: %d (maximum %d)", nlocs, MAX_GUIDER_LOCATIONS);
+        throwDAQException(env, x);
+        return NULL;
+    }
     for (int i=0; i<nlocs; i++) {
        int j = i*5;
        uint8_t index = values[j];
@@ -446,6 +453,13 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_valid
     GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];
     jint* values = env->GetIntArrayElements(roiData, 0);
     int nlocs = env->GetArrayLength(roiData)/5;
+    if (nlocs > MAX_GUIDER_LOCATIONS) {
+        env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Too many guider ROI locations specified: %d (maximum %d)", nlocs, MAX_GUIDER_LOCATIONS);
+        throwDAQException(env, x);
+        return;
+    }
     for (int i=0; i<nlocs; i++) {
        int j = i*5;
        uint8_t index = values[j];
@@ -803,11 +817,12 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_open
     }
     DAQ::Location element(elementIndex);
     Source* source = new Source(id_, element, *store_);
-    if (!source) {
+    if (!*source) {
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Source not found (id=%ld elementIndex=%d)", id, elementIndex);
         throwDAQException(env, x, source->error());
         delete source;
+        return JNI_ERR;
     }
     return (jlong) source;
 }
@@ -1064,7 +1079,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_write
         instList.insert(RMS::Instruction::PUT, regArray[j], regValues[j]);
     }
     env->ReleaseIntArrayElements(addresses, regArray, JNI_ABORT);
-    env->ReleaseIntArrayElements(addresses, regValues, JNI_ABORT);
+    env->ReleaseIntArrayElements(values, regValues, JNI_ABORT);
 
     MyHarvester harvester(numRegs);
     client_->access(locations_, instList, harvester);
