@@ -20,6 +20,14 @@ public class Config {
         this.locations = locations;
     }
 
+    /**
+     * Creates a Config wrapping the given status, with no ROI/clear details.
+     * Intended for tests, which cannot otherwise construct a Config.
+     */
+    static Config of(Status status) {
+        return new Config(status, null, null, null);
+    }
+
     public Status getStatus() {
         return status;
     }
