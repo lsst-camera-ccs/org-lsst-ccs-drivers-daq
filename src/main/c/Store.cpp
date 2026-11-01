@@ -406,6 +406,13 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
     GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];
     jint* values = env->GetIntArrayElements(roiData, 0);
     int nlocs = env->GetArrayLength(roiData)/5;
+    if (nlocs > MAX_GUIDER_LOCATIONS) {
+        env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Too many guider ROI locations specified: %d (maximum %d)", nlocs, MAX_GUIDER_LOCATIONS);
+        throwDAQException(env, x);
+        return NULL;
+    }
     for (int i=0; i<nlocs; i++) {
        int j = i*5;
        uint8_t index = values[j];
@@ -428,7 +435,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
     if (error) {
         char x[MESSAGE_LENGTH];
         char y[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "Guider start failed, status %d", error);
+        const char* in = status.state_in().decode();
+        const char* out = status.state_out().decode();
+        snprintf(x, MESSAGE_LENGTH, "Guider start failed, (in=%s, out=%s), status %d", in, out, error);
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
         return NULL;
     } else {
@@ -444,6 +453,13 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_valid
     GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];
     jint* values = env->GetIntArrayElements(roiData, 0);
     int nlocs = env->GetArrayLength(roiData)/5;
+    if (nlocs > MAX_GUIDER_LOCATIONS) {
+        env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Too many guider ROI locations specified: %d (maximum %d)", nlocs, MAX_GUIDER_LOCATIONS);
+        throwDAQException(env, x);
+        return;
+    }
     for (int i=0; i<nlocs; i++) {
        int j = i*5;
        uint8_t index = values[j];
@@ -478,7 +494,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
     if (error) {
         char x[MESSAGE_LENGTH];
         char y[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "Guider stop failed, status %d", error);
+        const char* in = status.state_in().decode();
+        const char* out = status.state_out().decode();
+        snprintf(x, MESSAGE_LENGTH, "Guider stop failed, (in=%s, out=%s), status %d", in, out, error);
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
         return NULL;
     } else {
@@ -502,7 +520,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_pa
     if (error) {
         char x[MESSAGE_LENGTH];
         char y[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "Guider pause failed, status %d", error);
+        const char* in = status.state_in().decode();
+        const char* out = status.state_out().decode();
+        snprintf(x, MESSAGE_LENGTH, "Guider pause failed, (in=%s, out=%s), status %d", in, out, error);
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
         return NULL;
     } else {
@@ -526,7 +546,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_re
     if (error) {
         char x[MESSAGE_LENGTH];
         char y[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "Guider resume failed, status %d", error);
+        const char* in = status.state_in().decode();
+        const char* out = status.state_out().decode();
+        snprintf(x, MESSAGE_LENGTH, "Guider resume failed, (in=%s, out=%s), status %d", in, out, error);
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
         return NULL;
     } else {
@@ -543,7 +565,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_sl
     if (error) {
         char x[MESSAGE_LENGTH];
         char y[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "Guider sleep failed, status %d", error);
+        const char* in = status.state_in().decode();
+        const char* out = status.state_out().decode();
+        snprintf(x, MESSAGE_LENGTH, "Guider sleep failed, (in=%s, out=%s), status %d", in, out, error);
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
         return NULL;
     } else {
@@ -561,7 +585,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_wa
     if (error) {
         char x[MESSAGE_LENGTH];
         char y[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "Guider wake failed, status %d", error);
+        const char* in = status.state_in().decode();
+        const char* out = status.state_out().decode();
+        snprintf(x, MESSAGE_LENGTH, "Guider wake failed, (in=%s, out=%s), status %d", in, out, error);
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
         return NULL;
     } else {
@@ -579,7 +605,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_cl
     if (error) {
         char x[MESSAGE_LENGTH];
         char y[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "Guider clear failed, status %d", error);
+        const char* in = status.state_in().decode();
+        const char* out = status.state_out().decode();
+        snprintf(x, MESSAGE_LENGTH, "Guider clear failed, (in=%s, out=%s), status %d", in, out, error);
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
         return NULL;
     } else {
@@ -601,7 +629,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_gu
     if (error) {
         char x[MESSAGE_LENGTH];
         char y[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "Guider config failed, status %d", error);
+        const char* in = status.state_in().decode();
+        const char* out = status.state_out().decode();
+        snprintf(x, MESSAGE_LENGTH, "Guider config failed, (in=%s, out=%s), status %d", in, out, error);
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
         return NULL;
     }  else {
@@ -621,7 +651,9 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_gu
     if (error) {
         char x[MESSAGE_LENGTH];
         char y[MESSAGE_LENGTH];
-        snprintf(x, MESSAGE_LENGTH, "Guider series failed, status %d", error);
+        const char* in = status.state_in().decode();
+        const char* out = status.state_out().decode();
+        snprintf(x, MESSAGE_LENGTH, "Guider series failed, (in=%s, out=%s), status %d", in, out, error);
         throwDAQException(env, x, error, GDS::Exception::decode(error, y));
     }
 
@@ -785,11 +817,12 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_open
     }
     DAQ::Location element(elementIndex);
     Source* source = new Source(id_, element, *store_);
-    if (!source) {
+    if (!*source) {
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Source not found (id=%ld elementIndex=%d)", id, elementIndex);
         throwDAQException(env, x, source->error());
         delete source;
+        return JNI_ERR;
     }
     return (jlong) source;
 }
@@ -1046,7 +1079,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_write
         instList.insert(RMS::Instruction::PUT, regArray[j], regValues[j]);
     }
     env->ReleaseIntArrayElements(addresses, regArray, JNI_ABORT);
-    env->ReleaseIntArrayElements(addresses, regValues, JNI_ABORT);
+    env->ReleaseIntArrayElements(values, regValues, JNI_ABORT);
 
     MyHarvester harvester(numRegs);
     client_->access(locations_, instList, harvester);
