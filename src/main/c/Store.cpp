@@ -1046,7 +1046,7 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_write
         instList.insert(RMS::Instruction::PUT, regArray[j], regValues[j]);
     }
     env->ReleaseIntArrayElements(addresses, regArray, JNI_ABORT);
-    env->ReleaseIntArrayElements(addresses, regValues, JNI_ABORT);
+    env->ReleaseIntArrayElements(values, regValues, JNI_ABORT);
 
     MyHarvester harvester(numRegs);
     client_->access(locations_, instList, harvester);
