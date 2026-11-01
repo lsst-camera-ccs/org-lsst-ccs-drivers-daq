@@ -48,7 +48,6 @@ public class FitsWriterFactory implements GuiderListener {
 
     static {
         FitsFactory.setUseHierarch(true);
-        FitsFactory.setLongStringsEnabled(true);
     }
 
     public FitsWriterFactory(String partition, FitsIntWriter.FileNamer fileNamer, Map<String, HeaderSpecification> headerSpecifications) {
