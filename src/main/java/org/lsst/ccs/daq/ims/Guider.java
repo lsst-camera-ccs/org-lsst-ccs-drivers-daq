@@ -28,12 +28,68 @@ import org.lsst.ccs.utilities.location.LocationSet;
  */
 public class Guider {
 
+    private static final Logger LOG = Logger.getLogger(Guider.class.getName());
+
+    // The GDS command timeout error code. Kept in sync with the DAQ enum
+    // gds/Exception.hh: enum Id { COMMAND_TIMEOUT=-1, ... }
+    private static final int COMMAND_TIMEOUT = -1;
+
+    static final int DEFAULT_MAX_RETRIES = 1;
+
     private final Store store;
     private final long guider;
+    private final int maxRetries;
 
     public Guider(Store store, long guider) {
+        this(store, guider, DEFAULT_MAX_RETRIES);
+    }
+
+    /**
+     * Create a Guider that will retry state-changing commands that fail with a
+     * command timeout.
+     *
+     * @param store The owning Store
+     * @param guider The native guider handle
+     * @param maxRetries The maximum number of retries (extra attempts after the
+     * first failure) to perform when a state-changing command fails with a
+     * command timeout. A value of 0 disables retries.
+     */
+    public Guider(Store store, long guider, int maxRetries) {
         this.store = store;
         this.guider = guider;
+        this.maxRetries = maxRetries;
+    }
+
+    @FunctionalInterface
+    private interface GuiderCommand {
+        Status run() throws DAQException;
+    }
+
+    /**
+     * Runs a state-changing guider command, retrying (up to {@code maxRetries}
+     * times) only if it fails with a {@link #COMMAND_TIMEOUT}. Any other failure
+     * is propagated immediately.
+     */
+    private Status withRetry(String name, GuiderCommand command) throws DAQException {
+        int retries = 0;
+        while (true) {
+            try {
+                Status status = command.run();
+                if (retries > 0) {
+                    LOG.log(Level.INFO, "Guider command {0} succeeded after {1} retr{2}",
+                            new Object[]{name, retries, retries == 1 ? "y" : "ies"});
+                }
+                return status;
+            } catch (DAQException x) {
+                if (x.rc() == COMMAND_TIMEOUT && retries < maxRetries) {
+                    retries++;
+                    LOG.log(Level.WARNING, "Guider command {0} timed out, retry {1}/{2}",
+                            new Object[]{name, retries, maxRetries});
+                } else {
+                    throw x;
+                }
+            }
+        }
     }
 
     public Status start(ROICommon common, List<ROILocation> locations) throws DAQException {
@@ -44,7 +100,7 @@ public class Guider {
     public Status start(ROICommon common, List<ROILocation> locations, String id) throws DAQException {
         return start(new ROICommonExtended(common), locations, id);
     }
-        /**
+    /**
      * Start the guider, using the specified ROI locations
      *
      * @param common The common settings for this start command
@@ -66,7 +122,7 @@ public class Guider {
             roiData[j + 3] = location.getStartRow();
             roiData[j + 4] = location.getStartCol();
         }
-        return store.startGuider(guider, common.getRows(), common.getCols(), common.getIntegrationTimeMillis(),  common.getOverRows(), common.getUnderCols(), common.getOverCols(), common.getFlushCount(), id, roiData);
+        return withRetry("start", () -> store.startGuider(guider, common.getRows(), common.getCols(), common.getIntegrationTimeMillis(),  common.getOverRows(), common.getUnderCols(), common.getOverCols(), common.getFlushCount(), id, roiData));
     }
 
     public void validate(ROICommon common, List<ROILocation> locations) throws DAQException {
@@ -94,7 +150,7 @@ public class Guider {
     }
 
     public Status stop(String comment) throws DAQException {
-        return store.stopGuider(guider, comment);
+        return withRetry("stop", () -> store.stopGuider(guider, comment));
     }
 
     public Status pause() throws DAQException {
@@ -102,7 +158,7 @@ public class Guider {
     }
 
     public Status pause(String comment) throws DAQException {
-        return store.pauseGuider(guider, comment);
+        return withRetry("pause", () -> store.pauseGuider(guider, comment));
     }
 
     public Status resume() throws DAQException {
@@ -110,11 +166,11 @@ public class Guider {
     }
 
     public Status resume(String comment) throws DAQException {
-        return store.resumeGuider(guider, comment);
+        return withRetry("resume", () -> store.resumeGuider(guider, comment));
     }
 
     public Status sleep() throws DAQException {
-        return store.sleepGuider(guider);
+        return withRetry("sleep", () -> store.sleepGuider(guider));
     }
 
     public Status wake() throws DAQException {
@@ -122,11 +178,11 @@ public class Guider {
     }
 
     public Status wake(ClearParameters clearParameters) throws DAQException {
-        return store.wakeGuider(guider, clearParameters);
+        return withRetry("wake", () -> store.wakeGuider(guider, clearParameters));
     }
 
     public Status clear(ClearParameters clearParameters) throws DAQException {
-        return store.clearGuider(guider, clearParameters);
+        return withRetry("clear", () -> store.clearGuider(guider, clearParameters));
     }
 
     public Config config() throws DAQException {
