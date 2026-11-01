@@ -34,6 +34,8 @@ every other function here does with a stack `Source`/`Image`. As written a faile
 source is never detected, and the error branch returns a freed pointer.
 
 ## 3. `startGuider` / `validateGuider` — unbounded `nlocs` vs fixed buffer — BUG
+**JIRA: [LSSTCCSDRIVER-496](https://jira.slac.stanford.edu/browse/LSSTCCSDRIVER-496)**
+
 ~line 406-417 and 444-454:
 ```cpp
 GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];   // 8

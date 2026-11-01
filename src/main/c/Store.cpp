@@ -406,6 +406,13 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_st
     GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];
     jint* values = env->GetIntArrayElements(roiData, 0);
     int nlocs = env->GetArrayLength(roiData)/5;
+    if (nlocs > MAX_GUIDER_LOCATIONS) {
+        env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Too many guider ROI locations specified: %d (maximum %d)", nlocs, MAX_GUIDER_LOCATIONS);
+        throwDAQException(env, x);
+        return NULL;
+    }
     for (int i=0; i<nlocs; i++) {
        int j = i*5;
        uint8_t index = values[j];
@@ -444,6 +451,13 @@ JNIEXPORT void JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_valid
     GDS::RoiLocation locs[MAX_GUIDER_LOCATIONS];
     jint* values = env->GetIntArrayElements(roiData, 0);
     int nlocs = env->GetArrayLength(roiData)/5;
+    if (nlocs > MAX_GUIDER_LOCATIONS) {
+        env->ReleaseIntArrayElements(roiData, values, JNI_ABORT);
+        char x[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Too many guider ROI locations specified: %d (maximum %d)", nlocs, MAX_GUIDER_LOCATIONS);
+        throwDAQException(env, x);
+        return;
+    }
     for (int i=0; i<nlocs; i++) {
        int j = i*5;
        uint8_t index = values[j];
