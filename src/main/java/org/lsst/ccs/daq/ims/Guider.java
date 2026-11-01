@@ -17,6 +17,7 @@ import org.lsst.ccs.utilities.location.SensorLocation;
 import org.lsst.ccs.daq.guider.SeriesMetaData;
 import org.lsst.ccs.daq.guider.SeriesStatus;
 import org.lsst.ccs.daq.guider.StateMetaData;
+import org.lsst.ccs.daq.guider.RetryStatus;
 import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.daq.guider.Status.State;
 import org.lsst.ccs.utilities.location.LocationSet;
@@ -94,7 +95,8 @@ public class Guider {
      * to disable state reconciliation
      * @param command the command to run
      */
-    private Status withRetry(String name, State target, GuiderCommand command) throws DAQException {
+    private RetryStatus withRetry(String name, State target, GuiderCommand command) throws DAQException {
+        int timeouts = 0;
         int retries = 0;
         while (true) {
             try {
@@ -103,12 +105,13 @@ public class Guider {
                     LOG.log(Level.INFO, "Guider command {0} succeeded after {1} retr{2}",
                             new Object[]{name, retries, retries == 1 ? "y" : "ies"});
                 }
-                return status;
+                return new RetryStatus(status, timeouts, retries);
             } catch (DAQException x) {
                 if (x.rc() != COMMAND_TIMEOUT || maxRetries == 0) {
                     // Not a timeout, or retries disabled: behave as the plain command.
                     throw x;
                 }
+                timeouts++;
                 // Timeout: try to reconcile against the guider's actual state before retrying.
                 if (target != null) {
                     Status current = config().getStatus();
@@ -116,7 +119,7 @@ public class Guider {
                     if (actual == target) {
                         LOG.log(Level.INFO, "Guider command {0} timed out but the guider is already in state {1}; "
                                 + "the command took effect but its response was lost", new Object[]{name, actual});
-                        return current;
+                        return new RetryStatus(current, timeouts, retries);
                     }
                     if (actual == State.ERROR || actual == State.UNDEFINED) {
                         throw new DAQException(String.format(
@@ -135,12 +138,12 @@ public class Guider {
         }
     }
 
-    public Status start(ROICommon common, List<ROILocation> locations) throws DAQException {
+    public RetryStatus start(ROICommon common, List<ROILocation> locations) throws DAQException {
         return this.start(common, locations, null);
     }
 
 
-    public Status start(ROICommon common, List<ROILocation> locations, String id) throws DAQException {
+    public RetryStatus start(ROICommon common, List<ROILocation> locations, String id) throws DAQException {
         return start(new ROICommonExtended(common), locations, id);
     }
     /**
@@ -152,7 +155,7 @@ public class Guider {
      * @return The status after the command completes
      * @throws DAQException
      */
-    public Status start(ROICommonExtended common, List<ROILocation> locations, String id) throws DAQException {
+    public RetryStatus start(ROICommonExtended common, List<ROILocation> locations, String id) throws DAQException {
         final int nLocs = locations.size();
         int[] roiData = new int[nLocs * 5];
         for (int i = 0; i < nLocs; i++) {
@@ -188,43 +191,43 @@ public class Guider {
         return new Subscriber(store, locations, byteOrder, listener);
     }
 
-    public Status stop() throws DAQException {
+    public RetryStatus stop() throws DAQException {
         return stop(null);
     }
 
-    public Status stop(String comment) throws DAQException {
+    public RetryStatus stop(String comment) throws DAQException {
         return withRetry("stop", State.IDLECLEARING, () -> store.stopGuider(guider, comment));
     }
 
-    public Status pause() throws DAQException {
+    public RetryStatus pause() throws DAQException {
         return pause(null);
     }
 
-    public Status pause(String comment) throws DAQException {
+    public RetryStatus pause(String comment) throws DAQException {
         return withRetry("pause", State.PAUSED, () -> store.pauseGuider(guider, comment));
     }
 
-    public Status resume() throws DAQException {
+    public RetryStatus resume() throws DAQException {
         return resume(null);
     }
 
-    public Status resume(String comment) throws DAQException {
+    public RetryStatus resume(String comment) throws DAQException {
         return withRetry("resume", State.RUNNING, () -> store.resumeGuider(guider, comment));
     }
 
-    public Status sleep() throws DAQException {
+    public RetryStatus sleep() throws DAQException {
         return withRetry("sleep", State.SLEEPING, () -> store.sleepGuider(guider));
     }
 
-    public Status wake() throws DAQException {
+    public RetryStatus wake() throws DAQException {
         return wake(ClearParameters.defaultValue());
     }
 
-    public Status wake(ClearParameters clearParameters) throws DAQException {
+    public RetryStatus wake(ClearParameters clearParameters) throws DAQException {
         return withRetry("wake", State.IDLECLEARING, () -> store.wakeGuider(guider, clearParameters));
     }
 
-    public Status clear(ClearParameters clearParameters) throws DAQException {
+    public RetryStatus clear(ClearParameters clearParameters) throws DAQException {
         return withRetry("clear", State.CLEARING, () -> store.clearGuider(guider, clearParameters));
     }
 

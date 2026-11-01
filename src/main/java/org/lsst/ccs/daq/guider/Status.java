@@ -28,6 +28,22 @@ public class Status {
     }
 
     /**
+     * Copy constructor, for subclasses that wrap a Status produced by the DAQ
+     * (via JNI) or by {@link #config()} to add extra information. Copies the
+     * fields of {@code other}; the native {@code (JIIII)} constructor is
+     * unaffected.
+     *
+     * @param other the status whose fields are copied
+     */
+    protected Status(Status other) {
+        this.timestamp = other.timestamp;
+        this.status = other.status;
+        this.sequence = other.sequence;
+        this.in = other.in;
+        this.out = other.out;
+    }
+
+    /**
      * Creates a Status with the given in/out states. Intended for tests, which
      * cannot otherwise construct a Status (instances normally come from the DAQ
      * via JNI).

@@ -8,6 +8,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.lsst.ccs.daq.guider.Config;
 import org.lsst.ccs.daq.guider.GuiderTestSupport;
+import org.lsst.ccs.daq.guider.RetryStatus;
 import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.daq.guider.Status.State;
 
@@ -68,10 +69,12 @@ public class GuiderRetryTest {
     public void timeoutButCommandTookEffect() throws DAQException {
         FakeStore store = new FakeStore(1, State.PAUSED);
         Guider guider = new Guider(store, 0L, 1);
-        Status status = guider.pause();
+        RetryStatus status = guider.pause();
         assertEquals("pause should not be re-issued once the guider is already PAUSED", 1, store.pauseCalls);
         assertTrue("state should have been queried after the timeout", store.configCalls >= 1);
         assertEquals(State.PAUSED, status.getOut());
+        assertEquals("the command timed out once", 1, status.getTimeouts());
+        assertEquals("the command took effect, so it was never re-issued", 0, status.getRetries());
     }
 
     /** Command never reached the DAQ: state unchanged, retry succeeds. */
@@ -79,9 +82,11 @@ public class GuiderRetryTest {
     public void timeoutThenRetrySucceeds() throws DAQException {
         FakeStore store = new FakeStore(1, State.RUNNING);
         Guider guider = new Guider(store, 0L, 1);
-        Status status = guider.pause();
+        RetryStatus status = guider.pause();
         assertEquals("pause should be retried once", 2, store.pauseCalls);
         assertEquals(State.PAUSED, status.getOut());
+        assertEquals("the command timed out once", 1, status.getTimeouts());
+        assertEquals("the command was re-issued once", 1, status.getRetries());
     }
 
     /** Inconclusive post-timeout state: no success fabricated, no blind retry. */
