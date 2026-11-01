@@ -77,6 +77,23 @@ public class GuiderRetryTest {
         assertEquals("the command took effect, so it was never re-issued", 0, status.getRetries());
     }
 
+    /**
+     * Command was acted on but landed in the idle-mode twin of the primary
+     * target: pause reaches IDLEPAUSE (not PAUSED) when started from
+     * IDLECLEARING. This must still be recognised as success.
+     */
+    @Test
+    public void timeoutCommandTookEffectInIdleTwinState() throws DAQException {
+        FakeStore store = new FakeStore(1, State.IDLEPAUSE);
+        Guider guider = new Guider(store, 0L, 1);
+        RetryStatus status = guider.pause();
+        assertEquals("pause should not be re-issued once the guider is already IDLEPAUSE", 1, store.pauseCalls);
+        assertTrue("state should have been queried after the timeout", store.configCalls >= 1);
+        assertEquals(State.IDLEPAUSE, status.getOut());
+        assertEquals("the command timed out once", 1, status.getTimeouts());
+        assertEquals("the command took effect, so it was never re-issued", 0, status.getRetries());
+    }
+
     /** Command never reached the DAQ: state unchanged, retry succeeds. */
     @Test
     public void timeoutThenRetrySucceeds() throws DAQException {
