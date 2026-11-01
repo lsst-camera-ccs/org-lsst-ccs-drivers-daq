@@ -785,11 +785,12 @@ JNIEXPORT jlong JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_open
     }
     DAQ::Location element(elementIndex);
     Source* source = new Source(id_, element, *store_);
-    if (!source) {
+    if (!*source) {
         char x[MESSAGE_LENGTH];
         snprintf(x, MESSAGE_LENGTH, "Source not found (id=%ld elementIndex=%d)", id, elementIndex);
         throwDAQException(env, x, source->error());
         delete source;
+        return JNI_ERR;
     }
     return (jlong) source;
 }
