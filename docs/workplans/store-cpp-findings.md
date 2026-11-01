@@ -6,6 +6,8 @@ the upgrade. Recorded 2026-10-31 to return to later; not being fixed now (keepin
 the current change minimal).
 
 ## 1. `writeRegisters` releases the wrong array handle — BUG
+**JIRA: [LSSTCCSDRIVER-494](https://jira.slac.stanford.edu/browse/LSSTCCSDRIVER-494)** (fix in PR #17)
+
 `src/main/c/Store.cpp` ~line 1048-1049:
 ```cpp
 env->ReleaseIntArrayElements(addresses, regArray, JNI_ABORT);
@@ -16,6 +18,8 @@ wrong array is undefined behavior (JNI requires the same array the elements came
 from).
 
 ## 2. `openSourceChannel` — null check can't fire, returns dangling pointer — BUG
+**JIRA: [LSSTCCSDRIVER-495](https://jira.slac.stanford.edu/browse/LSSTCCSDRIVER-495)**
+
 ~line 787-794:
 ```cpp
 Source* source = new Source(id_, element, *store_);
