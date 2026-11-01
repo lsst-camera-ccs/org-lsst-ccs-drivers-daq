@@ -114,10 +114,27 @@ public class Store implements AutoCloseable {
      * @throws DAQException
      */
     public Guider getGuider() throws DAQException {
+        return getGuider(Guider.DEFAULT_MAX_RETRIES);
+    }
+
+    /**
+     * Gets an instance of the Guider interface associated with this Store,
+     * configured to retry state-changing commands that fail with a command
+     * timeout. The Guider is attached and cached on first use, so {@code
+     * maxRetries} takes effect only on the call that first attaches it; later
+     * calls return the already-attached Guider and ignore their argument.
+     *
+     * @param maxRetries The maximum number of retries (extra attempts after the
+     * first failure) for a state-changing command that times out; 0 disables
+     * retries.
+     * @return The Guider
+     * @throws DAQException
+     */
+    public Guider getGuider(int maxRetries) throws DAQException {
         synchronized (this) {
             if (guider == null) {
                 long guider_ = impl.attachGuider(partition);
-                this.guider = new Guider(this, guider_);
+                this.guider = new Guider(this, guider_, maxRetries);
             }
             return guider;
         }
