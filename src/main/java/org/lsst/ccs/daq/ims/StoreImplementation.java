@@ -112,4 +112,6 @@ interface StoreImplementation {
     Status clearGuider(long guider, int delay, int preRows, int flushCount, int readRows, int postRows, int overRows) throws DAQException;
 
     String getClientPlatform(String partition) throws DAQException;
+
+    Status playGuider(long guider, String[] files);
 }

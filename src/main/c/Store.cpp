@@ -615,6 +615,45 @@ JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_cl
     }
 }
 
+JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_playGuider
+(JNIEnv* env, jobject obj, jlong guider_, jobjectArray files_) {
+    GDS::Client*  guider = (GDS::Client*) guider_;
+    GDS::Status status;
+
+    char reason[GDS::Client::EMU_REASON] = {};
+    GDS::LocationSet loaded;
+
+    const char* files[GDS::Client::EMU_MAX_FILES];
+    int nFiles = env->GetArrayLength(files_);
+
+    for (int i=0; i<nFiles; i++) {
+        jstring str = static_cast<jstring>(
+            env->GetObjectArrayElement(files_, i)
+        );
+        files[i] = env->GetStringUTFChars(str, 0);
+    }
+    int error = guider->emu_play(files, nFiles, status, loaded, reason);
+
+    // Release all JNI strings after emu_play finishes.
+    for (int i = 0; i < nFiles; i++) {
+        jstring str = static_cast<jstring>(
+            env->GetObjectArrayElement(files_, i)
+        );
+        env->ReleaseStringUTFChars(str, files[i]);
+    }
+
+    if (!error) error = status.status();
+    if (error) {
+        char x[MESSAGE_LENGTH];
+        char y[MESSAGE_LENGTH];
+        snprintf(x, MESSAGE_LENGTH, "Guider emu_play failed, status %d, reason %s", error, reason);
+        throwDAQException(env, x, error, GDS::Exception::decode(error, y));
+        return NULL;
+    } else {
+        return createGuiderStatus(env, status);
+    }
+}
+
 JNIEXPORT jobject JNICALL Java_org_lsst_ccs_daq_ims_StoreNativeImplementation_guiderConfig
 (JNIEnv* env, jobject obj, jlong guider_) {
     GDS::Client* guider = (GDS::Client*) guider_;

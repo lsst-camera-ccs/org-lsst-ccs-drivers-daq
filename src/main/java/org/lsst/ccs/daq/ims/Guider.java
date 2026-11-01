@@ -206,6 +206,10 @@ public class Guider {
     public RetryStatus pause(String comment) throws DAQException {
         return withRetry("pause", State.PAUSED, () -> store.pauseGuider(guider, comment));
     }
+    
+    public Status play(String... files) throws DAQException {
+        return store.playGuider(guider, files);
+    }
 
     public RetryStatus resume() throws DAQException {
         return resume(null);
