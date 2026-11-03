@@ -7,7 +7,7 @@ import static org.junit.Assert.fail;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.lsst.ccs.daq.guider.Config;
-import org.lsst.ccs.daq.guider.GuiderTestSupport;
+import org.lsst.ccs.daq.guider.GuiderSimulationSupport;
 import org.lsst.ccs.daq.guider.RetryStatus;
 import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.daq.guider.Status.State;
@@ -54,13 +54,13 @@ public class GuiderRetryTest {
             if (pauseCalls <= timeouts) {
                 throw new DAQException("pause timed out", -1);
             }
-            return GuiderTestSupport.status(State.RUNNING, State.PAUSED);
+            return GuiderSimulationSupport.status(State.RUNNING, State.PAUSED);
         }
 
         @Override
         Config guiderConfig(long guider) throws DAQException {
             configCalls++;
-            return GuiderTestSupport.config(GuiderTestSupport.status(reportedState, reportedState));
+            return GuiderSimulationSupport.config(GuiderSimulationSupport.status(reportedState, reportedState));
         }
     }
 

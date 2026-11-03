@@ -16,13 +16,21 @@ public class Series {
     private final List<SensorLocation> configured;
     private final List<SensorLocation> remaining;
 
-    @SuppressWarnings("unused")
     private Series(long timestampNanos, int sequence, int stamps, List<SensorLocation> configured, List<SensorLocation> remaining) {
         this.begin = Instant.ofEpochSecond(timestampNanos / 1_000_000_000, timestampNanos % 1_000_000_000);
         this.sequence = sequence;
         this.stamps = stamps;
         this.configured = configured;
         this.remaining = remaining;
+    }
+
+    /**
+     * Creates a Series with the given fields. Intended for the simulated store
+     * and tests, which cannot otherwise construct a Series (instances normally
+     * come from the DAQ via JNI).
+     */
+    static Series of(long timestampNanos, int sequence, int stamps, List<SensorLocation> configured, List<SensorLocation> remaining) {
+        return new Series(timestampNanos, sequence, stamps, configured, remaining);
     }
 
     public Instant getBegin() {

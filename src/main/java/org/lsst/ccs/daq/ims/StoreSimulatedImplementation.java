@@ -13,6 +13,7 @@ import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.lsst.ccs.daq.guider.Config;
+import org.lsst.ccs.daq.guider.GuiderSimulationSupport;
 import org.lsst.ccs.daq.guider.SeriesStatus;
 import org.lsst.ccs.daq.guider.Status;
 import org.lsst.ccs.utilities.location.Location;
@@ -249,8 +250,8 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Status startGuider(long guider, int rows, int cols, int integration, int overRows, int underCols, int overCols, int flushCount, String id, int[] roiData) {
-        return null;
+    public Status startGuider(long guider, int rows, int cols, int integration, int overRows, int underCols, int overCols, int flushCount, String id, int[] roiData) throws DAQException {
+        return storeSimulation.advanceGuider(StoreSimulation.GuiderCommand.START);
     }
 
     @Override
@@ -258,28 +259,28 @@ class StoreSimulatedImplementation implements StoreImplementation {
     }
 
     @Override
-    public Status stopGuider(long guider, String comment) {
-        return null;
+    public Status stopGuider(long guider, String comment) throws DAQException {
+        return storeSimulation.advanceGuider(StoreSimulation.GuiderCommand.STOP);
     }
 
     @Override
-    public Status pauseGuider(long guider, String comment) {
-        return null;
+    public Status pauseGuider(long guider, String comment) throws DAQException {
+        return storeSimulation.advanceGuider(StoreSimulation.GuiderCommand.PAUSE);
     }
 
     @Override
-    public Status resumeGuider(long guider, String comment) {
-        return null;
+    public Status resumeGuider(long guider, String comment) throws DAQException {
+        return storeSimulation.advanceGuider(StoreSimulation.GuiderCommand.RESUME);
     }
 
     @Override
-    public Status sleepGuider(long guider) {
-        return null;
+    public Status sleepGuider(long guider) throws DAQException {
+        return storeSimulation.advanceGuider(StoreSimulation.GuiderCommand.SLEEP);
     }
 
     @Override
-    public Status wakeGuider(long guider, int delay, int preRows, int flushCount, int readRows, int postRows, int overRows) {
-        return null;
+    public Status wakeGuider(long guider, int delay, int preRows, int flushCount, int readRows, int postRows, int overRows) throws DAQException {
+        return storeSimulation.advanceGuider(StoreSimulation.GuiderCommand.WAKE);
     }
 
     @Override
@@ -301,17 +302,17 @@ class StoreSimulatedImplementation implements StoreImplementation {
 
     @Override
     public Config guiderConfig(long guider) throws DAQException {
-        return null;
+        return GuiderSimulationSupport.config(storeSimulation.currentGuiderStatus());
     }
 
     @Override
     public SeriesStatus guiderSeries(long guider) throws DAQException {
-        return null;
+        return storeSimulation.guiderSeriesStatus();
     }
 
     @Override
     public Status clearGuider(long guider, int delay, int preRows, int flushCount, int readRows, int postRows, int overRows) throws DAQException {
-        return null;
+        return storeSimulation.advanceGuider(StoreSimulation.GuiderCommand.CLEAR);
     }
 
     @Override
@@ -321,6 +322,7 @@ class StoreSimulatedImplementation implements StoreImplementation {
 
     @Override
     public Status playGuider(long guider, String[] files) {
-        return null;
+        // PLAY loads emulation data but does not change the guider state.
+        return storeSimulation.peekGuiderStatus();
     }
 }
