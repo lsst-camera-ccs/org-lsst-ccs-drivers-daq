@@ -579,4 +579,8 @@ public class Store implements AutoCloseable {
         return impl.clearGuider(guider, clearParameters.getDelay(), clearParameters.getPreRows(), clearParameters.getFlushCount(), clearParameters.getReadRows(), clearParameters.getPostRows(), clearParameters.getOverRows());
     }
 
+    Status playGuider(long guider, String[] files) {
+        return impl.playGuider(guider, files);
+    }
+
 }
